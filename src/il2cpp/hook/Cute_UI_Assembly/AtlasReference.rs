@@ -1,0 +1,66 @@
+use std::{collections::hash_map, ptr::null_mut};
+
+use widestring::Utf16Str;
+
+use crate::{core::{ext::Utf16StringExt, Hachimi}, il2cpp::{
+    hook::{
+        UnityEngine_AssetBundleModule::AssetBundle::ASSET_PATH_PREFIX,
+        UnityEngine_CoreModule::{HideFlags_DontUnloadUnusedAsset, Object, Sprite::{self, TEXTURE_OVERRIDES}, Texture2D}
+    },
+    symbols::{get_field_from_name, get_field_object_value, IEnumerable}, types::*
+}};
+
+static mut CLASS: *mut Il2CppClass = null_mut();
+pub fn class() -> *mut Il2CppClass {
+    unsafe { CLASS }
+}
+
+static mut SPRITES_FIELD: *mut FieldInfo = null_mut();
+fn get_sprites(this: *mut Il2CppObject) -> *mut Il2CppObject {
+    get_field_object_value(this, unsafe { SPRITES_FIELD })
+}
+
+// hook::UnityEngine_AssetBundleModule::AssetBundle
+// name: assets/_gallopresources/bundle/resources/atlas/**.asset
+pub fn on_LoadAsset(asset: &mut *mut Il2CppObject, name: &Utf16Str) {
+    if !name.starts_with(ASSET_PATH_PREFIX) {
+        debug!("non-resource atlas: {}", name);
+        return;
+    }
+
+    let base_path = name[ASSET_PATH_PREFIX.len()..].path_basename();
+    if !base_path.starts_with("atlas/") {
+        debug!("bad path: {}", name);
+        return;
+    }
+    let rel_replace_path = base_path.to_string() + ".png";
+    let Some(replace_path) = Hachimi::instance().localized_data.load().get_assets_path(&rel_replace_path) else {
+        return;
+    };
+
+    if let Some(texture) = Texture2D::from_image_file(&replace_path) {
+        let this = *asset;
+        let Some(enumerable) = IEnumerable::new(get_sprites(this)) else {
+            return;
+        };
+        // Tell Unity not to unload this dangling texture
+        Object::set_hideFlags(texture, HideFlags_DontUnloadUnusedAsset);
+
+        let mut overrides = TEXTURE_OVERRIDES.lock().unwrap();
+        for sprite in enumerable.enumerator {
+            let orig_tex = Sprite::orig_get_texture(sprite);
+            if let hash_map::Entry::Vacant(e) = overrides.entry(orig_tex as usize) {
+                e.insert(texture as usize);
+            }
+        }
+    }
+}
+
+pub fn init(Cute_UI_Assembly: *const Il2CppImage) {
+    get_class_or_return!(Cute_UI_Assembly, "Cute.UI", AtlasReference);
+
+    unsafe {
+        CLASS = AtlasReference;
+        SPRITES_FIELD = get_field_from_name(AtlasReference, cstr!("sprites"))
+    }
+}

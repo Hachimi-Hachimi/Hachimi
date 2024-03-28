@@ -1,0 +1,333 @@
+use std::{fs, io::Write, path::Path, sync::{atomic::{self, AtomicUsize}, Arc, Mutex}};
+
+use arc_swap::ArcSwap;
+use fnv::FnvHashMap;
+use serde::{Deserialize, Serialize};
+use size::Size;
+use threadpool::ThreadPool;
+
+use super::{gui::SimpleYesNoDialog, hachimi::LocalizedData, http::{self, AsyncRequest}, utils, Error, Gui, Hachimi};
+
+#[derive(Deserialize)]
+pub struct RepoInfo {
+    pub name: String,
+    pub index: String
+}
+
+const META_INDEX_URL: &str = "https://raw.githubusercontent.com/Hachimi-Hachimi/meta/main/index.json";
+pub fn new_meta_index_request() -> AsyncRequest<Vec<RepoInfo>> {
+    AsyncRequest::with_json_response(ureq::get(META_INDEX_URL))
+}
+
+#[derive(Deserialize)]
+struct RepoIndex {
+    base_url: String,
+    files: Vec<RepoFile>
+}
+
+#[derive(Deserialize, Clone)]
+struct RepoFile {
+    path: String,
+    hash: String,
+    size: usize
+}
+
+#[derive(Clone)]
+struct UpdateInfo {
+    base_url: String,
+    files: Vec<RepoFile>, // only contains files needed for update
+    new_repo: bool,
+    cached_files: FnvHashMap<String, String>, // from repo cache
+    size: usize
+}
+
+#[derive(Default, Clone)]
+pub struct UpdateProgress {
+    pub current: usize,
+    pub total: usize
+}
+
+impl UpdateProgress {
+    pub fn new(current: usize, total: usize) -> UpdateProgress {
+        UpdateProgress {
+            current,
+            total
+        }
+    }
+}
+
+const REPO_CACHE_FILENAME: &str = ".tl_repo_cache";
+#[derive(Serialize, Deserialize, Default)]
+struct RepoCache {
+    base_url: String,
+    files: FnvHashMap<String, String> // path: hash
+}
+
+#[derive(Default)]
+pub struct Updater {
+    update_check_mutex: Mutex<()>,
+    new_update: ArcSwap<Option<UpdateInfo>>,
+    progress: ArcSwap<Option<UpdateProgress>>
+}
+
+const LOCALIZED_DATA_DIR: &str = "localized_data";
+const CHUNK_SIZE: usize = 8192; // 8KiB
+const NUM_THREADS: usize = 8;
+
+struct DownloadJob {
+    agent: ureq::Agent,
+    hasher: blake3::Hasher,
+    buffer: [u8; CHUNK_SIZE]
+}
+
+impl DownloadJob {
+    fn new() -> DownloadJob {
+        DownloadJob {
+            agent: ureq::Agent::new(),
+            hasher: blake3::Hasher::new(),
+            buffer: [0u8; CHUNK_SIZE]
+        }
+    }
+
+    fn execute(&mut self, file_path: &str, url: &str, file_hash: &str, add_bytes: impl Fn(usize)) -> Result<String, Error> {
+        if let Some(parent) = Path::new(file_path).parent() {
+            fs::create_dir_all(parent)?;
+        }
+        let mut file = fs::File::create(file_path)?;
+
+        let res = self.agent.get(url).call()?;
+        let mut reader = res.into_reader();
+        let mut buffer_pos = 0usize;
+        loop {
+            let read_bytes = reader.read(&mut self.buffer[buffer_pos..])?;
+
+            let prev_buffer_pos = buffer_pos;
+            buffer_pos += read_bytes;
+            self.hasher.update(&self.buffer[prev_buffer_pos..buffer_pos]);
+
+            add_bytes(read_bytes);
+
+            if buffer_pos == self.buffer.len() {
+                buffer_pos = 0;
+                let written = file.write(&self.buffer)?;
+                if written != self.buffer.len() {
+                    return Err(Error::OutOfDiskSpace);
+                }
+            }
+
+            if read_bytes == 0 {
+                break;
+            }
+        }
+
+        // Download finished, flush the buffer
+        if buffer_pos != 0 {
+            let written = file.write(&self.buffer[..buffer_pos])?;
+            if written != buffer_pos {
+                return Err(Error::OutOfDiskSpace);
+            }
+        }
+
+        // Hash the file
+        let hash = self.hasher.finalize().to_hex().to_string();
+        if hash != file_hash {
+            return Err(Error::FileHashMismatch(file_path.to_owned()));
+        }
+
+        self.hasher.reset();
+
+        Ok(hash)
+    }
+}
+
+impl Updater {
+    pub fn check_for_updates(self: Arc<Self>) {
+        std::thread::spawn(move || {
+            if let Err(e) = self.check_for_updates_internal() {
+                error!("{}", e);
+            }
+        });
+    }
+
+    fn check_for_updates_internal(&self) -> Result<(), Error> {
+        // Prevent multiple update checks running at the same time
+        let Ok(_guard) = self.update_check_mutex.try_lock() else {
+            return Ok(());
+        };
+
+        let hachimi = Hachimi::instance();
+        let Some(index_url) = &hachimi.config.load().translation_repo_index else {
+            return Ok(());
+        };
+
+        if let Some(mutex) = Gui::instance() {
+            mutex.lock().unwrap().show_notification("Checking for translation updates...");
+        }
+
+        let index: RepoIndex = http::get_json(index_url)?;
+
+        let cache_path = hachimi.get_data_path(REPO_CACHE_FILENAME);
+        let repo_cache = if fs::metadata(&cache_path).is_ok() {
+            let json = fs::read_to_string(&cache_path)?;
+            serde_json::from_str(&json)?
+        }
+        else {
+            RepoCache::default()
+        };
+
+        let mut update_files: Vec<RepoFile> = Vec::new();
+        let mut update_size: usize = 0;
+        for file in index.files.iter() {
+            let updated = if let Some(hash) = repo_cache.files.get(&file.path) {
+                hash != &file.hash
+            }
+            else {
+                // file doesnt exist yet, download it
+                true
+            };
+
+            if updated {
+                update_files.push(file.clone());
+                update_size += file.size;
+            }
+        }
+
+        if !update_files.is_empty() {
+            self.new_update.store(Arc::new(Some(UpdateInfo {
+                new_repo: index.base_url != repo_cache.base_url,
+                base_url: index.base_url,
+                files: update_files,
+                cached_files: repo_cache.files,
+                size: update_size
+            })));
+            if let Some(mutex) = Gui::instance() {
+                mutex.lock().unwrap().show_window(Box::new(SimpleYesNoDialog::new(
+                    "New update available",
+                    &format!("A new translation update is available ({}). Do you want to download it?", Size::from_bytes(update_size)),
+                    |ok| {
+                        if !ok { return; }
+                        Hachimi::instance().tl_updater.clone().run();
+                    }
+                )));
+            }
+        }
+        else if let Some(mutex) = Gui::instance() {
+            mutex.lock().unwrap().show_notification("No translation updates available.");
+        }
+        
+        Ok(())
+    }
+
+    pub fn run(self: Arc<Self>) {
+        std::thread::spawn(move || {
+            if let Err(e) = self.run_internal() {
+                error!("{}", e);
+                if let Some(mutex) = Gui::instance() {
+                    mutex.lock().unwrap().show_notification(&("Update failed: ".to_owned() + &e.to_string()));
+                }
+            }
+        });
+    }
+
+    fn run_internal(self: Arc<Self>) -> Result<(), Error> {
+        let Some(update_info) = (**self.new_update.load()).clone() else {
+            return Ok(());
+        };
+        self.new_update.store(Arc::new(None));
+
+        let total_size = update_info.size;
+        self.progress.store(Arc::new(Some(UpdateProgress::new(0, total_size))));
+        if let Some(mutex) = Gui::instance() {
+            mutex.lock().unwrap().update_progress_visible = true;
+        }
+
+        // Empty the localized data so files couldnt be accessed while update is in progress
+        let hachimi = Hachimi::instance();
+        hachimi.localized_data.store(Arc::new(LocalizedData::default()));
+
+        // Clear the localized data if downloading from a new repo
+        let localized_data_dir = hachimi.get_data_path(LOCALIZED_DATA_DIR);
+        if update_info.new_repo {
+            // rm -rf
+            if let Ok(meta) = fs::metadata(&localized_data_dir) {
+                if meta.is_dir() {
+                    fs::remove_dir_all(&localized_data_dir)?;
+                }
+            }
+        }
+
+        fs::create_dir_all(&localized_data_dir)?;
+
+        // Download the files
+        let cached_files = Arc::new(Mutex::new(update_info.cached_files.clone()));
+        let mut jobs_vec = Vec::with_capacity(NUM_THREADS);
+        for _ in 0..NUM_THREADS {
+            jobs_vec.push(DownloadJob::new());
+        }
+        let jobs = Arc::new(Mutex::new(jobs_vec));
+        let pool = ThreadPool::new(NUM_THREADS);
+        let current_size = Arc::new(AtomicUsize::new(0));
+        for repo_file in update_info.files.iter() {
+            let repo_file_path = repo_file.path.clone();
+            let file_path = utils::concat_path(&localized_data_dir, &repo_file.path);
+            let url = utils::concat_path(&update_info.base_url, &repo_file.path);
+
+            // Clone the Arcs for the closure
+            let jobs = jobs.clone();
+            let file_hash = repo_file.hash.clone();
+            let updater = self.clone();
+            let current_size = current_size.clone();
+            let cached_files = cached_files.clone();
+
+            pool.execute(move || {
+                let mut job = { jobs.lock().unwrap().pop().expect("vacant job in job pool") };
+                
+                let res = job.execute(&file_path, &url, &file_hash, |read_bytes| {
+                    let prev_size = current_size.fetch_add(read_bytes, atomic::Ordering::SeqCst);
+                    updater.progress.store(Arc::new(Some(UpdateProgress::new(prev_size + read_bytes, total_size))));
+                });
+
+                match res {
+                    Ok(hash) => { cached_files.lock().unwrap().insert(repo_file_path, hash); },
+                    Err(e) => { error!("{}", e); }
+                }
+
+                // Return the job back to the pool
+                jobs.lock().unwrap().push(job);
+            });
+        }
+
+        // Wait for the thread pool to finish
+        pool.join();
+        
+        // Modify the config if needed
+        if hachimi.config.load().localized_data_dir.is_none() {
+            let mut config = (**hachimi.config.load()).clone();
+            config.localized_data_dir = Some(LOCALIZED_DATA_DIR.to_owned());
+            hachimi.save_and_reload_config(config)?;
+        }
+
+        // Drop the download state
+        self.progress.store(Arc::new(None));
+
+        // Reload the localized data
+        hachimi.reload_localized_data();
+
+        // Save the repo cache (done last so if any of the previous fails, the entire update would be voided)
+        let repo_cache = RepoCache {
+            base_url: update_info.base_url.clone(),
+            files: cached_files.lock().unwrap().clone()
+        };
+        let cache_path = hachimi.get_data_path(REPO_CACHE_FILENAME);
+        utils::write_json_file(&repo_cache, &cache_path)?;
+
+        if let Some(mutex) = Gui::instance() {
+            mutex.lock().unwrap().show_notification("Update completed.");
+        }
+        Ok(())
+    }
+
+    pub fn progress(&self) -> Option<UpdateProgress> {
+        (**self.progress.load()).clone()
+    }
+}

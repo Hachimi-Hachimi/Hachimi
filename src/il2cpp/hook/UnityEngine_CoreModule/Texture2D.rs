@@ -1,0 +1,72 @@
+use std::ptr::null_mut;
+
+use widestring::Utf16Str;
+
+use crate::{core::{ext::{StringExt, Utf16StringExt}, Hachimi}, il2cpp::{
+    api::il2cpp_object_new,
+    hook::{mscorlib, UnityEngine_AssetBundleModule::AssetBundle::ASSET_PATH_PREFIX, UnityEngine_ImageConversionModule::ImageConversion},
+    symbols::get_method_addr, types::*
+}};
+
+static mut CLASS: *mut Il2CppClass = null_mut();
+pub fn class() -> *mut Il2CppClass {
+    unsafe { CLASS }
+}
+
+static mut CTOR_ADDR: usize = 0;
+impl_addr_wrapper_fn!(_ctor, CTOR_ADDR, (), this: *mut Il2CppObject, width: i32, height: i32);
+
+pub fn new(width: i32, height: i32) -> *mut Il2CppObject {
+    let this = il2cpp_object_new(class());
+    _ctor(this, width, height);
+    this
+}
+
+pub fn from_image_file(path: &str) -> Option<*mut Il2CppObject> {
+    // check if file exists
+    let Ok(metadata) = std::fs::metadata(path) else {
+        return None;
+    };
+    if !metadata.is_file() {
+        return None;
+    }
+
+    // we've done everything we can, can't catch C# exceptions, yolo :)
+    let bytes = mscorlib::File::ReadAllBytes(path.to_il2cpp_string());
+    let texture = new(2, 2);
+    if ImageConversion::LoadImage(texture, bytes, false) {
+        Some(texture)
+    }
+    else {
+        warn!("Failed to load texture: {}", path);
+        None
+    }
+}
+
+// hook::UnityEngine_AssetBundleModule::AssetBundle
+pub fn on_LoadAsset(asset: &mut *mut Il2CppObject, name: &Utf16Str) {
+    if !name.starts_with(ASSET_PATH_PREFIX) {
+        debug!("non-resource texture: {}", name);
+        return;
+    }
+
+    let orig_path = &name[ASSET_PATH_PREFIX.len()..];
+    let rel_replace_path = "textures/".to_owned() + &orig_path.to_string();
+    let localized_data = Hachimi::instance().localized_data.load();
+    let Some(replace_path) = localized_data.get_assets_path(&rel_replace_path) else {
+        return;
+    };
+
+    if let Some(texture) = from_image_file(&replace_path) {
+        *asset = texture;
+    }
+}
+
+pub fn init(UnityEngine_CoreModule: *const Il2CppImage) {
+    get_class_or_return!(UnityEngine_CoreModule, UnityEngine, Texture2D);
+
+    unsafe {
+        CLASS = Texture2D;
+        CTOR_ADDR = get_method_addr(Texture2D, cstr!(".ctor"), 2);
+    }
+}
