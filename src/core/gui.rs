@@ -522,6 +522,7 @@ fn new_window<'a>(ctx: &egui::Context, title: impl Into<egui::WidgetText>) -> eg
     egui::Window::new(title)
     .pivot(egui::Align2::CENTER_CENTER)
     .fixed_pos(ctx.screen_rect().max / 2.0)
+    .max_width(350.0)
     .max_height(250.0)
     .collapsible(false)
     .resizable(false)
