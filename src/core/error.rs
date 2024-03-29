@@ -13,7 +13,8 @@ pub enum Error {
     HttpError(ureq::Error),
     PluralParsing,
     OutOfDiskSpace,
-    FileHashMismatch(String)
+    FileHashMismatch(String),
+    ZipError(zip::result::ZipError)
 }
 
 impl fmt::Display for Error {
@@ -55,6 +56,9 @@ impl fmt::Display for Error {
             Error::FileHashMismatch(name) => {
                 write!(f, "File hash mismatch: {}", name)
             }
+            Error::ZipError(error) => {
+                write!(f, "Zip error: {}", error)
+            }
         }
     }
 }
@@ -80,5 +84,11 @@ impl From<serde_json::Error> for Error {
 impl From<ureq::Error> for Error {
     fn from(e: ureq::Error) -> Self {
         Error::HttpError(e)
+    }
+}
+
+impl From<zip::result::ZipError> for Error {
+    fn from(e: zip::result::ZipError) -> Self {
+        Error::ZipError(e)
     }
 }

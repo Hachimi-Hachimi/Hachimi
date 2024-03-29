@@ -1,4 +1,4 @@
-use std::sync::{atomic::{self, AtomicBool}, Arc};
+use std::{io::Write, sync::{atomic::{self, AtomicBool}, Arc}};
 
 use arc_swap::ArcSwap;
 use serde::de::DeserializeOwned;
@@ -51,4 +51,38 @@ impl<T: Send + Sync + 'static + DeserializeOwned> AsyncRequest<T> {
 pub fn get_json<T: DeserializeOwned>(url: &str) -> Result<T, Error> {
     let res = ureq::get(url).call()?;
     Ok(serde_json::from_str(&res.into_string()?)?)
+}
+
+pub fn download_file_buffered(res: ureq::Response, file: &mut std::fs::File, buffer: &mut [u8], mut add_bytes: impl FnMut(&[u8])) -> Result<(), Error> {
+    let mut reader = res.into_reader();
+    let mut buffer_pos = 0usize;
+    loop {
+        let read_bytes = reader.read(&mut buffer[buffer_pos..])?;
+
+        let prev_buffer_pos = buffer_pos;
+        buffer_pos += read_bytes;
+        add_bytes(&buffer[prev_buffer_pos..buffer_pos]);
+
+        if buffer_pos == buffer.len() {
+            buffer_pos = 0;
+            let written = file.write(&buffer)?;
+            if written != buffer.len() {
+                return Err(Error::OutOfDiskSpace);
+            }
+        }
+
+        if read_bytes == 0 {
+            break;
+        }
+    }
+
+    // Download finished, flush the buffer
+    if buffer_pos != 0 {
+        let written = file.write(&buffer[..buffer_pos])?;
+        if written != buffer_pos {
+            return Err(Error::OutOfDiskSpace);
+        }
+    }
+
+    Ok(())
 }

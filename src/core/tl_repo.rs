@@ -1,4 +1,4 @@
-use std::{fs, io::Write, path::Path, sync::{atomic::{self, AtomicUsize}, Arc, Mutex}};
+use std::{fs, io::{Read, Write}, path::Path, sync::{atomic::{self, AtomicUsize}, Arc, Mutex}};
 
 use arc_swap::ArcSwap;
 use fnv::FnvHashMap;
@@ -22,6 +22,8 @@ pub fn new_meta_index_request() -> AsyncRequest<Vec<RepoInfo>> {
 #[derive(Deserialize)]
 struct RepoIndex {
     base_url: String,
+    zip_url: String,
+    zip_dir: String,
     files: Vec<RepoFile>
 }
 
@@ -35,6 +37,8 @@ struct RepoFile {
 #[derive(Clone)]
 struct UpdateInfo {
     base_url: String,
+    zip_url: String,
+    zip_dir: String,
     files: Vec<RepoFile>, // only contains files needed for update
     new_repo: bool,
     cached_files: FnvHashMap<String, String>, // from repo cache
@@ -73,6 +77,7 @@ pub struct Updater {
 const LOCALIZED_DATA_DIR: &str = "localized_data";
 const CHUNK_SIZE: usize = 8192; // 8KiB
 const NUM_THREADS: usize = 8;
+const INCREMENTAL_UPDATE_LIMIT: usize = 100;
 
 struct DownloadJob {
     agent: ureq::Agent,
@@ -96,37 +101,10 @@ impl DownloadJob {
         let mut file = fs::File::create(file_path)?;
 
         let res = self.agent.get(url).call()?;
-        let mut reader = res.into_reader();
-        let mut buffer_pos = 0usize;
-        loop {
-            let read_bytes = reader.read(&mut self.buffer[buffer_pos..])?;
-
-            let prev_buffer_pos = buffer_pos;
-            buffer_pos += read_bytes;
-            self.hasher.update(&self.buffer[prev_buffer_pos..buffer_pos]);
-
-            add_bytes(read_bytes);
-
-            if buffer_pos == self.buffer.len() {
-                buffer_pos = 0;
-                let written = file.write(&self.buffer)?;
-                if written != self.buffer.len() {
-                    return Err(Error::OutOfDiskSpace);
-                }
-            }
-
-            if read_bytes == 0 {
-                break;
-            }
-        }
-
-        // Download finished, flush the buffer
-        if buffer_pos != 0 {
-            let written = file.write(&self.buffer[..buffer_pos])?;
-            if written != buffer_pos {
-                return Err(Error::OutOfDiskSpace);
-            }
-        }
+        http::download_file_buffered(res, &mut file, &mut self.buffer, |bytes| {
+            self.hasher.update(bytes);
+            add_bytes(bytes.len());
+        })?;
 
         // Hash the file
         let hash = self.hasher.finalize().to_hex().to_string();
@@ -178,6 +156,14 @@ impl Updater {
         let mut update_files: Vec<RepoFile> = Vec::new();
         let mut update_size: usize = 0;
         for file in index.files.iter() {
+            // Cheap file path santization; since no files are supposed to have ".." in their name.
+            // dont even care about the separator
+            // Absolute paths are ok, since they get interpreted as relative paths anyways
+            if file.path.contains("..") {
+                warn!("File path '{}' sanitized", file.path);
+                continue;
+            }
+
             let updated = if let Some(hash) = repo_cache.files.get(&file.path) {
                 hash != &file.hash
             }
@@ -196,6 +182,8 @@ impl Updater {
             self.new_update.store(Arc::new(Some(UpdateInfo {
                 new_repo: index.base_url != repo_cache.base_url,
                 base_url: index.base_url,
+                zip_url: index.zip_url,
+                zip_dir: index.zip_dir,
                 files: update_files,
                 cached_files: repo_cache.files,
                 size: update_size
@@ -220,8 +208,9 @@ impl Updater {
 
     pub fn run(self: Arc<Self>) {
         std::thread::spawn(move || {
-            if let Err(e) = self.run_internal() {
+            if let Err(e) = self.clone().run_internal() {
                 error!("{}", e);
+                self.progress.store(Arc::new(None));
                 if let Some(mutex) = Gui::instance() {
                     mutex.lock().unwrap().show_notification(&("Update failed: ".to_owned() + &e.to_string()));
                 }
@@ -235,8 +224,7 @@ impl Updater {
         };
         self.new_update.store(Arc::new(None));
 
-        let total_size = update_info.size;
-        self.progress.store(Arc::new(Some(UpdateProgress::new(0, total_size))));
+        self.progress.store(Arc::new(Some(UpdateProgress::new(0, update_info.size))));
         if let Some(mutex) = Gui::instance() {
             mutex.lock().unwrap().update_progress_visible = true;
         }
@@ -260,45 +248,14 @@ impl Updater {
 
         // Download the files
         let cached_files = Arc::new(Mutex::new(update_info.cached_files.clone()));
-        let mut jobs_vec = Vec::with_capacity(NUM_THREADS);
-        for _ in 0..NUM_THREADS {
-            jobs_vec.push(DownloadJob::new());
+        // There are errors that can be ignored, let the downloader count how many non-fatal errors there are
+        let error_count = if update_info.files.len() > INCREMENTAL_UPDATE_LIMIT {
+            // It would be too slow to do a large amount of HTTP requests, so just download a zip file and extract it
+            self.clone().download_zip(&update_info, &localized_data_dir, cached_files.clone())
         }
-        let jobs = Arc::new(Mutex::new(jobs_vec));
-        let pool = ThreadPool::new(NUM_THREADS);
-        let current_size = Arc::new(AtomicUsize::new(0));
-        for repo_file in update_info.files.iter() {
-            let repo_file_path = repo_file.path.clone();
-            let file_path = utils::concat_path(&localized_data_dir, &repo_file.path);
-            let url = utils::concat_path(&update_info.base_url, &repo_file.path);
-
-            // Clone the Arcs for the closure
-            let jobs = jobs.clone();
-            let file_hash = repo_file.hash.clone();
-            let updater = self.clone();
-            let current_size = current_size.clone();
-            let cached_files = cached_files.clone();
-
-            pool.execute(move || {
-                let mut job = { jobs.lock().unwrap().pop().expect("vacant job in job pool") };
-                
-                let res = job.execute(&file_path, &url, &file_hash, |read_bytes| {
-                    let prev_size = current_size.fetch_add(read_bytes, atomic::Ordering::SeqCst);
-                    updater.progress.store(Arc::new(Some(UpdateProgress::new(prev_size + read_bytes, total_size))));
-                });
-
-                match res {
-                    Ok(hash) => { cached_files.lock().unwrap().insert(repo_file_path, hash); },
-                    Err(e) => { error!("{}", e); }
-                }
-
-                // Return the job back to the pool
-                jobs.lock().unwrap().push(job);
-            });
-        }
-
-        // Wait for the thread pool to finish
-        pool.join();
+        else {
+            self.clone().download_incremental(&update_info, &localized_data_dir, cached_files.clone())
+        }?; // <-- looga this question mark
         
         // Modify the config if needed
         if hachimi.config.load().localized_data_dir.is_none() {
@@ -322,9 +279,171 @@ impl Updater {
         utils::write_json_file(&repo_cache, &cache_path)?;
 
         if let Some(mutex) = Gui::instance() {
-            mutex.lock().unwrap().show_notification("Update completed.");
+            let mut gui = mutex.lock().unwrap();
+            gui.show_notification("Update completed.");
+            if error_count > 0 {
+                gui.show_notification(&(error_count.to_string() + " errors occurred during update. Check logs for more info."));
+            }
         }
         Ok(())
+    }
+
+    fn download_incremental(
+        self: Arc<Self>,
+        update_info: &UpdateInfo, localized_data_dir: &str, cached_files: Arc<Mutex<FnvHashMap<String, String>>>
+    ) -> Result<usize, Error> {
+        let mut jobs_vec = Vec::with_capacity(NUM_THREADS);
+        for _ in 0..NUM_THREADS {
+            jobs_vec.push(DownloadJob::new());
+        }
+        let jobs = Arc::new(Mutex::new(jobs_vec));
+        let pool = ThreadPool::new(NUM_THREADS);
+        let current_size = Arc::new(AtomicUsize::new(0));
+        let error_count = Arc::new(AtomicUsize::new(0));
+        let total_size = update_info.size;
+        for repo_file in update_info.files.iter() {
+            let repo_file_path = repo_file.path.clone();
+            let file_path = utils::concat_path(localized_data_dir, &repo_file.path);
+            let url = utils::concat_path(&update_info.base_url, &repo_file.path);
+
+            // Clone the Arcs for the closure
+            let jobs = jobs.clone();
+            let file_hash = repo_file.hash.clone();
+            let updater = self.clone();
+            let current_size = current_size.clone();
+            let cached_files = cached_files.clone();
+            let error_count = error_count.clone();
+
+            pool.execute(move || {
+                let mut job = { jobs.lock().unwrap().pop().expect("vacant job in job pool") };
+                
+                let res = job.execute(&file_path, &url, &file_hash, |read_bytes| {
+                    let prev_size = current_size.fetch_add(read_bytes, atomic::Ordering::SeqCst);
+                    updater.progress.store(Arc::new(Some(UpdateProgress::new(prev_size + read_bytes, total_size))));
+                });
+
+                match res {
+                    Ok(hash) => { cached_files.lock().unwrap().insert(repo_file_path, hash); },
+                    Err(e) => {
+                        error!("{}", e);
+                        error_count.fetch_add(1, atomic::Ordering::SeqCst);
+                    }
+                }
+
+                // Return the job back to the pool
+                jobs.lock().unwrap().push(job);
+            });
+        }
+
+        // Wait for the thread pool to finish
+        pool.join();
+
+        Ok(error_count.load(atomic::Ordering::Relaxed))
+    }
+
+    fn download_zip(
+        self: Arc<Self>,
+        update_info: &UpdateInfo, localized_data_dir: &str, cached_files: Arc<Mutex<FnvHashMap<String, String>>>
+    ) -> Result<usize, Error> {
+        let mut cached_files = cached_files.lock().unwrap();
+        let mut error_count = 0;
+        let zip_path = utils::concat_path(localized_data_dir, ".tmp.zip");
+
+        { // block that drops the file objects so we can delete the temp file later
+            let mut zip_file = fs::File::options()
+                .read(true)
+                .write(true)
+                .create(true)
+                .truncate(true)
+                .open(&zip_path)?;
+
+            let res = ureq::get(&update_info.zip_url).call()?;
+            let content_length = res.header("Content-Length")
+                .map(|s| s.parse::<usize>().ok())
+                .unwrap_or_default();
+            let mut buffer = [0u8; CHUNK_SIZE];
+            let mut downloaded = 0;
+            http::download_file_buffered(res, &mut zip_file, &mut buffer, |bytes| {
+                let progress = if let Some(len) = &content_length {
+                    downloaded += bytes.len();
+                    UpdateProgress::new(downloaded, *len)
+                }
+                else {
+                    // fake progress
+                    downloaded += 1;
+                    UpdateProgress::new(downloaded, 100000)
+                };
+                self.progress.store(Arc::new(Some(progress)));
+            })?;
+
+            let mut zip_archive = zip::ZipArchive::new(zip_file)?;
+            let mut hasher = blake3::Hasher::new();
+            let mut current_bytes = 0;
+            for repo_file in update_info.files.iter() {
+                let archive_path = utils::concat_path(&update_info.zip_dir, &repo_file.path);
+                let mut archive_file = match zip_archive.by_name(&archive_path) {
+                    Ok(v) => v,
+                    Err(_) => {
+                        error!("File not found in zip: {}", archive_path);
+                        continue;
+                    }
+                };
+
+                let path = utils::concat_path(localized_data_dir, &repo_file.path);
+                if let Some(parent) = Path::new(&path).parent() {
+                    fs::create_dir_all(parent)?;
+                }
+                let mut file = fs::File::create(&path)?;
+
+                let mut buffer_pos = 0usize;
+                loop {
+                    let read_bytes = archive_file.read(&mut buffer[buffer_pos..])?;
+            
+                    let prev_buffer_pos = buffer_pos;
+                    buffer_pos += read_bytes;
+                    hasher.update(&buffer[prev_buffer_pos..buffer_pos]);
+
+                    current_bytes += read_bytes;
+                    self.progress.store(Arc::new(Some(UpdateProgress::new(current_bytes, update_info.size))));
+            
+                    if buffer_pos == buffer.len() {
+                        buffer_pos = 0;
+                        let written = file.write(&buffer)?;
+                        if written != buffer.len() {
+                            return Err(Error::OutOfDiskSpace);
+                        }
+                    }
+            
+                    if read_bytes == 0 {
+                        break;
+                    }
+                }
+            
+                // Extract finished, flush the buffer
+                if buffer_pos != 0 {
+                    let written = file.write(&buffer[..buffer_pos])?;
+                    if written != buffer_pos {
+                        return Err(Error::OutOfDiskSpace);
+                    }
+                }
+
+                // Hash the file
+                let hash = hasher.finalize().to_hex().to_string();
+                if hash != repo_file.hash {
+                    return Err(Error::FileHashMismatch(path.to_owned()));
+                }
+                cached_files.insert(repo_file.path.clone(), hash);
+
+                hasher.reset();
+            }
+        }
+
+        if let Err(e) = fs::remove_file(&zip_path) {
+            error!("Failed to remove '{}': {}", zip_path, e);
+            error_count += 1;
+        }
+
+        Ok(error_count)
     }
 
     pub fn progress(&self) -> Option<UpdateProgress> {
