@@ -181,9 +181,15 @@ impl Gui {
         self.context.end_frame()
     }
 
+    const ICON_IMAGE: egui::ImageSource<'static> = egui::include_image!("../../assets/icon.png");
     fn icon<'a>() -> egui::Image<'a> {
-        egui::Image::new(egui::include_image!("../../assets/icon.png"))
+        egui::Image::new(Self::ICON_IMAGE)
         .fit_to_exact_size(egui::Vec2::new(24.0, 24.0))
+    }
+
+    fn icon_2x<'a>() -> egui::Image<'a> {
+        egui::Image::new(Self::ICON_IMAGE)
+        .fit_to_exact_size(egui::Vec2::new(48.0, 48.0))
     }
 
     fn run_splash(&mut self) {
@@ -229,6 +235,9 @@ impl Gui {
                 ui.horizontal(|ui| {
                     ui.add(Self::icon());
                     ui.heading("Hachimi");
+                    if ui.button("？").clicked() {
+                        show_window = Some(Box::new(AboutWindow::new()));
+                    }
                 });
                 ui.label(&self.version_str);
                 if ui.button("🗙 Close menu").clicked() {
@@ -862,5 +871,75 @@ impl Window for FirstTimeSetupWindow {
         }
 
         open_res
+    }
+}
+
+struct AboutWindow {
+    id: egui::Id
+}
+
+impl AboutWindow {
+    fn new() -> AboutWindow {
+        AboutWindow {
+            id: random_id()
+        }
+    }
+}
+
+impl Window for AboutWindow {
+    fn run(&mut self, ctx: &egui::Context) -> bool {
+        let mut open = true;
+
+        new_window(ctx, "About")
+        .id(self.id)
+        .open(&mut open)
+        .show(ctx, |ui| {
+            ui.horizontal(|ui| {
+                ui.add(Gui::icon_2x());
+                ui.vertical(|ui| {
+                    ui.heading("Hachimi");
+                    ui.label("v".to_owned() + env!("CARGO_PKG_VERSION"));
+                });
+            });
+            ui.label("Copyright (c) 2024 LeadRDRK and contributors");
+            if ui.button("View license").clicked() {
+                thread::spawn(|| {
+                    Gui::instance().unwrap()
+                    .lock().unwrap()
+                    .show_window(Box::new(LicenseWindow::new()));
+                });
+            }
+        });
+
+        open
+    }
+}
+
+struct LicenseWindow {
+    id: egui::Id
+}
+
+impl LicenseWindow {
+    fn new() -> LicenseWindow {
+        LicenseWindow {
+            id: random_id()
+        }
+    }
+}
+
+impl Window for LicenseWindow {
+    fn run(&mut self, ctx: &egui::Context) -> bool {
+        let mut open = true;
+
+        new_window(ctx, "License")
+        .id(self.id)
+        .open(&mut open)
+        .show(ctx, |ui| {
+            egui::ScrollArea::vertical().show(ui, |ui| {
+                ui.label(include_str!("../../LICENSE"));
+            });
+        });
+
+        open
     }
 }
