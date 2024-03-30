@@ -47,7 +47,7 @@ static INSTANCE: OnceCell<Mutex<Gui>> = OnceCell::new();
 static IS_CONSUMING_INPUT: AtomicBool = AtomicBool::new(false);
 impl Gui {
     // Call this from the render thread!
-    pub fn instance_or_init(get_ppp: fn() -> f32, open_key_str: &str) -> &Mutex<Gui> {
+    pub fn instance_or_init(open_key_str: &str) -> &Mutex<Gui> {
         if let Some(instance) = INSTANCE.get() {
             return instance;
         }
@@ -65,10 +65,7 @@ impl Gui {
         context.set_visuals(visuals);
 
         let mult = GraphicSettings::current_virtual_res_mult();
-        let mut ppp = get_ppp();
-        if ppp < 0.0 {
-            ppp = 1.0;
-        }
+        let ppp = 3.0;
         context.set_pixels_per_point(ppp * mult);
 
         let hachimi = Hachimi::instance();
@@ -531,7 +528,7 @@ fn new_window<'a>(ctx: &egui::Context, title: impl Into<egui::WidgetText>) -> eg
     egui::Window::new(title)
     .pivot(egui::Align2::CENTER_CENTER)
     .fixed_pos(ctx.screen_rect().max / 2.0)
-    .max_width(350.0)
+    .max_width(320.0)
     .max_height(250.0)
     .collapsible(false)
     .resizable(false)
@@ -698,7 +695,7 @@ impl ConfigEditor {
 
         Self::option_slider(ui, "Target FPS", &mut config.target_fps, 30..=240);
 
-        ui.label("Virtual resolution multiplier");
+        ui.label("Virtual resolution\nmultiplier");
         ui.add(egui::Slider::new(&mut config.virtual_res_mult, 1.0..=4.0).step_by(0.1));
         ui.end_row();
 
@@ -706,7 +703,7 @@ impl ConfigEditor {
         ui.checkbox(&mut config.skip_first_time_setup, "");
         ui.end_row();
 
-        ui.label("Disable auto update check");
+        ui.label("Disable auto update\ncheck");
         ui.checkbox(&mut config.disable_auto_update_check, "");
         ui.end_row();
     }

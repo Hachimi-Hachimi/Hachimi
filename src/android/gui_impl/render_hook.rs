@@ -28,8 +28,7 @@ static mut EGLSWAPBUFFERS_ADDR: usize = 0;
 type EGLSwapBuffersFn = extern "C" fn(display: EGLDisplay, surface: EGLSurface) -> EGLBoolean;
 extern "C" fn eglSwapBuffers(display: EGLDisplay, surface: EGLSurface) -> EGLBoolean {
     let orig_fn: EGLSwapBuffersFn = unsafe { std::mem::transmute(EGLSWAPBUFFERS_ADDR) };
-    // 1 in = 72 pt. Multiplying by 2 cuz mobile screens are way too dense
-    let mut gui = Gui::instance_or_init(|| Screen::get_dpi() / (72.0 * 2.0), "Vol Up + Vol Down").lock().unwrap();
+    let mut gui = Gui::instance_or_init("Vol Up + Vol Down").lock().unwrap();
     // Big fat state destroyer, initialize it as soon as possible
     let painter = match init_painter() {
         Ok(v) => v,
