@@ -2,7 +2,7 @@
 
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use jni::{objects::JObject, sys::{jboolean, jint, JNI_TRUE}, JNIEnv};
+use jni::{objects::JObject, sys::{jboolean, jint, JNI_FALSE, JNI_TRUE}, JNIEnv};
 
 use crate::core::{Error, Gui, Hachimi};
 
@@ -62,15 +62,25 @@ extern "C" fn nativeInjectEvent(mut env: JNIEnv, obj: JObject, input_event: JObj
         // scale the position accordingly to the game's actual rendering resolution
         let device_id = env.call_method(&input_event, "getDeviceId", "()I", &[]).unwrap().i().unwrap();
         let input_device_class = env.find_class("android/view/InputDevice").unwrap();
-        let device = env.call_static_method(
+        let Ok(device) = env.call_static_method(
             input_device_class, "getDevice", "(I)Landroid/view/InputDevice;", &[device_id.into()]
-        ).unwrap().l().unwrap();
+        ).unwrap().l() else {
+            return JNI_FALSE;
+        };
+        if device.is_null() {
+            return JNI_FALSE;
+        }
 
         // The axis gets rotated along with the screen orientation, so it's always 0
         let main_axis = 0;
-        let axis_range = env.call_method(
+        let Ok(axis_range) = env.call_method(
             &device, "getMotionRange", "(I)Landroid/view/InputDevice$MotionRange;", &[main_axis.into()]
-        ).unwrap().l().unwrap();
+        ).unwrap().l() else {
+            return JNI_FALSE;
+        };
+        if axis_range.is_null() {
+            return JNI_FALSE;
+        }
         let axis_max = env.call_method(axis_range, "getMax", "()F", &[]).unwrap().f().unwrap();
 
         let ppp = gui.context.zoom_factor() * (axis_max / gui.prev_main_axis_size as f32);
