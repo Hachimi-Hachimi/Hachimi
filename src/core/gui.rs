@@ -4,7 +4,7 @@ use once_cell::sync::OnceCell;
 
 use crate::il2cpp::{
     hook::{
-        umamusume::{GallopUtil, GraphicSettings, WebViewManager},
+        umamusume::{GallopUtil, WebViewManager},
         UnityEngine_CoreModule::Application
     },
     symbols::Thread
@@ -17,8 +17,7 @@ pub struct Gui {
     pub context: egui::Context,
     pub input: egui::RawInput,
     pub start_time: Instant,
-    pub pixels_per_point: f32,
-    prev_virtual_res_mult: f32,
+    pub prev_main_axis_size: i32,
     last_fps_update: Instant,
     tmp_frame_count: u32,
     fps_text: String,
@@ -40,6 +39,7 @@ pub struct Gui {
     windows: Vec<BoxedWindow>
 }
 
+const PIXELS_PER_POINT_RATIO: f32 = 3.0/1080.0;
 const BACKGROUND_COLOR: egui::Color32 = egui::Color32::from_rgba_premultiplied(27, 27, 27, 220);
 const TEXT_COLOR: egui::Color32 = egui::Color32::from_gray(170);
 
@@ -64,10 +64,6 @@ impl Gui {
         visuals.widgets.noninteractive.fg_stroke = egui::Stroke::new(1.0, TEXT_COLOR);
         context.set_visuals(visuals);
 
-        let mult = GraphicSettings::current_virtual_res_mult();
-        let ppp = 3.0;
-        context.set_pixels_per_point(ppp * mult);
-
         let hachimi = Hachimi::instance();
         let config = hachimi.config.load();
         let mut fps_value = hachimi.target_fps.load(atomic::Ordering::Relaxed);
@@ -85,8 +81,7 @@ impl Gui {
             context,
             input: egui::RawInput::default(),
             start_time: now,
-            pixels_per_point: ppp,
-            prev_virtual_res_mult: mult,
+            prev_main_axis_size: 1,
             last_fps_update: now,
             tmp_frame_count: 0,
             fps_text: "FPS: 0".to_string(),
@@ -124,6 +119,10 @@ impl Gui {
     }
 
     pub fn set_screen_size(&mut self, width: i32, height: i32) {
+        let main_axis_size = if width < height { width } else { height };
+        let pixels_per_point = main_axis_size as f32 * PIXELS_PER_POINT_RATIO;
+        self.context.set_pixels_per_point(pixels_per_point);
+
         self.input.screen_rect = Some(egui::Rect {
             min: egui::Pos2::default(),
             max: egui::Pos2::new(
@@ -131,6 +130,8 @@ impl Gui {
                 height as f32 / self.context.pixels_per_point()
             )
         });
+
+        self.prev_main_axis_size = main_axis_size;
     }
 
     fn take_input(&mut self) -> egui::RawInput {
@@ -154,13 +155,6 @@ impl Gui {
     pub fn run(&mut self) -> egui::FullOutput {
         self.update_fps();
         let input = self.take_input();
-
-        // Update scale if virtual resolution mult changed
-        let mult = GraphicSettings::current_virtual_res_mult();
-        if mult != self.prev_virtual_res_mult {
-            self.context.set_pixels_per_point(self.pixels_per_point * mult);
-            self.prev_virtual_res_mult = mult;
-        }
 
         self.context.begin_frame(input);
         

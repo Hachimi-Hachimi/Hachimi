@@ -1,15 +1,6 @@
-use std::sync::atomic;
-
-use atomic_float::AtomicF32;
-
 use crate::{core::Hachimi, il2cpp::{symbols::get_method_addr, types::*}};
 
 use super::SingleModeStartResultCharaViewer;
-
-static CURRENT_VIRTUAL_RES_MULT: AtomicF32 = AtomicF32::new(1.0);
-pub fn current_virtual_res_mult() -> f32 {
-    CURRENT_VIRTUAL_RES_MULT.load(atomic::Ordering::Relaxed)
-}
 
 type GetVirtualResolutionFn = extern "C" fn(this: *mut Il2CppObject) -> Vector2Int_t;
 extern "C" fn GetVirtualResolution(this: *mut Il2CppObject) -> Vector2Int_t {
@@ -18,7 +9,6 @@ extern "C" fn GetVirtualResolution(this: *mut Il2CppObject) -> Vector2Int_t {
     if mult != 1.0 {
         res *= mult;
     }
-    CURRENT_VIRTUAL_RES_MULT.store(mult, atomic::Ordering::Relaxed);
     res
 }
 

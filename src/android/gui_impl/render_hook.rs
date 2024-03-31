@@ -8,11 +8,14 @@ use glow::HasContext;
 use once_cell::unsync::OnceCell;
 
 use crate::core::{Error, Gui, Hachimi};
-use crate::il2cpp::hook::UnityEngine_CoreModule::Screen;
 
 type EGLBoolean = c_uint;
 type EGLDisplay = *mut c_void;
 type EGLSurface = *mut c_void;
+type EGLint = i32;
+
+const EGL_WIDTH: EGLint = 0x3057;
+const EGL_HEIGHT: EGLint = 0x3056;
 
 fn get_binding_parameter<T>(gl: &Arc<glow::Context>, parameter: u32, create_wrapper: fn(NonZeroU32) -> T) -> Option<T> {
     let v = unsafe { gl.get_parameter_i32(parameter) };
@@ -23,11 +26,19 @@ fn get_binding_parameter<T>(gl: &Arc<glow::Context>, parameter: u32, create_wrap
     None
 }
 
+static mut EGLQUERYSURFACE_ADDR: usize = 0;
+type EGLQuerySurfaceFn = extern "C" fn(display: EGLDisplay, surface: EGLSurface, attribute: EGLint, value: *mut EGLint) -> EGLBoolean;
+fn eglQuerySurface(display: EGLDisplay, surface: EGLSurface, attribute: EGLint, value: *mut EGLint) -> EGLBoolean {
+    let orig_fn: EGLQuerySurfaceFn = unsafe { std::mem::transmute(EGLQUERYSURFACE_ADDR) };
+    orig_fn(display, surface, attribute, value)
+}
+
 // Performance critical, store the trampoline addr directly
 static mut EGLSWAPBUFFERS_ADDR: usize = 0;
 type EGLSwapBuffersFn = extern "C" fn(display: EGLDisplay, surface: EGLSurface) -> EGLBoolean;
 extern "C" fn eglSwapBuffers(display: EGLDisplay, surface: EGLSurface) -> EGLBoolean {
     let orig_fn: EGLSwapBuffersFn = unsafe { std::mem::transmute(EGLSWAPBUFFERS_ADDR) };
+    // 1 in = 72 pt. Multiplying by 2 cuz mobile screens are way too dense
     let mut gui = Gui::instance_or_init("Vol Up + Vol Down").lock().unwrap();
     // Big fat state destroyer, initialize it as soon as possible
     let painter = match init_painter() {
@@ -46,12 +57,17 @@ extern "C" fn eglSwapBuffers(display: EGLDisplay, surface: EGLSurface) -> EGLBoo
         return orig_fn(display, surface);
     }
 
-    let resolution = Screen::get_resolution();
-    gui.set_screen_size(resolution.width(), resolution.height());
+    // these queries are actually relatively fast
+    let mut width = 0;
+    let mut height = 0;
+    eglQuerySurface(display, surface, EGL_WIDTH, &mut width);
+    eglQuerySurface(display, surface, EGL_HEIGHT, &mut height);
+
+    gui.set_screen_size(width, height);
     let output = gui.run();
 
     let clipped_primitives = gui.context.tessellate(output.shapes, output.pixels_per_point);
-    let dimensions: [u32; 2] = [resolution.width() as u32, resolution.height() as u32];
+    let dimensions: [u32; 2] = [width as u32, height as u32];
 
     // Save VBO and VAO since Unity doesn't rebind them unless it needs to
     // (might be slow...? could always hook the bind functions directly if its noticeably slow)
@@ -114,7 +130,8 @@ fn init_internal() -> Result<(), Error> {
 
     unsafe {
         EGLSWAPBUFFERS_ADDR = Hachimi::instance().interceptor.hook(eglSwapBuffers_addr as usize, eglSwapBuffers as usize)?;
-        EGLGETPROCADDRESS_ADDR = libc::dlsym(egl_handle, cstr!("eglGetProcAddress").as_ptr()) as usize
+        EGLGETPROCADDRESS_ADDR = libc::dlsym(egl_handle, cstr!("eglGetProcAddress").as_ptr()) as usize;
+        EGLQUERYSURFACE_ADDR = libc::dlsym(egl_handle, cstr!("eglQuerySurface").as_ptr()) as usize
     }
 
     Ok(())

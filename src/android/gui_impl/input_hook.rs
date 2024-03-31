@@ -56,12 +56,26 @@ extern "C" fn nativeInjectEvent(mut env: JNIEnv, obj: JObject, input_event: JObj
         };
 
         // dumb and simple, no multi touch
-        let get_x_res = env.call_method(&input_event, "getX", "()F", &[]).unwrap();
-        let get_y_res = env.call_method(&input_event, "getY", "()F", &[]).unwrap();
+        let real_x = env.call_method(&input_event, "getX", "()F", &[]).unwrap().f().unwrap();
+        let real_y = env.call_method(&input_event, "getY", "()F", &[]).unwrap().f().unwrap();
 
-        let ppp = gui.pixels_per_point;
-        let x = get_x_res.f().unwrap() / ppp;
-        let y = get_y_res.f().unwrap() / ppp;
+        // scale the position accordingly to the game's actual rendering resolution
+        let device_id = env.call_method(&input_event, "getDeviceId", "()I", &[]).unwrap().i().unwrap();
+        let input_device_class = env.find_class("android/view/InputDevice").unwrap();
+        let device = env.call_static_method(
+            input_device_class, "getDevice", "(I)Landroid/view/InputDevice;", &[device_id.into()]
+        ).unwrap().l().unwrap();
+
+        // The axis gets rotated along with the screen orientation, so it's always 0
+        let main_axis = 0;
+        let axis_range = env.call_method(
+            &device, "getMotionRange", "(I)Landroid/view/InputDevice$MotionRange;", &[main_axis.into()]
+        ).unwrap().l().unwrap();
+        let axis_max = env.call_method(axis_range, "getMax", "()F", &[]).unwrap().f().unwrap();
+
+        let ppp = gui.context.zoom_factor() * (axis_max / gui.prev_main_axis_size as f32);
+        let x = real_x as f32 / ppp;
+        let y = real_y as f32 / ppp;
         let pos = egui::Pos2 { x, y };
 
         match phase {
