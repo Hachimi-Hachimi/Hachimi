@@ -2,7 +2,7 @@
 
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use jni::{objects::JObject, sys::{jboolean, jint, JNI_FALSE, JNI_TRUE}, JNIEnv};
+use jni::{objects::{JMap, JObject}, sys::{jboolean, jint, JNI_TRUE}, JNIEnv};
 
 use crate::core::{Error, Gui, Hachimi};
 
@@ -59,31 +59,13 @@ extern "C" fn nativeInjectEvent(mut env: JNIEnv, obj: JObject, input_event: JObj
         let real_x = env.call_method(&input_event, "getX", "()F", &[]).unwrap().f().unwrap();
         let real_y = env.call_method(&input_event, "getY", "()F", &[]).unwrap().f().unwrap();
 
-        // scale the position accordingly to the game's actual rendering resolution
-        let device_id = env.call_method(&input_event, "getDeviceId", "()I", &[]).unwrap().i().unwrap();
-        let input_device_class = env.find_class("android/view/InputDevice").unwrap();
-        let Ok(device) = env.call_static_method(
-            input_device_class, "getDevice", "(I)Landroid/view/InputDevice;", &[device_id.into()]
-        ).unwrap().l() else {
-            return JNI_FALSE;
-        };
-        if device.is_null() {
-            return JNI_FALSE;
-        }
+        // SAFETY: view doesn't live past the lifetime of this function
+        let view = get_view(unsafe { env.unsafe_clone() });
+        let view_width = env.call_method(&view, "getWidth", "()I", &[]).unwrap().i().unwrap();
+        let view_height = env.call_method(&view, "getHeight", "()I", &[]).unwrap().i().unwrap();
+        let view_main_axis_size = if view_width < view_height { view_width } else { view_height };
 
-        // The axis gets rotated along with the screen orientation, so it's always 0
-        let main_axis = 0;
-        let Ok(axis_range) = env.call_method(
-            &device, "getMotionRange", "(I)Landroid/view/InputDevice$MotionRange;", &[main_axis.into()]
-        ).unwrap().l() else {
-            return JNI_FALSE;
-        };
-        if axis_range.is_null() {
-            return JNI_FALSE;
-        }
-        let axis_max = env.call_method(axis_range, "getMax", "()F", &[]).unwrap().f().unwrap();
-
-        let ppp = gui.context.zoom_factor() * (axis_max / gui.prev_main_axis_size as f32);
+        let ppp = gui.context.zoom_factor() * (view_main_axis_size as f32 / gui.prev_main_axis_size as f32);
         let x = real_x as f32 / ppp;
         let y = real_y as f32 / ppp;
         let pos = egui::Pos2 { x, y };
@@ -158,8 +140,7 @@ extern "C" fn nativeInjectEvent(mut env: JNIEnv, obj: JObject, input_event: JObj
     get_orig_fn!(nativeInjectEvent, NativeInjectEventFn)(env, obj, input_event)
 }
 
-/* TODO: currently not functional, view seems to be in touch mode
-fn show_soft_input(env: &mut JNIEnv, show: bool) {
+fn get_view(mut env: JNIEnv) -> JObject<'_> {
     let activity_thread_class = env.find_class("android/app/ActivityThread").unwrap();
     let activity_thread = env
         .call_static_method(
@@ -176,27 +157,12 @@ fn show_soft_input(env: &mut JNIEnv, show: bool) {
         .unwrap()
         .l()
         .unwrap();
-    let activities_map = JMap::from_env(env, &activities).unwrap();
+    let activities_map = JMap::from_env(&mut env, &activities).unwrap();
 
     // Get the first activity in the map
-    let (_, activity_record) = activities_map.iter(env).unwrap().next(env).unwrap().unwrap();
+    let (_, activity_record) = activities_map.iter(&mut env).unwrap().next(&mut env).unwrap().unwrap();
     let activity = env
         .get_field(activity_record, "activity", "Landroid/app/Activity;")
-        .unwrap()
-        .l()
-        .unwrap();
-
-    let ctx_class = env.find_class("android/content/Context").unwrap();
-    let ime = env
-        .get_static_field(ctx_class, "INPUT_METHOD_SERVICE", "Ljava/lang/String;")
-        .unwrap();
-    let ime_manager = env
-        .call_method(
-            &activity,
-            "getSystemService",
-            "(Ljava/lang/String;)Ljava/lang/Object;",
-            &[ime.borrow()],
-        )
         .unwrap()
         .l()
         .unwrap();
@@ -206,8 +172,28 @@ fn show_soft_input(env: &mut JNIEnv, show: bool) {
         .unwrap()
         .l()
         .unwrap();
-    let view = env
+
+    env
         .call_method(jni_window, "getDecorView", "()Landroid/view/View;", &[])
+        .unwrap()
+        .l()
+        .unwrap()
+}
+
+/* TODO: incomplete code + currently not functional, view seems to be in touch mode
+fn show_soft_input(env: &mut JNIEnv, show: bool) {
+    let ctx_class = env.find_class("android/content/Context").unwrap();
+    let ime = env
+        .get_static_field(ctx_class, "INPUT_METHOD_SERVICE", "Ljava/lang/String;")
+        .unwrap();
+
+    let ime_manager = env
+        .call_method(
+            &activity,
+            "getSystemService",
+            "(Ljava/lang/String;)Ljava/lang/Object;",
+            &[ime.borrow()],
+        )
         .unwrap()
         .l()
         .unwrap();
