@@ -77,7 +77,7 @@ pub struct Updater {
 const LOCALIZED_DATA_DIR: &str = "localized_data";
 const CHUNK_SIZE: usize = 8192; // 8KiB
 const NUM_THREADS: usize = 8;
-const INCREMENTAL_UPDATE_LIMIT: usize = 100;
+const INCREMENTAL_UPDATE_LIMIT: usize = 200;
 
 struct DownloadJob {
     agent: ureq::Agent,
