@@ -337,6 +337,51 @@ impl<'a, T> Iterator for IListIter<'a, T> {
     }
 }
 
+// IDictionary wrapper
+#[allow(non_snake_case)]
+pub struct IDictionary<K, V> {
+    pub this: *mut Il2CppObject,
+    get_Item: fn(*mut Il2CppObject, K) -> V,
+    set_Item: fn(*mut Il2CppObject, K, V),
+    Contains: fn(*mut Il2CppObject, K) -> bool
+}
+
+impl<K, V> IDictionary<K, V> {
+    pub fn new(this: *mut Il2CppObject) -> Option<IDictionary<K, V>> {
+        if this.is_null() {
+            return None;
+        }
+
+        let class = unsafe { (*this).klass() };
+        let get_item_addr = get_method_addr(class, cstr!("get_Item"), 1);
+        let set_item_addr = get_method_addr(class, cstr!("set_Item"), 2);
+        let contains_addr = get_method_addr(class, cstr!("Contains"), 1);
+
+        if get_item_addr == 0 || set_item_addr == 0 || contains_addr == 0 {
+            return None;
+        }
+
+        Some(IDictionary {
+            this,
+            get_Item: unsafe { std::mem::transmute(get_item_addr) },
+            set_Item: unsafe { std::mem::transmute(set_item_addr) },
+            Contains: unsafe { std::mem::transmute(contains_addr) }
+        })
+    }
+
+    pub fn get(&self, key: K) -> V {
+        (self.get_Item)(self.this, key)
+    }
+
+    pub fn set(&self, key: K, value: V) {
+        (self.set_Item)(self.this, key, value);
+    }
+
+    pub fn contains(&self, key: K) -> bool {
+        (self.Contains)(self.this, key)
+    }
+}
+
 // Il2CppThread wrapper
 #[repr(transparent)]
 #[derive(Clone)]

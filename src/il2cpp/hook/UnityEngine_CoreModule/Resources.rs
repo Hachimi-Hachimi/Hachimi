@@ -1,4 +1,4 @@
-use crate::il2cpp::{symbols::get_method_addr, types::*};
+use crate::il2cpp::{hook::Plugins::AnimateToUnity::AnMeshParameter, symbols::get_method_addr, types::*};
 
 use super::{Object, Sprite};
 
@@ -10,7 +10,19 @@ extern "C" fn UnloadUnusedAssets() -> *mut Il2CppObject {
         let alive = Object::IsNativeObjectAlive(*orig as *mut Il2CppObject);
         if !alive {
             Object::Destroy(*replace as *mut Il2CppObject);
-            debug!("texture destroyed: {}", replace);
+            debug!("sprite texture destroyed: {}", replace);
+        }
+
+        alive
+    });
+    AnMeshParameter::TEXTURE_SET_OVERRIDES.lock().unwrap().retain(|amp, overrides| {
+        // Destroy replacements if the parent AnMeshParameter is dead
+        let alive = Object::IsNativeObjectAlive(*amp as *mut Il2CppObject);
+        if !alive {
+            for (_, texture) in overrides.iter() {
+                Object::Destroy(*texture as *mut Il2CppObject);
+                debug!("amp texture destroyed: {}", texture);
+            }
         }
 
         alive

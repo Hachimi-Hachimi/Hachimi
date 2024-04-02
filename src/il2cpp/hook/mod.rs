@@ -71,7 +71,7 @@ pub mod UnityEngine_ImageConversionModule;
 pub mod LibNative_Runtime;
 pub mod umamusume;
 pub mod Cute_UI_Assembly;
-mod Plugins;
+pub mod Plugins;
 
 pub fn init() {
     info!("Initializing il2cpp hooks");

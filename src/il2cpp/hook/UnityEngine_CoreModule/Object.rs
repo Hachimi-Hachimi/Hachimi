@@ -9,6 +9,9 @@ impl_addr_wrapper_fn!(set_hideFlags, SET_HIDEFLAGS_ADDR, (), this: *mut Il2CppOb
 static mut ISNATIVEOBJECTALIVE_ADDR: usize = 0;
 impl_addr_wrapper_fn!(IsNativeObjectAlive, ISNATIVEOBJECTALIVE_ADDR, bool, obj: *mut Il2CppObject);
 
+static mut GET_NAME_ADDR: usize = 0;
+impl_addr_wrapper_fn!(get_name, GET_NAME_ADDR, *mut Il2CppString, this: *mut Il2CppObject);
+
 pub fn init(UnityEngine_CoreModule: *const Il2CppImage) {
     get_class_or_return!(UnityEngine_CoreModule, UnityEngine, Object);
 
@@ -16,5 +19,6 @@ pub fn init(UnityEngine_CoreModule: *const Il2CppImage) {
         DESTROY_ADDR = get_method_addr(Object, cstr!("Destroy"), 1);
         SET_HIDEFLAGS_ADDR = get_method_addr(Object, cstr!("set_hideFlags"), 1);
         ISNATIVEOBJECTALIVE_ADDR = get_method_addr(Object, cstr!("IsNativeObjectAlive"), 1);
+        GET_NAME_ADDR = get_method_addr(Object, cstr!("get_name"), 0);
     }
 }

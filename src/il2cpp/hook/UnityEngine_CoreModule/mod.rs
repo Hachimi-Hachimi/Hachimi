@@ -3,6 +3,7 @@ mod Resources;
 pub mod Sprite;
 pub mod Object;
 pub mod Application;
+pub mod Material;
 
 pub const HideFlags_DontUnloadUnusedAsset: i32 = 32;
 
@@ -14,4 +15,5 @@ pub fn init() {
     Sprite::init(image);
     Object::init(image);
     Application::init(image);
+    Material::init(image);
 }
