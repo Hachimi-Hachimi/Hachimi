@@ -1,7 +1,7 @@
 use std::ffi::CStr;
-use std::ffi::CString;
 use std::os::raw::c_void;
 
+use crate::symbols_impl;
 use crate::core::Error;
 
 use super::api::*;
@@ -12,11 +12,8 @@ use std::ptr::null_mut;
 static mut HANDLE: *mut c_void = null_mut();
 static mut DOMAIN: *mut Il2CppDomain = null_mut();
 
-#[cfg(target_os = "android")]
 pub unsafe fn dlsym(name: &str) -> *mut c_void {
-    debug_assert!(!HANDLE.is_null());
-    let name_cstr = CString::new(name).unwrap();
-    libc::dlsym(HANDLE, name_cstr.as_ptr())
+    symbols_impl::dlsym(HANDLE, name)
 }
 
 pub fn set_handle(handle: usize) {

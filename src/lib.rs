@@ -9,4 +9,4 @@ pub mod il2cpp;
 mod android;
 
 #[cfg(target_os = "android")]
-use android::{log_impl, game_impl, hachimi_impl, gui_impl};
+use android::{log_impl, game_impl, hachimi_impl, gui_impl, symbols_impl};
