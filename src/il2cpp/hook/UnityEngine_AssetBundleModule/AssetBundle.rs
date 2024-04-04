@@ -33,8 +33,7 @@ extern "C" fn LoadAssetAsync_Internal(this: *mut Il2CppObject, name: *mut Il2Cpp
 type OnLoadAssetFn = fn(asset: &mut *mut Il2CppObject, name: &Utf16Str);
 pub fn on_LoadAsset(asset: &mut *mut Il2CppObject, name: *mut Il2CppString) {
     let class = unsafe { (**asset).klass() };
-    let name_utf16 = unsafe { (*name).to_utf16str() };
-    //debug!("{} {}", unsafe { std::ffi::CStr::from_ptr((*class).name).to_str().unwrap() }, name_utf16);
+    //debug!("{} {}", unsafe { std::ffi::CStr::from_ptr((*class).name).to_str().unwrap() }, unsafe { (*name).to_utf16str() });
 
     let handler: OnLoadAssetFn = if class == StoryTimelineData::class() {
         StoryTimelineData::on_LoadAsset
@@ -52,7 +51,7 @@ pub fn on_LoadAsset(asset: &mut *mut Il2CppObject, name: *mut Il2CppString) {
         return;
     };
 
-    handler(asset, name_utf16);
+    handler(asset, unsafe { (*name).to_utf16str() });
 }
 
 pub fn init(_UnityEngine_AssetBundleModule: *const Il2CppImage) {
