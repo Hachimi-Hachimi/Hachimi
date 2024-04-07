@@ -74,7 +74,7 @@ extern "C" fn _GetMaterial(
             );
             let localized_data = Hachimi::instance().localized_data.load();
             if let Some(path) = localized_data.get_assets_path(&rel_path) {
-                if let Some(texture) = Texture2D::from_image_file(&path) {
+                if let Some(texture) = Texture2D::from_image_file(&path, false, true) {
                     // Tell Unity not to unload this dangling texture
                     Object::set_hideFlags(texture, HideFlags_DontUnloadUnusedAsset);
 

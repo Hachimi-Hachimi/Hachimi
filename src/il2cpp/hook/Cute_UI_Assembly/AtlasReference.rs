@@ -38,7 +38,7 @@ pub fn on_LoadAsset(asset: &mut *mut Il2CppObject, name: &Utf16Str) {
         return;
     };
 
-    if let Some(texture) = Texture2D::from_image_file(&replace_path) {
+    if let Some(texture) = Texture2D::from_image_file(&replace_path, false, true) {
         let this = *asset;
         let Some(enumerable) = IEnumerable::new(get_sprites(this)) else {
             return;

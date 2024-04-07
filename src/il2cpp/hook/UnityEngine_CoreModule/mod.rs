@@ -7,6 +7,8 @@ pub mod Material;
 
 pub const HideFlags_DontUnloadUnusedAsset: i32 = 32;
 
+pub const TextureFormat_RGBA32: i32 = 4;
+
 pub fn init() {
     get_assembly_image_or_return!(image, "UnityEngine.CoreModule.dll");
 
