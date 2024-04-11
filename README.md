@@ -45,5 +45,15 @@ The easiest way to install is by using [UmaPatcher](https://github.com/LeadRDRK/
 Configuration can be done within the game itself using the built-in config editor, or you can also edit the config file directly:
 - Android: `/sdcard/Android/media/jp.co.cygames.umamusume/hachimi/config.json`
 
+# Special thanks
+These projects have been the basis for Hachimi's development; without them, Hachimi would never have existed in its current form:
+
+- [Trainers' Legend G](https://github.com/MinamiChiwa/Trainers-Legend-G)
+- [umamusume-localify-android](https://github.com/Kimjio/umamusume-localify-android)
+- [umamusume-localify](https://github.com/GEEKiDoS/umamusume-localify)
+- [Carotenify](https://github.com/KevinVG207/Uma-Carotenify)
+- [umamusu-translate](https://github.com/noccu/umamusu-translate)
+- [frida-il2cpp-bridge](https://github.com/vfsfitvnm/frida-il2cpp-bridge)
+
 # License
 [GNU GPLv3](LICENSE)
