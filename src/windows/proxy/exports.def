@@ -1,0 +1,73 @@
+EXPORTS
+    ; dxgi.dll
+    CreateDXGIFactory
+    CreateDXGIFactory1
+    CreateDXGIFactory2
+    DXGID3D10CreateDevice
+    DXGID3D10RegisterLayers
+    DXGIGetDebugInterface1
+
+	; version.dll
+    GetFileVersionInfoA
+	GetFileVersionInfoExA
+	GetFileVersionInfoExW
+	GetFileVersionInfoSizeA
+	GetFileVersionInfoSizeExA
+	GetFileVersionInfoSizeExW
+	GetFileVersionInfoSizeW
+	GetFileVersionInfoW
+	VerFindFileA
+	VerFindFileW
+	VerInstallFileA
+	VerInstallFileW
+	VerLanguageNameA
+	VerLanguageNameW
+	VerQueryValueA
+	VerQueryValueW
+
+	; winhttp.dll
+    WinHttpAddRequestHeaders
+    WinHttpCheckPlatform
+    WinHttpCloseHandle
+    WinHttpConnect
+    WinHttpCrackUrl
+    WinHttpCreateProxyResolver
+    WinHttpCreateUrl
+    WinHttpDetectAutoProxyConfigUrl
+    WinHttpFreeProxyResult
+    WinHttpFreeProxyResultEx
+    WinHttpFreeProxySettings
+    WinHttpGetDefaultProxyConfiguration
+    WinHttpGetIEProxyConfigForCurrentUser
+    WinHttpGetProxyForUrl
+    WinHttpGetProxyForUrlEx
+    WinHttpGetProxyForUrlEx2
+    WinHttpGetProxyResult
+    WinHttpGetProxyResultEx
+    WinHttpGetProxySettingsVersion
+    WinHttpOpen
+    WinHttpOpenRequest
+    WinHttpQueryAuthSchemes
+    WinHttpQueryDataAvailable
+    WinHttpQueryHeaders
+    WinHttpQueryOption
+    WinHttpReadData
+    WinHttpReadProxySettings
+    WinHttpReceiveResponse
+    WinHttpResetAutoProxy
+    WinHttpSendRequest
+    WinHttpSetCredentials
+    WinHttpSetDefaultProxyConfiguration
+    WinHttpSetOption
+    WinHttpSetStatusCallback
+    WinHttpSetTimeouts
+    WinHttpTimeFromSystemTime
+    WinHttpTimeToSystemTime
+    WinHttpWebSocketClose
+    WinHttpWebSocketCompleteUpgrade
+    WinHttpWebSocketQueryCloseStatus
+    WinHttpWebSocketReceive
+    WinHttpWebSocketSend
+    WinHttpWebSocketShutdown
+    WinHttpWriteData
+    WinHttpWriteProxySettings

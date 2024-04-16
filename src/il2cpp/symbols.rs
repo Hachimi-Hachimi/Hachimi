@@ -12,7 +12,7 @@ use std::ptr::null_mut;
 static mut HANDLE: *mut c_void = null_mut();
 static mut DOMAIN: *mut Il2CppDomain = null_mut();
 
-pub unsafe fn dlsym(name: &str) -> *mut c_void {
+pub unsafe fn dlsym(name: &str) -> usize {
     symbols_impl::dlsym(HANDLE, name)
 }
 

@@ -15,7 +15,7 @@ pub mod plurals;
 mod template_filters;
 
 pub mod sql;
-#[macro_use] mod interceptor;
+#[macro_use] pub mod interceptor;
 pub use interceptor::Interceptor;
 
 pub mod utils;

@@ -260,7 +260,7 @@ impl Gui {
                     ui.heading("🖼 Graphics");
                     ui.horizontal(|ui| {
                         ui.label("FPS");
-                        if ui.add(egui::Slider::new(&mut self.menu_fps_value, 30..=240)).drag_released() {
+                        if ui.add(egui::Slider::new(&mut self.menu_fps_value, 30..=240)).drag_stopped() {
                             hachimi.target_fps.store(self.menu_fps_value, atomic::Ordering::Relaxed);
                             Thread::main_thread().schedule(|| {
                                 // doesnt matter which value's used here, hook will override it
@@ -331,7 +331,7 @@ impl Gui {
         });
         let ratio = progress.current as f32 / progress.total as f32;
 
-        egui::Area::new("update_progress")
+        egui::Area::new("update_progress".into())
         .fixed_pos(egui::Pos2 {
             x: 4.0,
             y: 4.0

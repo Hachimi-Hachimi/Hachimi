@@ -1,4 +1,4 @@
-use std::{fs, os::raw::c_void, process, sync::{atomic::{self, AtomicBool, AtomicI32}, Arc}};
+use std::{fs, process, sync::{atomic::{self, AtomicBool, AtomicI32}, Arc}};
 use arc_swap::ArcSwap;
 use fnv::FnvHashMap;
 use once_cell::sync::OnceCell;
@@ -120,10 +120,6 @@ impl Hachimi {
             }
         };
         self.localized_data.store(Arc::new(new_data));
-    }
-
-    pub fn find_symbol_by_name(&self, module: &str, symbol: &str) -> Result<*mut c_void, Error> {
-        dobby_rs::resolve_symbol(module, symbol).ok_or(Error::SymbolNotFound(module.to_owned(), symbol.to_owned()))
     }
 
     pub fn on_dlopen(&self, filename: &str, handle: usize) -> bool {

@@ -3,7 +3,7 @@ use std::fmt;
 #[derive(Debug)]
 pub enum Error {
     SymbolNotFound(String, String),
-    HookingError(dobby_rs::DobbyHookError),
+    HookingError(String),
     AssemblyNotFound(String),
     ClassNotFound(String, String),
     MethodNotFound(String),
@@ -14,7 +14,8 @@ pub enum Error {
     PluralParsing,
     OutOfDiskSpace,
     FileHashMismatch(String),
-    ZipError(zip::result::ZipError)
+    ZipError(zip::result::ZipError),
+    RuntimeError(String)
 }
 
 impl fmt::Display for Error {
@@ -58,14 +59,11 @@ impl fmt::Display for Error {
             }
             Error::ZipError(error) => {
                 write!(f, "Zip error: {}", error)
+            },
+            Error::RuntimeError(msg) => {
+                write!(f, "{}", msg)
             }
         }
-    }
-}
-
-impl From<dobby_rs::DobbyHookError> for Error {
-    fn from(e: dobby_rs::DobbyHookError) -> Self {
-        Error::HookingError(e)
     }
 }
 

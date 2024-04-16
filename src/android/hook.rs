@@ -5,7 +5,7 @@ use std::{
 
 use jni::sys::{jint, JNINativeMethod, JNIEnv, jclass};
 
-use crate::{android::gui_impl::input_hook, core::{Error, Hachimi}};
+use crate::{android::gui_impl::input_hook, core::{Error, Hachimi, Interceptor}};
 use super::ffi;
 
 const LINKER_MODULE: &str = if cfg!(target_pointer_width = "64") {
@@ -72,8 +72,8 @@ fn init_internal(env: *mut jni::sys::JNIEnv) -> Result<(), Error> {
     let hachimi = Hachimi::instance();
 
     info!("Hooking dlopen: {}", loader_dlopen_symbol);
-    let loader_dlopen_addr = hachimi.find_symbol_by_name(LINKER_MODULE, loader_dlopen_symbol)?;
-    hachimi.interceptor.hook(loader_dlopen_addr as usize, loader_dlopen as usize)?;
+    let loader_dlopen_addr = Interceptor::find_symbol_by_name(LINKER_MODULE, loader_dlopen_symbol)?;
+    hachimi.interceptor.hook(loader_dlopen_addr, loader_dlopen as usize)?;
 
     if !hachimi.config.load().disable_gui {
         info!("Hooking JNINativeInterface RegisterNatives");
