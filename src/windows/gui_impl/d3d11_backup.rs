@@ -64,6 +64,8 @@ pub struct BackupState {
 impl BackupState {
     #[inline]
     pub unsafe fn save(&mut self, ctx: &ID3D11DeviceContext) {
+        self.scissor_count = D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE;
+        self.viewport_count = D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE;
         ctx.RSGetScissorRects(&mut self.scissor_count, Some(self.scissor_rects.as_mut_ptr()));
         ctx.RSGetViewports(&mut self.viewport_count, Some(self.viewports.as_mut_ptr()));
         if let Ok(state) = ctx.RSGetState() {
