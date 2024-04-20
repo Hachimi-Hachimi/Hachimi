@@ -71,31 +71,32 @@ extern "C" fn IDXGISwapChain_ResizeBuffers(
     this: *mut c_void, buffer_count: c_uint, width: c_uint, height: c_uint,
     new_format: DXGI_FORMAT, swap_chain_flags: c_uint
 ) -> HRESULT {
-    let res = get_orig_fn!(IDXGISwapChain_ResizeBuffers, ResizeBuffersFn)(
-        this, buffer_count, width, height, new_format, swap_chain_flags
-    );
+    let orig_fn = get_orig_fn!(IDXGISwapChain_ResizeBuffers, ResizeBuffersFn);
 
-    if res.is_ok() {
-        let painter_mutex = match init_painter(this) {
-            Ok(v) => v,
-            Err(e) => {
-                error!("{}", e);
-                info!("Unhooking IDXGISwapChain hooks");
+    let painter_mutex = match init_painter(this) {
+        Ok(v) => v,
+        Err(e) => {
+            error!("{}", e);
+            info!("Unhooking IDXGISwapChain hooks");
 
-                let interceptor = &Hachimi::instance().interceptor;
-                interceptor.unhook(IDXGISwapChain_Present as usize);
-                interceptor.unhook(IDXGISwapChain_ResizeBuffers as usize);
-                return res;
-            }
-        };
-        let mut painter = painter_mutex.lock().unwrap();
-        if this != painter.swap_chain().as_raw() {
-            return res;
+            let interceptor = &Hachimi::instance().interceptor;
+            interceptor.unhook(IDXGISwapChain_Present as usize);
+            interceptor.unhook(IDXGISwapChain_ResizeBuffers as usize);
+            return orig_fn(
+                this, buffer_count, width, height, new_format, swap_chain_flags
+            );
         }
-        painter.init_render_target();
+    };
+    let mut painter = painter_mutex.lock().unwrap();
+    if this != painter.swap_chain().as_raw() {
+        return orig_fn(
+            this, buffer_count, width, height, new_format, swap_chain_flags
+        );
     }
-
-    res
+    
+    painter.resize_buffers(|| orig_fn(
+        this, buffer_count, width, height, new_format, swap_chain_flags
+    ))
 }
 
 static PAINTER: OnceCell<Mutex<D3D11Painter>> = OnceCell::new();

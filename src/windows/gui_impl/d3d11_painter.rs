@@ -1,10 +1,10 @@
-use windows::Win32::Graphics::{
+use windows::{core::HRESULT, Win32::Graphics::{
     Direct3D11::{
         ID3D11Device, ID3D11DeviceContext, ID3D11RenderTargetView, ID3D11Texture2D,
         D3D11_RENDER_TARGET_VIEW_DESC, D3D11_RTV_DIMENSION_TEXTURE2D
     },
     Dxgi::{Common::DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, IDXGISwapChain}
-};
+}};
 
 use crate::core::Error;
 
@@ -53,10 +53,20 @@ impl D3D11Painter {
         )
     }
 
-    /// Call this in the ResizeBuffers hook, after calling the orig fn
-    pub fn init_render_target(&mut self) {
+    /// Call this in the ResizeBuffers hook, with orig_fn calling the original function
+    pub fn resize_buffers(&mut self, orig_fn: impl FnOnce() -> HRESULT) -> HRESULT {
         self.render_target = None;
         
+        // Has to be called after dropping the render target!
+        let res = orig_fn();
+        if res.is_ok() {
+            self.init_render_target();
+        }
+
+        res
+    }
+
+    fn init_render_target(&mut self) {
         let Ok(backbuffer) = (unsafe { self.swap_chain.GetBuffer::<ID3D11Texture2D>(0) }) else {
             error!("Failed to get swapchain's backbuffer");
             return;
