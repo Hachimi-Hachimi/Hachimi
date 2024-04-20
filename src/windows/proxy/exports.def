@@ -7,25 +7,25 @@ EXPORTS
     DXGID3D10RegisterLayers
     DXGIGetDebugInterface1
 
-	; version.dll
+    ; version.dll
     GetFileVersionInfoA
-	GetFileVersionInfoExA
-	GetFileVersionInfoExW
-	GetFileVersionInfoSizeA
-	GetFileVersionInfoSizeExA
-	GetFileVersionInfoSizeExW
-	GetFileVersionInfoSizeW
-	GetFileVersionInfoW
-	VerFindFileA
-	VerFindFileW
-	VerInstallFileA
-	VerInstallFileW
-	VerLanguageNameA
-	VerLanguageNameW
-	VerQueryValueA
-	VerQueryValueW
+    GetFileVersionInfoExA
+    GetFileVersionInfoExW
+    GetFileVersionInfoSizeA
+    GetFileVersionInfoSizeExA
+    GetFileVersionInfoSizeExW
+    GetFileVersionInfoSizeW
+    GetFileVersionInfoW
+    VerFindFileA
+    VerFindFileW
+    VerInstallFileA
+    VerInstallFileW
+    VerLanguageNameA
+    VerLanguageNameW
+    VerQueryValueA
+    VerQueryValueW
 
-	; winhttp.dll
+    ; winhttp.dll
     WinHttpAddRequestHeaders
     WinHttpCheckPlatform
     WinHttpCloseHandle
