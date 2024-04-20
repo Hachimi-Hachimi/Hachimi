@@ -63,4 +63,3 @@ features = [
 
 [patch.crates-io]
 dobby-sys = { git = "https://github.com/LeadRDRK/dobby-sys.git" }
-egui-directx11 = { git = "https://github.com/LeadRDRK/egui-directx11.git", branch = "no-clear-state" }

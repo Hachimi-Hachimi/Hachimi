@@ -303,8 +303,9 @@ dependencies = [
 
 [[package]]
 name = "egui-directx11"
-version = "0.3.0"
-source = "git+https://github.com/LeadRDRK/egui-directx11.git?branch=no-clear-state#bd7a6869485273e11571dbc0669c8a916b0ad3c3"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9f43dd2a58a313690e10ebb75a2e7fd854c2ec0cf3cb49c4f9797e9d10a6afc9"
 dependencies = [
  "egui",
  "log",
