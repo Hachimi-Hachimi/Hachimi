@@ -1,4 +1,4 @@
-use std::io::Write;
+use std::{io::Write, path::Path};
 
 use serde::Serialize;
 
@@ -6,7 +6,7 @@ use crate::il2cpp::types::Il2CppString;
 
 use super::{ext::StringExt, Error, Hachimi};
 
-pub fn concat_path(left: &str, right: &str) -> String {
+pub fn concat_unix_path(left: &str, right: &str) -> String {
     let mut str = String::with_capacity(left.len() + 1 + right.len());
     str.push_str(left);
     str.push_str("/");
@@ -131,7 +131,7 @@ pub fn wrap_fit_text_il2cpp(string: *mut Il2CppString, base_line_width: i32, max
     None
 }
 
-pub fn write_json_file<T: Serialize>(data: &T, path: &str) -> Result<(), Error> {
+pub fn write_json_file<T: Serialize, P: AsRef<Path>>(data: &T, path: P) -> Result<(), Error> {
     let file = std::fs::File::create(path)?;
     let mut writer = std::io::BufWriter::new(file);
     serde_json::to_writer_pretty(&mut writer, data)?;

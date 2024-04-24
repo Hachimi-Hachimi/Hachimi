@@ -1,11 +1,11 @@
-use std::{collections::hash_map, sync::Mutex};
+use std::{collections::hash_map, path::Path, sync::Mutex};
 
 use fnv::FnvHashMap;
 use once_cell::sync::Lazy;
 use widestring::Utf16Str;
 
 use crate::{
-    core::{utils, Hachimi}, 
+    core::Hachimi, 
     il2cpp::{
         hook::UnityEngine_CoreModule::{HideFlags_DontUnloadUnusedAsset, Material, Object, Texture2D},
         symbols::{get_method_addr, IDictionary, IList},
@@ -68,10 +68,9 @@ extern "C" fn _GetMaterial(
             let amp_name = unsafe { (*Object::get_name(this)).to_utf16str() };
             let texture_set_filename = texture_set_name_utf16.to_string() + ".png";
             // an_texture_sets/[amp_name]/[texture_set_name].png
-            let rel_path = utils::concat_path(
-                "an_texture_sets",
-                &utils::concat_path(&amp_name.to_string(), &texture_set_filename)
-            );
+            let mut rel_path = Path::new("an_texture_sets").join(&amp_name.to_string());
+            rel_path.push(&texture_set_filename);
+
             let localized_data = Hachimi::instance().localized_data.load();
             if let Some(path) = localized_data.get_assets_path(&rel_path) {
                 if let Some(texture) = Texture2D::from_image_file(&path, false, true) {

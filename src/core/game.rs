@@ -1,9 +1,11 @@
+use std::path::PathBuf;
+
 use crate::game_impl;
 
 pub struct Game {
     pub package_name: String,
     pub region: Region,
-    pub data_dir: String
+    pub data_dir: PathBuf
 }
 
 #[derive(PartialEq, Eq)]

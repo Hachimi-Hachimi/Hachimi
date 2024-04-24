@@ -1,4 +1,4 @@
-use std::ptr::null_mut;
+use std::{path::Path, ptr::null_mut};
 
 use widestring::Utf16Str;
 
@@ -26,9 +26,18 @@ pub fn new(width: i32, height: i32, texture_format: i32, mip_chain: bool, linear
     this
 }
 
-pub fn from_image_file(path: &str, mip_chain: bool, mark_non_readable: bool) -> Option<*mut Il2CppObject> {
+pub fn from_image_file<P: AsRef<Path>>(path: P, mip_chain: bool, mark_non_readable: bool) -> Option<*mut Il2CppObject> {
+    // check if path is valid utf-8
+    let path_ref = path.as_ref();
+    let path_str = if let Some(s) = path_ref.to_str() {
+        s
+    }
+    else {
+        return None;
+    };
+
     // check if file exists
-    let Ok(metadata) = std::fs::metadata(path) else {
+    let Ok(metadata) = std::fs::metadata(path_ref) else {
         return None;
     };
     if !metadata.is_file() {
@@ -36,13 +45,13 @@ pub fn from_image_file(path: &str, mip_chain: bool, mark_non_readable: bool) -> 
     }
 
     // we've done everything we can, can't catch C# exceptions, yolo :)
-    let bytes = mscorlib::File::ReadAllBytes(path.to_il2cpp_string());
+    let bytes = mscorlib::File::ReadAllBytes(path_str.to_il2cpp_string());
     let texture = new(2, 2, TextureFormat_RGBA32, mip_chain, false);
     if ImageConversion::LoadImage(texture, bytes, mark_non_readable) {
         Some(texture)
     }
     else {
-        warn!("Failed to load texture: {}", path);
+        warn!("Failed to load texture: {}", path_str);
         None
     }
 }
