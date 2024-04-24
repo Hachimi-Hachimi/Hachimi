@@ -1,5 +1,5 @@
 use procfs::process::Process;
-use std::process;
+use std::{path::{Path, PathBuf}, process};
 
 use crate::core::game::Region;
 
@@ -25,6 +25,8 @@ pub fn get_region(package_name: &str) -> Region {
     }
 }
 
-pub fn get_data_dir(package_name: &str) -> String {
-    format!("/sdcard/Android/media/{}/hachimi", package_name)
+pub fn get_data_dir(package_name: &str) -> PathBuf {
+    let mut path = Path::new("/sdcard/Android/media").join(package_name);
+    path.push("hachimi");
+    path
 }

@@ -1,4 +1,4 @@
-use std::{fs, os::raw::c_void, process, sync::{atomic::{self, AtomicBool, AtomicI32}, Arc}};
+use std::{fs, os::raw::c_void, path::{Path, PathBuf}, process, sync::{atomic::{self, AtomicBool, AtomicI32}, Arc}};
 use arc_swap::ArcSwap;
 use fnv::FnvHashMap;
 use once_cell::sync::OnceCell;
@@ -76,8 +76,8 @@ impl Hachimi {
         })
     }
 
-    fn load_config(data_dir: &str) -> Result<Config, Error> {
-        let config_path = utils::concat_path(data_dir, "config.json");
+    fn load_config(data_dir: &Path) -> Result<Config, Error> {
+        let config_path = data_dir.join("config.json");
         if fs::metadata(&config_path).is_ok() {
             let json = fs::read_to_string(&config_path)?;
             Ok(serde_json::from_str(&json)?)
@@ -152,8 +152,8 @@ impl Hachimi {
         }
     }
 
-    pub fn get_data_path(&self, rel_path: &str) -> String {
-        utils::concat_path(&self.game.data_dir, rel_path)
+    pub fn get_data_path<P: AsRef<Path>>(&self, rel_path: P) -> PathBuf {
+        self.game.data_dir.join(rel_path)
     }
 }
 
@@ -198,7 +198,7 @@ impl Default for Config {
 #[derive(Default)]
 pub struct LocalizedData {
     pub config: LocalizedDataConfig,
-    path: Option<String>,
+    path: Option<PathBuf>,
 
     pub localize_dict: FnvHashMap<String, String>,
     pub hashed_dict: FnvHashMap<u64, String>,
@@ -206,19 +206,19 @@ pub struct LocalizedData {
     pub character_system_text_dict: FnvHashMap<i32, FnvHashMap<i32, String>>, // {"character_id": {"voice_id": "text"}}
     pub race_jikkyo_comment_dict: FnvHashMap<i32, String>, // {"id": "text"}
     pub race_jikkyo_message_dict: FnvHashMap<i32, String>, // {"id": "text"}
-    assets_path: Option<String>,
+    assets_path: Option<PathBuf>,
 
     pub plural_form: plurals::Resolver,
     pub ordinal_form: plurals::Resolver
 }
 
 impl LocalizedData {
-    fn new(config: &Config, data_dir: &str) -> Result<LocalizedData, Error> {
-        let path: Option<String>;
+    fn new(config: &Config, data_dir: &Path) -> Result<LocalizedData, Error> {
+        let path: Option<PathBuf>;
         let config: LocalizedDataConfig = if let Some(ld_dir) = &config.localized_data_dir {
-            let ld_path_str = utils::concat_path(data_dir, ld_dir);
-            let ld_config_path = utils::concat_path(&ld_path_str, "config.json");
-            path = Some(ld_path_str);
+            let ld_path = Path::new(data_dir).join(ld_dir);
+            let ld_config_path = ld_path.join("config.json");
+            path = Some(ld_path);
 
             if fs::metadata(&ld_config_path).is_ok() {
                 let json = fs::read_to_string(&ld_config_path)?;
@@ -244,7 +244,11 @@ impl LocalizedData {
             character_system_text_dict: Self::load_dict_static(&path, config.character_system_text_dict.as_ref()).unwrap_or_default(),
             race_jikkyo_comment_dict: Self::load_dict_static(&path, config.race_jikkyo_comment_dict.as_ref()).unwrap_or_default(),
             race_jikkyo_message_dict: Self::load_dict_static(&path, config.race_jikkyo_message_dict.as_ref()).unwrap_or_default(),
-            assets_path: path.as_ref().map(|p| config.assets_dir.as_ref().map(|dir| utils::concat_path(p, dir))).unwrap_or(None),
+            assets_path: path.as_ref()
+                .map(|p| config.assets_dir.as_ref()
+                    .map(|dir| p.join(dir))
+                )
+                .unwrap_or_default(),
 
             plural_form,
             ordinal_form,
@@ -254,7 +258,7 @@ impl LocalizedData {
         })
     }
 
-    fn load_dict_static_ex<T: DeserializeOwned>(ld_path_opt: &Option<String>, rel_path_opt: Option<&String>, silent_fs_error: bool) -> Option<T> {
+    fn load_dict_static_ex<T: DeserializeOwned, P: AsRef<Path>>(ld_path_opt: &Option<PathBuf>, rel_path_opt: Option<P>, silent_fs_error: bool) -> Option<T> {
         let Some(ld_path) = ld_path_opt else {
             return None;
         };
@@ -262,12 +266,12 @@ impl LocalizedData {
             return None;
         };
 
-        let path = utils::concat_path(ld_path, rel_path);
+        let path = ld_path.join(rel_path);
         let json = match fs::read_to_string(&path) {
             Ok(v) => v,
             Err(e) => {
                 if !silent_fs_error {
-                    error!("Failed to read '{}': {}", path, e);
+                    error!("Failed to read '{}': {}", path.display(), e);
                 }
                 return None;
             }
@@ -276,7 +280,7 @@ impl LocalizedData {
         let dict = match serde_json::from_str::<T>(&json) {
             Ok(v) => v,
             Err(e) => {
-                error!("Failed to parse '{}': {}", path, e);
+                error!("Failed to parse '{}': {}", path.display(), e);
                 return None;
             }
         };
@@ -284,15 +288,15 @@ impl LocalizedData {
         Some(dict)
     }
 
-    fn load_dict_static<T: DeserializeOwned>(ld_path_opt: &Option<String>, rel_path_opt: Option<&String>) -> Option<T> {
+    fn load_dict_static<T: DeserializeOwned, P: AsRef<Path>>(ld_path_opt: &Option<PathBuf>, rel_path_opt: Option<P>) -> Option<T> {
         Self::load_dict_static_ex(ld_path_opt, rel_path_opt, false)
     }
 
-    pub fn load_dict<T: DeserializeOwned>(&self, rel_path_opt: Option<&String>) -> Option<T> {
+    pub fn load_dict<T: DeserializeOwned, P: AsRef<Path>>(&self, rel_path_opt: Option<P>) -> Option<T> {
         Self::load_dict_static(&self.path, rel_path_opt)
     }
 
-    pub fn load_assets_dict<T: DeserializeOwned>(&self, rel_path_opt: Option<&String>) -> Option<T> {
+    pub fn load_assets_dict<T: DeserializeOwned, P: AsRef<Path>>(&self, rel_path_opt: Option<P>) -> Option<T> {
         Self::load_dict_static_ex(&self.assets_path, rel_path_opt, true)
     }
 
@@ -305,9 +309,9 @@ impl LocalizedData {
         }
     }
 
-    pub fn get_assets_path(&self, rel_path: &str) -> Option<String> {
+    pub fn get_assets_path<P: AsRef<Path>>(&self, rel_path: P) -> Option<PathBuf> {
         if let Some(assets_path) = &self.assets_path {
-            Some(utils::concat_path(assets_path, rel_path))
+            Some(assets_path.join(rel_path))
         }
         else {
             None

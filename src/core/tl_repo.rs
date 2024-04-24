@@ -1,4 +1,4 @@
-use std::{fs, io::{Read, Write}, path::Path, sync::{atomic::{self, AtomicUsize}, Arc, Mutex}};
+use std::{fs, io::{Read, Write}, path::{Path, PathBuf}, sync::{atomic::{self, AtomicUsize}, Arc, Mutex}};
 
 use arc_swap::ArcSwap;
 use fnv::FnvHashMap;
@@ -32,6 +32,17 @@ struct RepoFile {
     path: String,
     hash: String,
     size: usize
+}
+
+impl RepoFile {
+    fn get_fs_path(&self, root_dir: &Path) -> PathBuf {
+        // Modern Windows versions support forward slashes anyways but it doesn't hurt to do something so trivial
+        #[cfg(target_os = "windows")]
+        return root_dir.join(&self.path.replace("/", "\\"));
+
+        #[cfg(not(target_os = "windows"))]
+        return root_dir.join(&self.path);
+    }
 }
 
 #[derive(Clone)]
@@ -94,7 +105,7 @@ impl DownloadJob {
         }
     }
 
-    fn execute(&mut self, file_path: &str, url: &str, file_hash: &str, add_bytes: impl Fn(usize)) -> Result<String, Error> {
+    fn execute(&mut self, file_path: &Path, url: &str, file_hash: &str, add_bytes: impl Fn(usize)) -> Result<String, Error> {
         if let Some(parent) = Path::new(file_path).parent() {
             fs::create_dir_all(parent)?;
         }
@@ -109,7 +120,7 @@ impl DownloadJob {
         // Hash the file
         let hash = self.hasher.finalize().to_hex().to_string();
         if hash != file_hash {
-            return Err(Error::FileHashMismatch(file_path.to_owned()));
+            return Err(Error::FileHashMismatch(file_path.to_str().unwrap_or("").to_string()));
         }
 
         self.hasher.reset();
@@ -156,10 +167,7 @@ impl Updater {
         let mut update_files: Vec<RepoFile> = Vec::new();
         let mut update_size: usize = 0;
         for file in index.files.iter() {
-            // Cheap file path santization; since no files are supposed to have ".." in their name.
-            // dont even care about the separator
-            // Absolute paths are ok, since they get interpreted as relative paths anyways
-            if file.path.contains("..") {
+            if file.path.contains("..") || Path::new(&file.path).has_root() {
                 warn!("File path '{}' sanitized", file.path);
                 continue;
             }
@@ -290,7 +298,7 @@ impl Updater {
 
     fn download_incremental(
         self: Arc<Self>,
-        update_info: &UpdateInfo, localized_data_dir: &str, cached_files: Arc<Mutex<FnvHashMap<String, String>>>
+        update_info: &UpdateInfo, localized_data_dir: &Path, cached_files: Arc<Mutex<FnvHashMap<String, String>>>
     ) -> Result<usize, Error> {
         let mut jobs_vec = Vec::with_capacity(NUM_THREADS);
         for _ in 0..NUM_THREADS {
@@ -303,8 +311,8 @@ impl Updater {
         let total_size = update_info.size;
         for repo_file in update_info.files.iter() {
             let repo_file_path = repo_file.path.clone();
-            let file_path = utils::concat_path(localized_data_dir, &repo_file.path);
-            let url = utils::concat_path(&update_info.base_url, &repo_file.path);
+            let file_path = repo_file.get_fs_path(localized_data_dir);
+            let url = utils::concat_unix_path(&update_info.base_url, &repo_file.path);
 
             // Clone the Arcs for the closure
             let jobs = jobs.clone();
@@ -343,11 +351,11 @@ impl Updater {
 
     fn download_zip(
         self: Arc<Self>,
-        update_info: &UpdateInfo, localized_data_dir: &str, cached_files: Arc<Mutex<FnvHashMap<String, String>>>
+        update_info: &UpdateInfo, localized_data_dir: &Path, cached_files: Arc<Mutex<FnvHashMap<String, String>>>
     ) -> Result<usize, Error> {
         let mut cached_files = cached_files.lock().unwrap();
         let mut error_count = 0;
-        let zip_path = utils::concat_path(localized_data_dir, ".tmp.zip");
+        let zip_path = localized_data_dir.join(".tmp.zip");
 
         { // block that drops the file objects so we can delete the temp file later
             let mut zip_file = fs::File::options()
@@ -380,7 +388,7 @@ impl Updater {
             let mut hasher = blake3::Hasher::new();
             let mut current_bytes = 0;
             for repo_file in update_info.files.iter() {
-                let archive_path = utils::concat_path(&update_info.zip_dir, &repo_file.path);
+                let archive_path = utils::concat_unix_path(&update_info.zip_dir, &repo_file.path);
                 let mut archive_file = match zip_archive.by_name(&archive_path) {
                     Ok(v) => v,
                     Err(_) => {
@@ -389,7 +397,7 @@ impl Updater {
                     }
                 };
 
-                let path = utils::concat_path(localized_data_dir, &repo_file.path);
+                let path = repo_file.get_fs_path(localized_data_dir);
                 if let Some(parent) = Path::new(&path).parent() {
                     fs::create_dir_all(parent)?;
                 }
@@ -430,7 +438,7 @@ impl Updater {
                 // Hash the file
                 let hash = hasher.finalize().to_hex().to_string();
                 if hash != repo_file.hash {
-                    return Err(Error::FileHashMismatch(path.to_owned()));
+                    return Err(Error::FileHashMismatch(path.to_str().unwrap_or("").to_string()));
                 }
                 cached_files.insert(repo_file.path.clone(), hash);
 
@@ -439,7 +447,7 @@ impl Updater {
         }
 
         if let Err(e) = fs::remove_file(&zip_path) {
-            error!("Failed to remove '{}': {}", zip_path, e);
+            error!("Failed to remove '{}': {}", zip_path.display(), e);
             error_count += 1;
         }
 
