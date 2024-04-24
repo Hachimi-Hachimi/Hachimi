@@ -4,13 +4,13 @@ use once_cell::sync::OnceCell;
 
 use crate::il2cpp::{
     hook::{
-        umamusume::{GallopUtil, WebViewManager},
+        umamusume::{GallopUtil, Localize, WebViewManager},
         UnityEngine_CoreModule::Application
     },
     symbols::Thread
 };
 
-use super::{ext::StringExt, hachimi, http::AsyncRequest, tl_repo::{self, RepoInfo}, Hachimi};
+use super::{ext::StringExt, hachimi, http::AsyncRequest, tl_repo::{self, RepoInfo}, utils, Hachimi};
 
 type BoxedWindow = Box<dyn Window + Send + Sync>;
 pub struct Gui {
@@ -277,6 +277,21 @@ impl Gui {
                     }
                     if ui.button("⮉ Check for updates").clicked() {
                         hachimi.tl_updater.clone().check_for_updates();
+                    }
+                    if hachimi.config.load().translator_mode {
+                        if ui.button("Dump localize dict").clicked() {
+                            Thread::main_thread().schedule(|| {
+                                let data = Localize::dump_strings();
+                                let dict_path = Hachimi::instance().get_data_path("localize_dump.json");
+                                let mut gui = Gui::instance().unwrap().lock().unwrap();
+                                if let Err(e) = utils::write_json_file(&data, dict_path) {
+                                    gui.show_notification(&e.to_string())
+                                }
+                                else {
+                                    gui.show_notification("Saved to localize_dump.json")
+                                }
+                            })
+                        }
                     }
                     ui.separator();
 

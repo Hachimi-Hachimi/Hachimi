@@ -1,4 +1,4 @@
-mod Localize;
+pub mod Localize;
 pub mod TextId;
 pub mod StoryRaceTextAsset;
 mod LyricsController;

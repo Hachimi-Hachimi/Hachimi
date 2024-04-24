@@ -12,6 +12,9 @@ impl_addr_wrapper_fn!(ToUInt64, TOUINT64_ADDR, u64, object: *mut Il2CppObject);
 static mut PARSE_ADDR: usize = 0;
 impl_addr_wrapper_fn!(Parse, PARSE_ADDR, *mut Il2CppObject, enum_type: *mut Il2CppObject, value: *mut Il2CppString);
 
+static mut GETVALUES_ADDR: usize = 0;
+impl_addr_wrapper_fn!(GetValues, GETVALUES_ADDR, *mut Il2CppObject, enum_type: *mut Il2CppObject);
+
 pub fn init(mscorlib: *const Il2CppImage) {
     get_class_or_return!(mscorlib, System, Enum);
 
@@ -21,5 +24,6 @@ pub fn init(mscorlib: *const Il2CppImage) {
         // ToInt32 would make more sense here; but for some reason it doesn't exist!
         TOUINT64_ADDR = get_method_addr(Enum, cstr!("ToUInt64"), 1);
         PARSE_ADDR = get_method_addr(Enum, cstr!("Parse"), 2);
+        GETVALUES_ADDR = get_method_addr(Enum, cstr!("GetValues"), 1);
     }
 }

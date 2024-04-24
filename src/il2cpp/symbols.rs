@@ -172,6 +172,10 @@ pub fn get_static_field_object_value<T>(field: *mut FieldInfo) -> *mut T {
     value
 }
 
+pub unsafe fn unbox<T: Copy>(obj: *mut Il2CppObject) -> T {
+    *(il2cpp_object_unbox(obj) as *mut T)
+}
+
 // IEnumerable wrapper
 // (for use with arrays only)
 pub struct IEnumerable<T> {

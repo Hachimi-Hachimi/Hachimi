@@ -1,11 +1,11 @@
-use std::collections::hash_map::Entry;
+use std::collections::{hash_map::Entry, BTreeMap};
 
 use fnv::FnvHashMap;
 use once_cell::unsync::Lazy;
 
 use crate::{
     core::{ext::StringExt, utils, Hachimi},
-    il2cpp::{symbols::get_method_overload_addr, types::*}
+    il2cpp::{symbols::{get_method_overload_addr, unbox}, types::*}
 };
 
 use super::TextId;
@@ -48,6 +48,24 @@ extern "C" fn Get(id: i32) -> *mut Il2CppString {
         }
         str
     }
+}
+
+pub fn dump_strings() -> BTreeMap<String, String> {
+    let mut map = BTreeMap::new();
+
+    for obj in TextId::get_values().enumerator {
+        let value: i32 = unsafe { unbox(obj) };
+        let name = TextId::get_name(value);
+        let name_str = unsafe { (*name).to_utf16str() };
+
+        let res = get_orig_fn!(Get, GetFn)(value);
+        if !res.is_null() {
+            let res_str = unsafe { (*res).to_utf16str() };
+            map.insert(name_str.to_string(), res_str.to_string());
+        }
+    }
+
+    map
 }
 
 pub fn init(umamusume: *const Il2CppImage) {

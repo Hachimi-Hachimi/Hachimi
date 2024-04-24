@@ -1,6 +1,6 @@
 use std::ptr::null_mut;
 
-use crate::{core::ext::StringExt, il2cpp::{api::{il2cpp_class_get_type, il2cpp_type_get_object}, hook::mscorlib::Enum, types::*}};
+use crate::{core::ext::StringExt, il2cpp::{api::{il2cpp_class_get_type, il2cpp_type_get_object}, hook::mscorlib::Enum, symbols::IEnumerable, types::*}};
 
 static mut TEXTID_TYPE_OBJECT: *mut Il2CppObject = null_mut();
 
@@ -14,6 +14,10 @@ pub fn get_name(value: i32) -> *const Il2CppString {
 pub fn from_name(name: &str) -> i32 {
     let text_id = Enum::Parse(unsafe { TEXTID_TYPE_OBJECT }, name.to_il2cpp_string());
     Enum::ToUInt64(text_id) as i32
+}
+
+pub fn get_values() -> IEnumerable<*mut Il2CppObject> {
+    IEnumerable::new(Enum::GetValues(unsafe { TEXTID_TYPE_OBJECT })).expect("IEnumerable from array")
 }
 
 pub fn init(umamusume: *const Il2CppImage) {
