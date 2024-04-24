@@ -305,6 +305,7 @@ impl Gui {
                             });
                         })));
                     }
+                    #[cfg(not(target_os = "windows"))]
                     if ui.button("🌐 Open in-game browser").clicked() {
                         show_window = Some(Box::new(SimpleYesNoDialog::new("Confirm", "Are you sure you want to open the in-game browser?", |ok| {
                             if !ok { return; }
