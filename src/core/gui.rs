@@ -4,11 +4,14 @@ use once_cell::sync::OnceCell;
 
 use crate::il2cpp::{
     hook::{
-        umamusume::{GallopUtil, Localize, WebViewManager},
+        umamusume::{GallopUtil, Localize},
         UnityEngine_CoreModule::Application
     },
     symbols::Thread
 };
+
+#[cfg(not(target_os = "windows"))]
+use crate::il2cpp::hook::umamusume::WebViewManager;
 
 use super::{ext::StringExt, hachimi, http::AsyncRequest, tl_repo::{self, RepoInfo}, utils, Hachimi};
 
