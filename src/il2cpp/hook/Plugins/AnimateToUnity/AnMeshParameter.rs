@@ -21,7 +21,9 @@ impl_addr_wrapper_fn!(get_MeshParameterGroupList, GET_MESHPARAMETERGROUPLIST_ADD
 // *mut Il2CppObject(AnMeshParameter), Map<TextureSetName, *mut Il2CppObject(Texture2D)>
 // We map the texture sets to the mesh parameter because it's a Unity object and its lifetime can be tracked.
 // The textures are destroyed in the Resources::UnloadUnusedAssets hook.
-pub static TEXTURE_SET_OVERRIDES: Lazy<Mutex<FnvHashMap<usize, FnvHashMap<&Utf16Str, usize>>>> = Lazy::new(|| Mutex::default());
+pub static TEXTURE_SET_OVERRIDES: Lazy<
+    Mutex<FnvHashMap<usize, FnvHashMap<&Utf16Str, Option<usize>>>>
+> = Lazy::new(|| Mutex::default());
 
 // DEV NOTE: The texture names can be found in AnMeshParameter asset bundles (which usually has "flash" in their path),
 // in `AnMeshInfoParameter._textureName`. The name is a bit misleading because it works a bit more like sprites,
@@ -54,15 +56,23 @@ extern "C" fn _GetMaterial(
             // found!
             let texture_set_name = AnMeshInfoParameterGroup::get_TextureSetName(parameter_group);
             let texture_set_name_utf16 = unsafe { (*texture_set_name).to_utf16str() };
-
-            // Check if a replacement is already loaded
             let material = unsafe { *material_ };
-            if let Some(amp_overrides) = TEXTURE_SET_OVERRIDES.lock().unwrap().get(&(this as usize)) {
-                if let Some(texture_override) = amp_overrides.get(texture_set_name_utf16) {
-                    Material::set_mainTexture(material, *texture_override as *mut Il2CppObject);
-                    break;
-                }
-            }
+
+            // Get override map entry or insert
+            let mut overrides = TEXTURE_SET_OVERRIDES.lock().unwrap();
+            let amp_overrides = match overrides.entry(this as usize) {
+                hash_map::Entry::Occupied(e) => {
+                    // Check if a replacement is already loaded or not found
+                    if let Some(texture_override_opt) = e.get().get(texture_set_name_utf16) {
+                        if let Some(texture_override) = texture_override_opt {
+                            Material::set_mainTexture(material, *texture_override as *mut Il2CppObject);
+                        }
+                        break;
+                    }
+                    e.into_mut()
+                },
+                hash_map::Entry::Vacant(e) => e.insert(FnvHashMap::default())
+            };
 
             // Try to load a replacement
             let amp_name = unsafe { (*Object::get_name(this)).to_utf16str() };
@@ -81,16 +91,13 @@ extern "C" fn _GetMaterial(
                     Material::set_mainTexture(material, texture);
 
                     // Add it to the override map
-                    let mut overrides = TEXTURE_SET_OVERRIDES.lock().unwrap();
-                    let amp_overrides = match overrides.entry(this as usize) {
-                        hash_map::Entry::Occupied(e) => e.into_mut(),
-                        hash_map::Entry::Vacant(e) => e.insert(FnvHashMap::default()),
-                    };
-
-                    amp_overrides.insert(texture_set_name_utf16, texture as usize);
+                    amp_overrides.insert(texture_set_name_utf16, Some(texture as usize));
+                    break;
                 }
             }
 
+            // Mark as not found
+            amp_overrides.insert(texture_set_name_utf16, None);
             break;
         }
     }
