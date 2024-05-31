@@ -1,5 +1,10 @@
+use std::collections::hash_map;
 use std::ffi::CStr;
 use std::os::raw::c_void;
+use std::sync::Mutex;
+
+use fnv::FnvHashMap;
+use once_cell::sync::Lazy;
 
 use crate::symbols_impl;
 use crate::core::Error;
@@ -115,6 +120,26 @@ pub fn get_method_overload_addr(class: *mut Il2CppClass, name: &str, params: &[I
     }
 }
 
+pub static METHOD_ADDR_CACHE: Lazy<
+    Mutex<FnvHashMap<usize, FnvHashMap<&'static CStr, usize>>>
+> = Lazy::new(|| Mutex::default());
+
+pub fn get_method_addr_cached(class: *mut Il2CppClass, name: &'static CStr, args_count: i32) -> usize {
+    let mut cache = METHOD_ADDR_CACHE.lock().unwrap();
+    let entries = match cache.entry(class as usize) {
+        hash_map::Entry::Occupied(e) => {
+            if let Some(addr) = e.get().get(name) {
+                return *addr;
+            }
+            e.into_mut()
+        },
+        hash_map::Entry::Vacant(e) => e.insert(FnvHashMap::default())
+    };
+    let res = get_method_addr(class, name, args_count);
+    entries.insert(name, res);
+    res
+}
+
 pub fn find_nested_class(class: *mut Il2CppClass, name: &CStr) -> Result<*mut Il2CppClass, Error> {
     let mut iter: *mut c_void = null_mut();
     loop {
@@ -186,7 +211,7 @@ impl<T> IEnumerable<T> {
         }
 
         let class = unsafe { (*this).klass() };
-        let get_enumerator_addr = get_method_addr(class, cstr!("GetEnumerator"), 0);
+        let get_enumerator_addr = get_method_addr_cached(class, cstr!("GetEnumerator"), 0);
         if get_enumerator_addr == 0 {
             return None;
         }
@@ -220,8 +245,8 @@ impl<T> IEnumerator<T> {
         }
 
         let class = unsafe { (*this).klass() };
-        let get_current_addr = get_method_addr(class, cstr!("get_Current"), 0);
-        let move_next_addr = get_method_addr(class, cstr!("MoveNext"), 0);
+        let get_current_addr = get_method_addr_cached(class, cstr!("get_Current"), 0);
+        let move_next_addr = get_method_addr_cached(class, cstr!("MoveNext"), 0);
 
         if get_current_addr == 0 || move_next_addr == 0 {
             return None;
@@ -265,9 +290,9 @@ impl<T> IList<T> {
         }
 
         let class = unsafe { (*this).klass() };
-        let get_item_addr = get_method_addr(class, cstr!("get_Item"), 1);
-        let set_item_addr = get_method_addr(class, cstr!("set_Item"), 2);
-        let get_count_addr = get_method_addr(class, cstr!("get_Count"), 0);
+        let get_item_addr = get_method_addr_cached(class, cstr!("get_Item"), 1);
+        let set_item_addr = get_method_addr_cached(class, cstr!("set_Item"), 2);
+        let get_count_addr = get_method_addr_cached(class, cstr!("get_Count"), 0);
 
         if get_item_addr == 0 || set_item_addr == 0 || get_count_addr == 0 {
             return None;
@@ -350,9 +375,9 @@ impl<K, V> IDictionary<K, V> {
         }
 
         let class = unsafe { (*this).klass() };
-        let get_item_addr = get_method_addr(class, cstr!("get_Item"), 1);
-        let set_item_addr = get_method_addr(class, cstr!("set_Item"), 2);
-        let contains_addr = get_method_addr(class, cstr!("Contains"), 1);
+        let get_item_addr = get_method_addr_cached(class, cstr!("get_Item"), 1);
+        let set_item_addr = get_method_addr_cached(class, cstr!("set_Item"), 2);
+        let contains_addr = get_method_addr_cached(class, cstr!("Contains"), 1);
 
         if get_item_addr == 0 || set_item_addr == 0 || contains_addr == 0 {
             return None;
@@ -387,7 +412,7 @@ pub struct Thread(*mut Il2CppThread);
 impl Thread {
     fn sync_ctx(&self) -> *mut Il2CppObject {
         let class = unsafe { (*self.0).obj.klass() };
-        let get_exec_ctx_addr = get_method_addr(class, cstr!("GetMutableExecutionContext"), 0);
+        let get_exec_ctx_addr = get_method_addr_cached(class, cstr!("GetMutableExecutionContext"), 0);
         if get_exec_ctx_addr == 0 {
             return null_mut();
         }
@@ -415,14 +440,14 @@ impl Thread {
         let sync_ctx_class = unsafe { (*sync_ctx).klass() };
 
         let sync_ctx_post: fn(*mut Il2CppObject, *mut Il2CppDelegate, *mut Il2CppObject) = unsafe {
-            std::mem::transmute(get_method_addr(sync_ctx_class, cstr!("Post"), 2))
+            std::mem::transmute(get_method_addr_cached(sync_ctx_class, cstr!("Post"), 2))
         };
 
         let mscorlib = get_assembly_image(cstr!("mscorlib.dll")).expect("mscorlib");
         let delegate_class = get_class(mscorlib, cstr!("System.Threading"), cstr!("SendOrPostCallback")).expect("SendOrPostCallback");
         let delegate_invoke = get_method(delegate_class, cstr!("Invoke"), 1).expect("SendOrPostCallback.Invoke");
         let delegate_ctor: fn(*mut Il2CppObject, *mut Il2CppObject, *const MethodInfo) = unsafe {
-            std::mem::transmute(get_method_addr(delegate_class, cstr!(".ctor"), 2))
+            std::mem::transmute(get_method_addr_cached(delegate_class, cstr!(".ctor"), 2))
         };
 
         let delegate_obj = il2cpp_object_new(delegate_class);

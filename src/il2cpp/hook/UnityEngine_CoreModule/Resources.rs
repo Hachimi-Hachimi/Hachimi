@@ -19,9 +19,11 @@ extern "C" fn UnloadUnusedAssets() -> *mut Il2CppObject {
         // Destroy replacements if the parent AnMeshParameter is dead
         let alive = Object::IsNativeObjectAlive(*amp as *mut Il2CppObject);
         if !alive {
-            for (_, texture) in overrides.iter() {
-                Object::Destroy(*texture as *mut Il2CppObject);
-                debug!("amp texture destroyed: {}", texture);
+            for (_, texture_opt) in overrides.iter() {
+                if let Some(texture) = texture_opt {
+                    Object::Destroy(*texture as *mut Il2CppObject);
+                    debug!("amp texture destroyed: {}", texture);
+                }
             }
         }
 

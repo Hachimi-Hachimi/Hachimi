@@ -27,24 +27,16 @@ pub fn new(width: i32, height: i32, texture_format: i32, mip_chain: bool, linear
 }
 
 pub fn from_image_file<P: AsRef<Path>>(path: P, mip_chain: bool, mark_non_readable: bool) -> Option<*mut Il2CppObject> {
-    // check if path is valid utf-8
     let path_ref = path.as_ref();
-    let path_str = if let Some(s) = path_ref.to_str() {
-        s
-    }
-    else {
-        return None;
-    };
 
     // check if file exists
-    let Ok(metadata) = std::fs::metadata(path_ref) else {
-        return None;
-    };
+    let metadata = std::fs::metadata(path_ref).ok()?;
     if !metadata.is_file() {
         return None;
     }
 
     // we've done everything we can, can't catch C# exceptions, yolo :)
+    let path_str = path_ref.to_str()?;
     let bytes = mscorlib::File::ReadAllBytes(path_str.to_il2cpp_string());
     let texture = new(2, 2, TextureFormat_RGBA32, mip_chain, false);
     if ImageConversion::LoadImage(texture, bytes, mark_non_readable) {
