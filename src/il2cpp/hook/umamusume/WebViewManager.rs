@@ -1,8 +1,8 @@
 use std::ptr::null_mut;
 
-use crate::{core::ext::StringExt, il2cpp::{symbols::{get_method_addr, MonoSingleton}, types::*}};
+use crate::{core::{ext::StringExt, Hachimi}, il2cpp::{symbols::{get_method_addr, MonoSingleton}, types::*}};
 
-use super::{DialogCommon, TextId};
+use super::{DialogCommon, TextId, WebViewDefine};
 
 static mut CLASS: *mut Il2CppClass = null_mut();
 pub fn class() -> *mut Il2CppClass {
@@ -41,8 +41,24 @@ pub fn quick_open(dialog_title: &str, url: &str) {
     )
 }
 
+type GetUrlFn = extern "C" fn(this: *mut Il2CppObject, url_type: i32) -> *mut Il2CppString;
+extern "C" fn GetUrl(this: *mut Il2CppObject, url_type: i32) -> *mut Il2CppString {
+    if url_type == WebViewDefine::Url_Update {
+        if let Some(news_url) = &Hachimi::instance().localized_data.load().config.news_url {
+            return news_url.to_il2cpp_string();
+        }
+    }
+
+    get_orig_fn!(GetUrl, GetUrlFn)(this, url_type)
+}
+
+
 pub fn init(umamusume: *const Il2CppImage) {
     get_class_or_return!(umamusume, Gallop, WebViewManager);
+
+    let GetUrl_addr = get_method_addr(WebViewManager, cstr!("GetUrl"), 1);
+
+    new_hook!(GetUrl_addr, GetUrl);
 
     unsafe {
         CLASS = WebViewManager;

@@ -17,6 +17,7 @@ pub mod MasterSkillData;
 mod PartsSingleModeSkillLearningListItem;
 mod MasterMissionData;
 mod TrainingParamChangeA2U;
+pub mod WebViewDefine;
 
 pub fn init() {
     get_assembly_image_or_return!(image, "umamusume.dll");

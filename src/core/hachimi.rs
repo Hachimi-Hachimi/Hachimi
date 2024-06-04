@@ -331,6 +331,8 @@ pub struct LocalizedDataConfig {
     pub text_wrapper: Option<i32>,
     pub line_width_multiplier: Option<f32>,
 
+    pub news_url: Option<String>,
+
     // UNIMPLEMENTED
     #[serde(default)]
     pub story_adjust_length: bool,
