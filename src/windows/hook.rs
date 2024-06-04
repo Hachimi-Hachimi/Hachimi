@@ -13,7 +13,7 @@ use windows::{
     }
 };
 
-use crate::{core::{Error, Hachimi}, windows::hachimi_impl};
+use crate::{core::{Error, Hachimi}, windows::{hachimi_impl, libnative_hook}};
 
 use super::{ffi, proxy, utils};
 
@@ -30,6 +30,10 @@ extern "C" fn LoadLibraryW(filename: PCWSTR) -> HMODULE {
     if hachimi_impl::is_criware_lib(&filename_str) {
         // Manually trigger a GameAssembly.dll load anyways since hachimi might have been loaded later
         hachimi.on_dlopen("GameAssembly.dll", orig_fn(w!("GameAssembly.dll")).0 as usize);
+    }
+    else if filename_str.ends_with("libnative.dll") {
+        info!("Got libnative.dll");
+        libnative_hook::init(handle);
     }
 
     if hachimi.on_dlopen(&filename_str, handle.0 as usize) {
@@ -162,14 +166,14 @@ fn init_internal() -> Result<(), Error> {
     info!("Init winhttp.dll proxy");
     proxy::winhttp::init(&system_dir);
 
-    let hachimi = Hachimi::instance();
+    let interceptor = &Hachimi::instance().interceptor;
 
     info!("Hooking LoadLibraryW");
-    hachimi.interceptor.hook(ffi::LoadLibraryW as usize, LoadLibraryW as usize)?;    
+    interceptor.hook(ffi::LoadLibraryW as usize, LoadLibraryW as usize)?;    
 
     info!("Hooking fun stuff");
-    hachimi.interceptor.hook(ffi::FindFirstFileExW as usize, FindFirstFileExW as usize)?;
-    hachimi.interceptor.hook(ffi::FindNextFileW as usize, FindNextFileW as usize)?;
+    interceptor.hook(ffi::FindFirstFileExW as usize, FindFirstFileExW as usize)?;
+    interceptor.hook(ffi::FindNextFileW as usize, FindNextFileW as usize)?;
 
     Ok(())
 }
