@@ -719,6 +719,10 @@ impl ConfigEditor {
         ui.label("Disable auto update\ncheck");
         ui.checkbox(&mut config.disable_auto_update_check, "");
         ui.end_row();
+
+        ui.label("Disable translations");
+        ui.checkbox(&mut config.disable_translations, "");
+        ui.end_row();
     }
 }
 

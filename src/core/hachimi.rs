@@ -177,7 +177,9 @@ pub struct Config {
     #[serde(default)]
     pub skip_first_time_setup: bool,
     #[serde(default)]
-    pub disable_auto_update_check: bool
+    pub disable_auto_update_check: bool,
+    #[serde(default)]
+    pub disable_translations: bool
 }
 
 impl Config {
@@ -210,6 +212,10 @@ pub struct LocalizedData {
 
 impl LocalizedData {
     fn new(config: &Config, data_dir: &Path) -> Result<LocalizedData, Error> {
+        if config.disable_translations {
+            return Ok(LocalizedData::default());
+        }
+
         let path: Option<PathBuf>;
         let config: LocalizedDataConfig = if let Some(ld_dir) = &config.localized_data_dir {
             let ld_path = Path::new(data_dir).join(ld_dir);
