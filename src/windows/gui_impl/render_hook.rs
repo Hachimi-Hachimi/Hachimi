@@ -15,9 +15,10 @@ use crate::{core::{Error, Gui, Hachimi}, windows::proxy::dxgi};
 
 use super::d3d11_painter::D3D11Painter;
 
+static mut PRESENT_ADDR: usize = 0; 
 type PresentFn = extern "C" fn(this: *mut c_void, sync_interval: c_uint, flags: c_uint) -> HRESULT;
 extern "C" fn IDXGISwapChain_Present(this: *mut c_void, sync_interval: c_uint, flags: c_uint) -> HRESULT {
-    let orig_fn = get_orig_fn!(IDXGISwapChain_Present, PresentFn);
+    let orig_fn: PresentFn = unsafe { std::mem::transmute(PRESENT_ADDR) };
     let mut gui = Gui::instance_or_init("Home").lock().unwrap();
     let painter_mutex = match init_painter(this) {
         Ok(v) => v,
@@ -63,6 +64,7 @@ extern "C" fn IDXGISwapChain_Present(this: *mut c_void, sync_interval: c_uint, f
     orig_fn(this, sync_interval, flags)
 }
 
+static mut RESIZEBUFFERS_ADDR: usize = 0; 
 type ResizeBuffersFn = extern "C" fn(
     this: *mut c_void, buffer_count: c_uint, width: c_uint, height: c_uint,
     new_format: DXGI_FORMAT, swap_chain_flags: c_uint
@@ -71,7 +73,7 @@ extern "C" fn IDXGISwapChain_ResizeBuffers(
     this: *mut c_void, buffer_count: c_uint, width: c_uint, height: c_uint,
     new_format: DXGI_FORMAT, swap_chain_flags: c_uint
 ) -> HRESULT {
-    let orig_fn = get_orig_fn!(IDXGISwapChain_ResizeBuffers, ResizeBuffersFn);
+    let orig_fn: ResizeBuffersFn = unsafe { std::mem::transmute(RESIZEBUFFERS_ADDR) };
 
     let painter_mutex = match init_painter(this) {
         Ok(v) => v,
@@ -116,11 +118,13 @@ fn init_internal() -> Result<(), Error> {
 
     let interceptor = &Hachimi::instance().interceptor;
 
-    info!("Hooking IDXGISwapChain::Present");
-    interceptor.hook_vtable(swap_chain_vtable, 8, IDXGISwapChain_Present as usize)?;
+    unsafe {
+        info!("Hooking IDXGISwapChain::Present");
+        PRESENT_ADDR = interceptor.hook_vtable(swap_chain_vtable, 8, IDXGISwapChain_Present as usize)?;
 
-    info!("Hooking IDXGISwapChain::ResizeBuffers");
-    interceptor.hook_vtable(swap_chain_vtable, 13, IDXGISwapChain_ResizeBuffers as usize)?;
+        info!("Hooking IDXGISwapChain::ResizeBuffers");
+        RESIZEBUFFERS_ADDR = interceptor.hook_vtable(swap_chain_vtable, 13, IDXGISwapChain_ResizeBuffers as usize)?;
+    }
 
     Ok(())
 }
