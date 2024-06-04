@@ -1,20 +1,10 @@
 use crate::il2cpp::{hook::Plugins::AnimateToUnity::AnMeshInfoParameterGroup, symbols::get_method_addr, types::*};
 
-use super::{Object, Sprite};
+use super::Object;
 
 type UnloadUnusedAssetsFn = extern "C" fn() -> *mut Il2CppObject;
 extern "C" fn UnloadUnusedAssets() -> *mut Il2CppObject {
     // Unity seems to destroy textures prior to calling UnloadUnusedAssets... so it's valid to do this here i guess?
-    Sprite::TEXTURE_OVERRIDES.lock().unwrap().retain(|orig, replace| {
-        // Destroy and remove replacement if original is dead
-        let alive = Object::IsNativeObjectAlive(*orig as *mut Il2CppObject);
-        if !alive {
-            Object::Destroy(*replace as *mut Il2CppObject);
-            debug!("sprite texture destroyed: {}", replace);
-        }
-
-        alive
-    });
     AnMeshInfoParameterGroup::TEXTURE_SET_OVERRIDES.lock().unwrap().retain(|amp, overrides| {
         // Destroy replacements if the parent AnMeshParameter is dead
         let alive = Object::IsNativeObjectAlive(*amp as *mut Il2CppObject);

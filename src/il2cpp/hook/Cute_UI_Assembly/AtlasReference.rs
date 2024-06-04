@@ -1,11 +1,11 @@
-use std::{collections::hash_map, ptr::null_mut};
+use std::ptr::null_mut;
 
 use widestring::Utf16Str;
 
 use crate::{core::{ext::Utf16StringExt, Hachimi}, il2cpp::{
     hook::{
         UnityEngine_AssetBundleModule::AssetBundle::ASSET_PATH_PREFIX,
-        UnityEngine_CoreModule::{HideFlags_DontUnloadUnusedAsset, Object, Sprite::{self, TEXTURE_OVERRIDES}, Texture2D}
+        UnityEngine_CoreModule::{Sprite, Texture2D}
     },
     symbols::{get_field_from_name, get_field_object_value, IEnumerable}, types::*
 }};
@@ -38,21 +38,13 @@ pub fn on_LoadAsset(asset: &mut *mut Il2CppObject, name: &Utf16Str) {
         return;
     };
 
-    if let Some(texture) = Texture2D::from_image_file(&replace_path, false, true) {
-        let this = *asset;
-        let Some(enumerable) = IEnumerable::new(get_sprites(this)) else {
-            return;
-        };
-        // Tell Unity not to unload this dangling texture
-        Object::set_hideFlags(texture, HideFlags_DontUnloadUnusedAsset);
-
-        let mut overrides = TEXTURE_OVERRIDES.lock().unwrap();
-        for sprite in enumerable.enumerator {
-            let orig_tex = Sprite::orig_get_texture(sprite);
-            if let hash_map::Entry::Vacant(e) = overrides.entry(orig_tex as usize) {
-                e.insert(texture as usize);
-            }
-        }
+    let this = *asset;
+    let Some(mut enumerable) = IEnumerable::<*mut Il2CppObject>::new(get_sprites(this)) else {
+        return;
+    };
+    // All of the sprites in the atlas uses the same texture so we just need to replace one of them
+    if let Some(sprite) = enumerable.enumerator.next() {
+        Texture2D::load_image_file(Sprite::get_texture(sprite), replace_path, true);
     }
 }
 

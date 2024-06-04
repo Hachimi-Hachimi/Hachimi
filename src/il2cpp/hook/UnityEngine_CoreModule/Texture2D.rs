@@ -48,6 +48,31 @@ pub fn from_image_file<P: AsRef<Path>>(path: P, mip_chain: bool, mark_non_readab
     }
 }
 
+pub fn load_image_file<P: AsRef<Path>>(this: *mut Il2CppObject, path: P, mark_non_readable: bool) -> bool {
+    let path_ref = path.as_ref();
+
+    // check if file exists
+    let Ok(metadata) = std::fs::metadata(path_ref) else {
+        return false;
+    };
+    if !metadata.is_file() {
+        return false;
+    }
+
+    // we've done everything we can, can't catch C# exceptions, yolo :)
+    if let Some(path_str) = path_ref.to_str() {
+        let bytes = mscorlib::File::ReadAllBytes(path_str.to_il2cpp_string());
+        if ImageConversion::LoadImage(this, bytes, mark_non_readable) {
+            return true;
+        }
+        else {
+            warn!("Failed to load texture: {}", path_str);
+        }
+    }
+
+    false
+}
+
 // hook::UnityEngine_AssetBundleModule::AssetBundle
 pub fn on_LoadAsset(asset: &mut *mut Il2CppObject, name: &Utf16Str) {
     if !name.starts_with(ASSET_PATH_PREFIX) {
