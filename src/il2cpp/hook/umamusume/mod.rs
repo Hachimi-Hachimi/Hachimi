@@ -13,7 +13,6 @@ mod CameraController;
 pub mod SingleModeStartResultCharaViewer;
 pub mod WebViewManager;
 pub mod DialogCommon;
-pub mod MasterSkillData;
 mod PartsSingleModeSkillLearningListItem;
 mod MasterMissionData;
 mod TrainingParamChangeA2U;
@@ -37,7 +36,6 @@ pub fn init() {
     SingleModeStartResultCharaViewer::init(image);
     WebViewManager::init(image);
     DialogCommon::init(image);
-    MasterSkillData::init(image);
     PartsSingleModeSkillLearningListItem::init(image);
     MasterMissionData::init(image);
     TrainingParamChangeA2U::init(image);
