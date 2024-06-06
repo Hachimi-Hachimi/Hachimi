@@ -1,7 +1,7 @@
 <img align="left" width="80" height="80" src="assets/icon.png">
 
 # Hachimi
-![Discord server](https://dcbadge.limes.pink/api/server/https://discord.gg/BVEt5FcxEn)
+[![Discord server](https://dcbadge.limes.pink/api/server/https://discord.gg/BVEt5FcxEn)](https://discord.gg/BVEt5FcxEn)
 
 Game enhancement and translation mod for UM:PD.
 
