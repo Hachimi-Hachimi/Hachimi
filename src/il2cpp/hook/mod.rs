@@ -65,7 +65,7 @@ pub mod mscorlib;
 
 pub mod UnityEngine_CoreModule;
 pub mod UnityEngine_AssetBundleModule;
-mod UnityEngine_TextRenderingModule;
+pub mod UnityEngine_TextRenderingModule;
 pub mod UnityEngine_ImageConversionModule;
 
 pub mod LibNative_Runtime;

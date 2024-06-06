@@ -86,6 +86,18 @@ impl<'a> template::Context for TemplateContext<'a> {
     }
 }
 
+// Context that ignores TextGenerator filters
+pub struct IgnoreTGFiltersContext();
+
+impl template::Context for IgnoreTGFiltersContext {
+    fn on_filter_eval(&mut self, _name: &str, _args: &[template::Token]) -> Option<String> {
+        match _name {
+            "nb" | "anchor" => Some(String::new()),
+            _ => None
+        }
+    }
+}
+
 pub fn init(UnityEngine_TextRenderingModule: *const Il2CppImage) {
     get_class_or_return!(UnityEngine_TextRenderingModule, UnityEngine, TextGenerator);
 

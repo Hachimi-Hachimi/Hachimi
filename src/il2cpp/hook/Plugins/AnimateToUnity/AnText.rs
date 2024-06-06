@@ -1,26 +1,50 @@
-use crate::{core::{ext::StringExt, Hachimi}, il2cpp::{symbols::get_method_addr, types::*}};
+use std::ptr::null_mut;
 
-type SetTextFn = extern "C" fn(this: *mut Il2CppObject, text: *mut Il2CppString);
-extern "C" fn SetText(this: *mut Il2CppObject, text_: *mut Il2CppString) {
-    let text = unsafe { (*text_).to_utf16str() };
-
-    // doesn't run through TextGenerator, remove filters
-    let new_text = if text.as_slice().contains(&36) { // 36 = dollar sign ($)
-        Hachimi::instance().template_parser
-            .remove_filters(&text.to_string())
-            .to_il2cpp_string()
+use crate::{
+    core::{ext::StringExt, Hachimi},
+    il2cpp::{
+        hook::UnityEngine_TextRenderingModule::TextGenerator::IgnoreTGFiltersContext,
+        symbols::{get_field_from_name, get_field_object_value, get_method_addr, set_field_object_value},
+        types::*
     }
-    else {
-        text_
-    };
+};
+
+static mut TEXT_FIELD: *mut FieldInfo = null_mut();
+fn get__text(this: *mut Il2CppObject) -> *mut Il2CppString {
+    get_field_object_value(this, unsafe { TEXT_FIELD })
+}
+
+fn set__text(this: *mut Il2CppObject, value: *mut Il2CppString) {
+    set_field_object_value(this, unsafe { TEXT_FIELD }, value);
+}
+
+type _UpdateTextFn = extern "C" fn(this: *mut Il2CppObject);
+extern "C" fn _UpdateText(this: *mut Il2CppObject) { // _UpdateText
+    let text_ptr = get__text(this);
+    if text_ptr.is_null() {
+        return get_orig_fn!(_UpdateText, _UpdateTextFn)(this);
+    }
+
+    let text = unsafe { (*text_ptr).to_utf16str() };
+
+    // doesn't run through TextGenerator, ignore its filters
+    if text.as_slice().contains(&36) { // 36 = dollar sign ($)
+        set__text(this, Hachimi::instance().template_parser
+            .eval_with_context(&text.to_string(), &mut IgnoreTGFiltersContext())
+            .to_il2cpp_string());
+    }
     
-    get_orig_fn!(SetText, SetTextFn)(this, new_text)
+    get_orig_fn!(_UpdateText, _UpdateTextFn)(this);
 }
 
 pub fn init(Plugins: *const Il2CppImage) {
     get_class_or_return!(Plugins, AnimateToUnity, AnText);
 
-    let SetText_addr = get_method_addr(AnText, cstr!("SetText"), 1);
+    let _UpdateText_addr = get_method_addr(AnText, cstr!("_UpdateText"), 0);
 
-    new_hook!(SetText_addr, SetText);
+    new_hook!(_UpdateText_addr, _UpdateText);
+
+    unsafe {
+        TEXT_FIELD = get_field_from_name(AnText, cstr!("_text"));
+    }
 }
