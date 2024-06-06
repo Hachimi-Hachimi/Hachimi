@@ -5,20 +5,9 @@ use super::Object;
 type UnloadUnusedAssetsFn = extern "C" fn() -> *mut Il2CppObject;
 extern "C" fn UnloadUnusedAssets() -> *mut Il2CppObject {
     // Unity seems to destroy textures prior to calling UnloadUnusedAssets... so it's valid to do this here i guess?
-    AnMeshInfoParameterGroup::TEXTURE_SET_OVERRIDES.lock().unwrap().retain(|amp, overrides| {
-        // Destroy replacements if the parent AnMeshParameter is dead
-        let alive = Object::IsNativeObjectAlive(*amp as *mut Il2CppObject);
-        if !alive {
-            for (_, texture_opt) in overrides.iter() {
-                if let Some(texture) = texture_opt {
-                    Object::Destroy(*texture as *mut Il2CppObject);
-                    debug!("amp texture destroyed: {}", texture);
-                }
-            }
-        }
-
-        alive
-    });
+    AnMeshInfoParameterGroup::PROCESSED_TEXTURES.lock().unwrap().retain(|texture|
+        Object::IsNativeObjectAlive(*texture as *mut Il2CppObject)
+    );
     get_orig_fn!(UnloadUnusedAssets, UnloadUnusedAssetsFn)()
 }
 
