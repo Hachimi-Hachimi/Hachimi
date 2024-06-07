@@ -18,6 +18,9 @@ const CLIP_TEXT_LINE_WIDTH: i32 = 21;
 const CLIP_TEXT_LINE_COUNT: i32 = 3;
 const CLIP_TEXT_FONT_SIZE: i32 = 42;
 
+// probably?
+const MAIN_STORY_CLIP_TEXT_LINE_WIDTH: i32 = 32;
+
 static mut CLASS: *mut Il2CppClass = null_mut();
 pub fn class() -> *mut Il2CppClass {
     unsafe { CLASS }
@@ -91,6 +94,7 @@ pub fn on_LoadAsset(asset: &mut *mut Il2CppObject, name: &Utf16Str) {
         30
     };
     */
+    let is_main_story = base_path.starts_with("story/data/02");
 
     let this = *asset;
     if let Some(title) = &dict.title {
@@ -131,28 +135,41 @@ pub fn on_LoadAsset(asset: &mut *mut Il2CppObject, name: &Utf16Str) {
                 StoryTimelineTextClipData::set_Name(clip_data, name.to_il2cpp_string());
             }
             if let Some(text) = &text_block_dict.text {
-                let size = StoryTimelineTextClipData::get_Size(this);
-                let text_str = if size == StoryTimelineTextClipData::FontSize_Default {
-                    if let Some(fitted) = utils::wrap_fit_text(text,
-                        CLIP_TEXT_LINE_WIDTH, CLIP_TEXT_LINE_COUNT, CLIP_TEXT_FONT_SIZE
-                    ) {
-                        fitted.to_il2cpp_string()
+                let text_str: *mut Il2CppString;
+                if is_main_story {
+                    // Sizing tags are not used at all in main stories, simply wrap it
+                    // Add an extra space to each line because the vertical log screen ignores newlines
+                    text_str = if let Some(wrapped) = utils::wrap_text(text, MAIN_STORY_CLIP_TEXT_LINE_WIDTH) {
+                        wrapped.join(" \n").to_il2cpp_string()
                     }
                     else {
                         text.to_il2cpp_string()
                     }
                 }
                 else {
-                    // dont wanna mess other sizes for now, but at least wrap the text if enabled
-                    // TODO: wrap fit text with line width relative to font size value
-                    // (which stories is it even used in...?)
-                    if let Some(wrapped) = utils::wrap_text(text, CLIP_TEXT_LINE_WIDTH) {
-                        wrapped.to_il2cpp_string()
+                    let size = StoryTimelineTextClipData::get_Size(this);
+                    text_str = if size == StoryTimelineTextClipData::FontSize_Default {
+                        if let Some(fitted) = utils::wrap_fit_text(text,
+                            CLIP_TEXT_LINE_WIDTH, CLIP_TEXT_LINE_COUNT, CLIP_TEXT_FONT_SIZE
+                        ) {
+                            fitted.to_il2cpp_string()
+                        }
+                        else {
+                            text.to_il2cpp_string()
+                        }
                     }
                     else {
-                        text.to_il2cpp_string()
-                    }
-                };
+                        // dont wanna mess other sizes for now, but at least wrap the text if enabled
+                        // TODO: wrap fit text with line width relative to font size value
+                        // (which stories is it even used in...?)
+                        if let Some(wrapped) = utils::wrap_text(text, CLIP_TEXT_LINE_WIDTH) {
+                            wrapped.join("\n").to_il2cpp_string()
+                        }
+                        else {
+                            text.to_il2cpp_string()
+                        }
+                    };
+                }
                 StoryTimelineTextClipData::set_Text(clip_data, text_str);
             }
 

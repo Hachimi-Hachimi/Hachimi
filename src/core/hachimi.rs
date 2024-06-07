@@ -333,9 +333,13 @@ pub struct LocalizedDataConfig {
 
     pub plural_form: Option<String>,
     pub ordinal_form: Option<String>,
-    #[serde(default)] pub ordinal_types: Vec<String>,
-    pub text_wrapper: Option<i32>,
-    pub line_width_multiplier: Option<f32>,
+    #[serde(default)]
+    pub ordinal_types: Vec<String>,
+    #[serde(default)]
+    pub use_text_wrapper: bool,
+    pub text_wrapper: Option<i32>, // DEPRECATED
+    #[serde(default = "LocalizedDataConfig::default_line_width_multiplier")]
+    pub line_width_multiplier: f32,
 
     pub news_url: Option<String>,
 
@@ -352,6 +356,13 @@ pub struct LocalizedDataConfig {
 
 impl LocalizedDataConfig {
     fn default_story_cps() -> i32 { 28 }
+    // Predefined line widths are counts of cjk characters.
+    // 1 cjk char = 2 columns, so this value replicates the default behaviour.
+    fn default_line_width_multiplier() -> f32 { 2.0 }
+
+    pub fn use_text_wrapper(&self) -> bool {
+        self.use_text_wrapper || self.text_wrapper.is_some()
+    }
 }
 
 impl Default for LocalizedDataConfig {
