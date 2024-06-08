@@ -4,6 +4,7 @@ pub mod Sprite;
 pub mod Object;
 pub mod Application;
 pub mod Material;
+#[cfg(target_os = "windows")]
 pub mod QualitySettings;
 
 pub const HideFlags_DontUnloadUnusedAsset: i32 = 32;
@@ -19,5 +20,6 @@ pub fn init() {
     Object::init(image);
     Application::init(image);
     Material::init(image);
+    #[cfg(target_os = "windows")]
     QualitySettings::init(image);
 }
