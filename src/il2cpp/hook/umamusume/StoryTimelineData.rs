@@ -105,11 +105,10 @@ pub fn on_LoadAsset(asset: &mut *mut Il2CppObject, name: &Utf16Str) {
         return;
     };
 
-    // enumerenumerenumer
-    for (ii, block_data) in block_list.iter().enumerate() {
+    for (mut i, block_data) in block_list.iter().enumerate() {
         // cy leaves a single empty text block at the start of every story for some reason
-        if ii == 0 { continue; }
-        let i = ii - 1;
+        if i == 0 { continue; }
+        i -= 1;
 
         let Some(text_block_dict) = dict.text_block_list.get(i) else {
             warn!("text block {} not found in dict: {}", i, dict_path);
