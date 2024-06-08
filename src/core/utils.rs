@@ -75,8 +75,7 @@ pub fn fit_text_il2cpp(string: *mut Il2CppString, base_line_width: i32, base_fon
 
 // WRAP IT TILL IT FITS GRAHHH BRUTE FORCE GRAHHH
 pub fn wrap_fit_text(string: &str, base_line_width: i32, mut max_line_count: i32, base_font_size: i32) -> Option<String> {
-    let config = &Hachimi::instance().localized_data.load().config;
-    if !config.use_text_wrapper {
+    if !Hachimi::instance().localized_data.load().config.use_text_wrapper() {
         return None;
     }
 
