@@ -1,6 +1,6 @@
 use std::sync::atomic;
 
-use crate::{core::Hachimi, il2cpp::{symbols::get_method_addr, types::*}};
+use crate::{core::Hachimi, il2cpp::{api::il2cpp_resolve_icall, types::*}};
 
 type SetTargetFrameRateFn = extern "C" fn(value: i32);
 pub extern "C" fn set_targetFrameRate(mut value: i32) {
@@ -11,10 +11,10 @@ pub extern "C" fn set_targetFrameRate(mut value: i32) {
     get_orig_fn!(set_targetFrameRate, SetTargetFrameRateFn)(value);
 }
 
-pub fn init(UnityEngine_CoreModule: *const Il2CppImage) {
-    get_class_or_return!(UnityEngine_CoreModule, UnityEngine, Application);
-
-    let set_targetFrameRate_addr = get_method_addr(Application, cstr!("set_targetFrameRate"), -1);
+pub fn init(_UnityEngine_CoreModule: *const Il2CppImage) {
+    let set_targetFrameRate_addr = il2cpp_resolve_icall(
+        cstr!("UnityEngine.Application::set_targetFrameRate(System.Int32)").as_ptr()
+    );
 
     new_hook!(set_targetFrameRate_addr, set_targetFrameRate);
 }

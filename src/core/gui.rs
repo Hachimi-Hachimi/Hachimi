@@ -13,6 +13,9 @@ use crate::il2cpp::{
 #[cfg(not(target_os = "windows"))]
 use crate::il2cpp::hook::umamusume::WebViewManager;
 
+#[cfg(target_os = "windows")]
+use crate::il2cpp::hook::UnityEngine_CoreModule::QualitySettings;
+
 use super::{ext::StringExt, hachimi, http::AsyncRequest, tl_repo::{self, RepoInfo}, utils, Hachimi};
 
 type BoxedWindow = Box<dyn Window + Send + Sync>;
@@ -35,6 +38,9 @@ pub struct Gui {
     menu_visible: bool,
     menu_anim_time: Option<Instant>,
     menu_fps_value: i32,
+
+    #[cfg(target_os = "windows")]
+    menu_vsync_value: i32,
 
     pub update_progress_visible: bool,
 
@@ -99,6 +105,9 @@ impl Gui {
             menu_visible: false,
             menu_anim_time: None,
             menu_fps_value: fps_value,
+
+            #[cfg(target_os = "windows")]
+            menu_vsync_value: hachimi.vsync_count.load(atomic::Ordering::Relaxed),
 
             update_progress_visible: false,
 
@@ -263,11 +272,25 @@ impl Gui {
                     ui.heading("🖼 Graphics");
                     ui.horizontal(|ui| {
                         ui.label("FPS");
-                        if ui.add(egui::Slider::new(&mut self.menu_fps_value, 30..=240)).drag_stopped() {
+                        let res = ui.add(egui::Slider::new(&mut self.menu_fps_value, 30..=240));
+                        if res.lost_focus() || res.drag_stopped() {
                             hachimi.target_fps.store(self.menu_fps_value, atomic::Ordering::Relaxed);
                             Thread::main_thread().schedule(|| {
                                 // doesnt matter which value's used here, hook will override it
-                                Application::set_targetFrameRate(30)
+                                Application::set_targetFrameRate(30);
+                            });
+                        }
+                    });
+                    #[cfg(target_os = "windows")]
+                    ui.horizontal(|ui| {
+                        ui.label("VSync");
+                        let prev_value = self.menu_vsync_value;
+                        Self::run_vsync_combo(ui, &mut self.menu_vsync_value);
+
+                        if prev_value != self.menu_vsync_value {
+                            hachimi.vsync_count.store(self.menu_vsync_value, atomic::Ordering::Relaxed);
+                            Thread::main_thread().schedule(|| {
+                                QualitySettings::set_vSyncCount(1);
                             });
                         }
                     });
@@ -339,6 +362,30 @@ impl Gui {
         if let Some(window) = show_window {
             self.show_window(window);
         }
+    }
+
+    #[cfg(target_os = "windows")]
+    fn run_vsync_combo(ui: &mut egui::Ui, value: &mut i32) {
+        egui::ComboBox::new(ui.id().with("vsync_combo"), "")
+        .selected_text(
+            match value {
+                -1 => "Default",
+                0 => "Off",
+                1 => "On",
+                2 => "1/2",
+                3 => "1/3",
+                4 => "1/4",
+                _ => "Unknown"
+            }
+        )
+        .show_ui(ui, |ui| {
+            ui.selectable_value(value, -1, "Default");
+            ui.selectable_value(value, 0, "Off");
+            ui.selectable_value(value, 1, "On");
+            ui.selectable_value(value, 2, "1/2");
+            ui.selectable_value(value, 3, "1/3");
+            ui.selectable_value(value, 4, "1/4");
+        });
     }
 
     fn run_update_progress(&mut self) {
@@ -694,22 +741,15 @@ impl ConfigEditor {
     }
 
     fn run_options_grid(config: &mut hachimi::Config, ui: &mut egui::Ui) {
+        ui.label(egui::RichText::new("| General").heading());
+        ui.end_row();
+
         ui.label("Debug mode");
         ui.checkbox(&mut config.debug_mode, "");
         ui.end_row();
 
         ui.label("Translator mode");
         ui.checkbox(&mut config.translator_mode, "");
-        ui.end_row();
-
-        ui.label("Disable GUI");
-        ui.checkbox(&mut config.disable_gui, "");
-        ui.end_row();
-
-        Self::option_slider(ui, "Target FPS", &mut config.target_fps, 30..=240);
-
-        ui.label("Virtual resolution\nmultiplier");
-        ui.add(egui::Slider::new(&mut config.virtual_res_mult, 1.0..=4.0).step_by(0.1));
         ui.end_row();
 
         ui.label("Skip first time setup");
@@ -722,6 +762,26 @@ impl ConfigEditor {
 
         ui.label("Disable translations");
         ui.checkbox(&mut config.disable_translations, "");
+        ui.end_row();
+
+        ui.label(egui::RichText::new("| Graphics").heading());
+        ui.end_row();
+
+        ui.label("Disable GUI");
+        ui.checkbox(&mut config.disable_gui, "");
+        ui.end_row();
+
+        Self::option_slider(ui, "Target FPS", &mut config.target_fps, 30..=240);
+
+        #[cfg(target_os = "windows")]
+        {
+            ui.label("VSync");
+            Gui::run_vsync_combo(ui, &mut config.vsync_count);
+            ui.end_row();
+        }
+
+        ui.label("Virtual resolution\nmultiplier");
+        ui.add(egui::Slider::new(&mut config.virtual_res_mult, 1.0..=4.0).step_by(0.1));
         ui.end_row();
     }
 }
