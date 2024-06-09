@@ -1,14 +1,22 @@
-use crate::il2cpp::{hook::Plugins::AnimateToUnity::AnMeshInfoParameterGroup, symbols::get_method_addr, types::*};
+use crate::il2cpp::{hook::Plugins::AnimateToUnity::AnMeshInfoParameterGroup, symbols::{create_delegate, get_method_addr}, types::*};
 
-use super::Object;
+use super::{AsyncOperation, Object};
 
 type UnloadUnusedAssetsFn = extern "C" fn() -> *mut Il2CppObject;
 extern "C" fn UnloadUnusedAssets() -> *mut Il2CppObject {
-    // Unity seems to destroy textures prior to calling UnloadUnusedAssets... so it's valid to do this here i guess?
-    AnMeshInfoParameterGroup::PROCESSED_TEXTURES.lock().unwrap().retain(|texture|
-        Object::IsNativeObjectAlive(*texture as *mut Il2CppObject)
-    );
-    get_orig_fn!(UnloadUnusedAssets, UnloadUnusedAssetsFn)()
+    let res = get_orig_fn!(UnloadUnusedAssets, UnloadUnusedAssetsFn)();
+    let delegate = create_delegate(unsafe { AsyncOperation::ACTION_ASYNCOPERATION_CLASS }, 1, || {
+        AnMeshInfoParameterGroup::PROCESSED_TEXTURES.lock().unwrap().retain(|_texture, gc_handle| {
+            let obj = gc_handle.target();
+            if obj.is_null() {
+                return false;
+            }
+            Object::IsNativeObjectAlive(obj)
+        });
+    }).unwrap();
+    AsyncOperation::add_completed(res, delegate);
+
+    res
 }
 
 pub fn init(UnityEngine_CoreModule: *const Il2CppImage) {

@@ -6,6 +6,7 @@ pub mod Application;
 pub mod Material;
 #[cfg(target_os = "windows")]
 pub mod QualitySettings;
+mod AsyncOperation;
 
 pub const HideFlags_DontUnloadUnusedAsset: i32 = 32;
 
@@ -22,4 +23,5 @@ pub fn init() {
     Material::init(image);
     #[cfg(target_os = "windows")]
     QualitySettings::init(image);
+    AsyncOperation::init(image);
 }

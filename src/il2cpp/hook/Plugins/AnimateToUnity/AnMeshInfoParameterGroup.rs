@@ -1,13 +1,13 @@
-use std::{path::Path, ptr::null_mut, sync::Mutex};
+use std::{collections::hash_map, path::Path, ptr::null_mut, sync::Mutex};
 
-use fnv::FnvHashSet;
+use fnv::FnvHashMap;
 use once_cell::sync::Lazy;
 
 use crate::{
     core::Hachimi,
     il2cpp::{
         hook::UnityEngine_CoreModule::{Material, Object, Texture2D},
-        symbols::{get_field_from_name, get_field_object_value, get_method_addr},
+        symbols::{get_field_from_name, get_field_object_value, get_method_addr, GCHandle},
         types::*
     }
 };
@@ -24,7 +24,7 @@ pub fn get__meshInfoParameterTable(this: *mut Il2CppObject) -> *mut Il2CppObject
 }
 
 // Cleaned up in the Resources::UnloadUnusedAssets hook
-pub static PROCESSED_TEXTURES: Lazy<Mutex<FnvHashSet<usize>>> = Lazy::new(|| Mutex::default());
+pub static PROCESSED_TEXTURES: Lazy<Mutex<FnvHashMap<usize, GCHandle>>> = Lazy::new(|| Mutex::default());
 
 // DEV NOTE: The texture names can be found in AnMeshParameter asset bundles (which usually has "flash" in their path),
 // in `AnMeshInfoParameter._textureName`. The name is a bit misleading because it works a bit more like sprites,
@@ -43,10 +43,17 @@ extern "C" fn _GetMaterial(
 
     let material = unsafe { *material_ };
     let texture = Material::get_mainTexture(material);
-    // Try to insert it into the set and see if it's already there
-    if !PROCESSED_TEXTURES.lock().unwrap().insert(texture as usize) {
-        return res;
+
+    match PROCESSED_TEXTURES.lock().unwrap().entry(texture as usize) {
+        hash_map::Entry::Occupied(_) => {
+            return res;
+        },
+        hash_map::Entry::Vacant(e) => {
+            e.insert(GCHandle::new_weak_ref(texture, false));
+        }
     }
+
+    debug!("new: {}", texture as usize);
 
     let texture_set_name = get_TextureSetName(this);
     let texture_set_name_utf16 = unsafe { (*texture_set_name).to_utf16str() };

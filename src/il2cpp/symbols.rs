@@ -120,24 +120,45 @@ pub fn get_method_overload_addr(class: *mut Il2CppClass, name: &str, params: &[I
     }
 }
 
-pub static METHOD_ADDR_CACHE: Lazy<
-    Mutex<FnvHashMap<usize, FnvHashMap<&'static CStr, usize>>>
+pub static METHOD_CACHE: Lazy<
+    Mutex<FnvHashMap<usize, FnvHashMap<(&'static CStr, i32), usize>>>
 > = Lazy::new(|| Mutex::default());
 
-pub fn get_method_addr_cached(class: *mut Il2CppClass, name: &'static CStr, args_count: i32) -> usize {
-    let mut cache = METHOD_ADDR_CACHE.lock().unwrap();
+pub fn get_method_cached(class: *mut Il2CppClass, name: &'static CStr, args_count: i32) -> Result<*const MethodInfo, Error> {
+    let mut cache = METHOD_CACHE.lock().unwrap();
     let entries = match cache.entry(class as usize) {
         hash_map::Entry::Occupied(e) => {
-            if let Some(addr) = e.get().get(name) {
-                return *addr;
+            if let Some(addr) = e.get().get(&(name, args_count)) {
+                if *addr == 0 {
+                    // Only error that get_method returns
+                    return Err(Error::MethodNotFound(name.to_str().unwrap().to_owned()));
+                }
+                else {
+                    return Ok(*addr as *const MethodInfo);
+                }
             }
             e.into_mut()
         },
         hash_map::Entry::Vacant(e) => e.insert(FnvHashMap::default())
     };
-    let res = get_method_addr(class, name, args_count);
-    entries.insert(name, res);
+    let res = get_method(class, name, args_count);
+    let addr = match res {
+        Ok(addr) => addr as usize,
+        Err(_) => 0
+    };
+    entries.insert((name, args_count), addr);
     res
+}
+
+pub fn get_method_addr_cached(class: *mut Il2CppClass, name: &'static CStr, args_count: i32) -> usize {
+    let res = get_method_cached(class, name, args_count);
+    if let Ok(method) = res {
+        unsafe { (*method).methodPointer }
+    }
+    else {
+        warn!("get_method_addr_cached: {} = NULL", name.to_str().unwrap());
+        0
+    }
 }
 
 pub fn find_nested_class(class: *mut Il2CppClass, name: &CStr) -> Result<*mut Il2CppClass, Error> {
@@ -449,17 +470,7 @@ impl Thread {
 
         let mscorlib = get_assembly_image(cstr!("mscorlib.dll")).expect("mscorlib");
         let delegate_class = get_class(mscorlib, cstr!("System.Threading"), cstr!("SendOrPostCallback")).expect("SendOrPostCallback");
-        let delegate_invoke = get_method(delegate_class, cstr!("Invoke"), 1).expect("SendOrPostCallback.Invoke");
-        let delegate_ctor: fn(*mut Il2CppObject, *mut Il2CppObject, *const MethodInfo) = unsafe {
-            std::mem::transmute(get_method_addr_cached(delegate_class, cstr!(".ctor"), 2))
-        };
-
-        let delegate_obj = il2cpp_object_new(delegate_class);
-        delegate_ctor(delegate_obj, delegate_obj, delegate_invoke);
-        let delegate = delegate_obj as *mut Il2CppDelegate;
-        unsafe {
-            (*delegate).method_ptr = callback as usize;
-        }
+        let delegate = create_delegate(delegate_class, 1, callback).unwrap();
 
         sync_ctx_post(sync_ctx, delegate, null_mut());
     }
@@ -473,6 +484,28 @@ impl Thread {
     pub fn main_thread() -> Thread {
         Self::attached_threads().get(0).expect("main thread must be present").clone()
     }
+}
+
+// Delegate creation
+pub fn create_delegate(delegate_class: *mut Il2CppClass, args_count: i32, method_ptr: fn()) -> Option<*mut Il2CppDelegate> {
+    let delegate_invoke = get_method_cached(delegate_class, cstr!("Invoke"), args_count).ok()?;
+    
+    let delegate_ctor_addr = get_method_addr_cached(delegate_class, cstr!(".ctor"), 2);
+    if delegate_ctor_addr == 0 {
+        return None;
+    }
+    let delegate_ctor: fn(*mut Il2CppObject, *mut Il2CppObject, *const MethodInfo) = unsafe {
+        std::mem::transmute(delegate_ctor_addr)
+    };
+
+    let delegate_obj = il2cpp_object_new(delegate_class);
+    delegate_ctor(delegate_obj, delegate_obj, delegate_invoke);
+    let delegate = delegate_obj as *mut Il2CppDelegate;
+    unsafe {
+        (*delegate).method_ptr = method_ptr as usize;
+    }
+
+    Some(delegate)
 }
 
 // MonoSingleton wrapper
@@ -494,5 +527,29 @@ impl MonoSingleton {
 
     pub fn instance(&self) -> *mut Il2CppObject {
         get_static_field_object_value(self.instance_field)
+    }
+}
+
+// GCHandle wrapper
+#[repr(transparent)]
+pub struct GCHandle(u32);
+
+impl GCHandle {
+    pub fn new(obj: *mut Il2CppObject, pinned: bool) -> GCHandle {
+        GCHandle(il2cpp_gchandle_new(obj, pinned))
+    }
+
+    pub fn new_weak_ref(obj: *mut Il2CppObject, track_resurrection: bool) -> GCHandle {
+        GCHandle(il2cpp_gchandle_new_weakref(obj, track_resurrection))
+    }
+
+    pub fn target(&self) -> *mut Il2CppObject {
+        il2cpp_gchandle_get_target(self.0)
+    }
+}
+
+impl Drop for GCHandle {
+    fn drop(&mut self) {
+        il2cpp_gchandle_free(self.0);
     }
 }
