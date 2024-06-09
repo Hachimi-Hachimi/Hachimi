@@ -125,7 +125,7 @@ impl Hachimi {
     }
 
     pub fn on_dlopen(&self, filename: &str, handle: usize) -> bool {
-        // return false, wait for il2cpp hook to finish and call unhook once (see below)
+        // Prevent double initialization
         if self.hooking_finished.load(atomic::Ordering::Relaxed) { return false; }
 
         if hachimi_impl::is_il2cpp_lib(filename) {
@@ -134,20 +134,24 @@ impl Hachimi {
             false
         }
         else if hachimi_impl::is_criware_lib(filename) {
-            // Dobby calls dlopen while it's hooking, set this flag first
             self.hooking_finished.store(true, atomic::Ordering::Relaxed);
 
             info!("GameAssembly finished loading");
             il2cpp::symbols::init();
             il2cpp::hook::init();
-            if !self.config.load().disable_gui {
-                gui_impl::init();
-            }
+            self.on_hooking_finished();
             true
         }
         else {
             false
         }
+    }
+
+    fn on_hooking_finished(&self) {
+        if !self.config.load().disable_gui {
+            gui_impl::init();
+        }
+        hachimi_impl::on_hooking_finished(self);
     }
 
     pub fn get_data_path<P: AsRef<Path>>(&self, rel_path: P) -> PathBuf {
