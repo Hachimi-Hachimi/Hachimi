@@ -53,8 +53,6 @@ extern "C" fn _GetMaterial(
         }
     }
 
-    debug!("new: {}", texture as usize);
-
     let texture_set_name = get_TextureSetName(this);
     let texture_set_name_utf16 = unsafe { (*texture_set_name).to_utf16str() };
     

@@ -1,6 +1,6 @@
 use std::sync::atomic;
 
-use crate::{core::Hachimi, il2cpp::{api::il2cpp_resolve_icall, types::Il2CppImage}};
+use crate::{core::Hachimi, il2cpp::{api::il2cpp_resolve_icall, types::*}};
 
 type SetVSyncCountFn = extern "C" fn(value: i32);
 pub extern "C" fn set_vSyncCount(mut value: i32) {

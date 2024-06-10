@@ -1,6 +1,6 @@
 use std::ptr::null_mut;
 
-use crate::il2cpp::{api::il2cpp_class_from_il2cpp_type, symbols::{get_field_from_name, get_method_addr}, types::{Il2CppClass, Il2CppDelegate, Il2CppImage, Il2CppObject}};
+use crate::il2cpp::{api::il2cpp_class_from_il2cpp_type, symbols::{get_field_from_name, get_method_addr}, types::*};
 
 static mut ADD_COMPLETED_ADDR: usize = 0;
 impl_addr_wrapper_fn!(add_completed, ADD_COMPLETED_ADDR, (), this: *mut Il2CppObject, value: *mut Il2CppDelegate);
