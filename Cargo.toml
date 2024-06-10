@@ -62,5 +62,12 @@ features = [
     "Win32_Storage_FileSystem"
 ]
 
+[build-dependencies]
+tauri-winres = "0.1"
+
+[package.metadata.tauri-winres]
+ProductName = "Hachimi"
+FileDescription = "Game enhancement and translation mod"
+
 [patch.crates-io]
 dobby-sys = { git = "https://github.com/LeadRDRK/dobby-sys.git" }
