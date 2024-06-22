@@ -24,6 +24,7 @@ pub trait Utf16StringExt {
     fn ends_with(&self, suffix: &str) -> bool;
     fn path_filename(&self) -> &Utf16Str;
     fn path_basename(&self) -> &Utf16Str;
+    fn str_eq(&self, other: &str) -> bool;
 }
 
 impl Utf16StringExt for Utf16Str {
@@ -65,7 +66,7 @@ impl Utf16StringExt for Utf16Str {
         let slice = self.as_slice();
         let mut i = slice.len();
         for c in slice.iter().rev() {
-            if *c == 47 { // '/'
+            if *c == 47 || *c == 92 { // '/' OR '\\'
                 break;
             }
             i -= 1;
@@ -86,6 +87,21 @@ impl Utf16StringExt for Utf16Str {
 
         self
     }
+
+    fn str_eq(&self, other: &str) -> bool {
+        let mut other_iter = other.chars();
+        for c in self.chars() {
+            if let Some(c2) = other_iter.next() {
+                if c != c2 {
+                    return false;
+                }
+            }
+            else {
+                return false;
+            }
+        }
+        other_iter.next().is_none()
+    }
 }
 
 impl Utf16StringExt for Utf16String {
@@ -103,5 +119,9 @@ impl Utf16StringExt for Utf16String {
 
     fn path_basename(&self) -> &Utf16Str {
         Utf16Str::path_basename(self)
+    }
+
+    fn str_eq(&self, other: &str) -> bool {
+        Utf16Str::str_eq(self, other)
     }
 }

@@ -4,7 +4,7 @@ use widestring::Utf16Str;
 
 use crate::{core::{ext::Utf16StringExt, Hachimi}, il2cpp::{
     hook::{
-        UnityEngine_AssetBundleModule::AssetBundle::ASSET_PATH_PREFIX,
+        UnityEngine_AssetBundleModule::AssetBundle,
         UnityEngine_CoreModule::{Sprite, Texture2D}
     },
     symbols::{get_field_from_name, get_field_object_value, IEnumerable}, types::*
@@ -22,21 +22,26 @@ fn get_sprites(this: *mut Il2CppObject) -> *mut Il2CppObject {
 
 // hook::UnityEngine_AssetBundleModule::AssetBundle
 // name: assets/_gallopresources/bundle/resources/atlas/**.asset
-pub fn on_LoadAsset(asset: &mut *mut Il2CppObject, name: &Utf16Str) {
-    if !name.starts_with(ASSET_PATH_PREFIX) {
+pub fn on_LoadAsset(bundle: *mut Il2CppObject, asset: &mut *mut Il2CppObject, name: &Utf16Str) {
+    if !name.starts_with(AssetBundle::ASSET_PATH_PREFIX) {
         debug!("non-resource atlas: {}", name);
         return;
     }
 
-    let base_path = name[ASSET_PATH_PREFIX.len()..].path_basename();
+    let base_path = name[AssetBundle::ASSET_PATH_PREFIX.len()..].path_basename();
     if !base_path.starts_with("atlas/") {
         debug!("bad path: {}", name);
         return;
     }
     let rel_replace_path = base_path.to_string() + ".png";
-    let Some(replace_path) = Hachimi::instance().localized_data.load().get_assets_path(&rel_replace_path) else {
+    let localized_data = Hachimi::instance().localized_data.load();
+    let Some(replace_path) = localized_data.get_assets_path(&rel_replace_path) else {
         return;
     };
+    let metadata = localized_data.load_asset_metadata(&rel_replace_path);
+    if !AssetBundle::check_asset_bundle_name(bundle, &metadata) {
+        return;
+    }
 
     let this = *asset;
     let Some(mut enumerable) = IEnumerable::<*mut Il2CppObject>::new(get_sprites(this)) else {

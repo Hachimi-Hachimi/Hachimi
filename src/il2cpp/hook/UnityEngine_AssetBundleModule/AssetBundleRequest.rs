@@ -2,19 +2,19 @@ use std::collections::hash_map;
 
 use crate::il2cpp::{symbols::get_method_addr, types::*};
 
-use super::AssetBundle::{self, REQUEST_NAMES};
+use super::AssetBundle::{self, REQUEST_INFOS};
 
 type GetResultFn = extern "C" fn(this: *mut Il2CppObject) -> *mut Il2CppObject;
 extern "C" fn GetResult(this: *mut Il2CppObject) -> *mut Il2CppObject {
     let mut asset = get_orig_fn!(GetResult, GetResultFn)(this);
-    let name = if let hash_map::Entry::Occupied(entry) = REQUEST_NAMES.lock().unwrap().entry(this as usize) {
-        entry.remove() as *mut Il2CppString
+    let info = if let hash_map::Entry::Occupied(entry) = REQUEST_INFOS.lock().unwrap().entry(this as usize) {
+        entry.remove()
     }
     else {
         warn!("Asset bundle request not found");
         return asset;
     };
-    AssetBundle::on_LoadAsset(&mut asset, name);
+    AssetBundle::on_LoadAsset(info.bundle as _, &mut asset, info.name());
     asset
 }
 

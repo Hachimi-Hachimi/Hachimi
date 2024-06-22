@@ -328,6 +328,12 @@ impl LocalizedData {
             None
         }
     }
+
+    pub fn load_asset_metadata<P: AsRef<Path>>(&self, rel_path: P) -> AssetMetadata {
+        let mut path = rel_path.as_ref().to_owned();
+        path.set_extension("json");
+        self.load_assets_dict(Some(path)).unwrap_or_else(|| AssetMetadataRoot::default()).get()
+    }
 }
 
 #[derive(Deserialize, Clone)]
@@ -378,4 +384,30 @@ impl Default for LocalizedDataConfig {
     fn default() -> Self {
         default_serde_instance().expect("default instance")
     }
+}
+
+#[derive(Deserialize, Default)]
+pub struct AssetMetadataRoot {
+    #[cfg(target_os = "android")]
+    #[serde(default)]
+    android: AssetMetadata,
+
+    #[cfg(target_os = "windows")]
+    #[serde(default)]
+    windows: AssetMetadata
+}
+
+impl AssetMetadataRoot {
+    fn get(self) -> AssetMetadata {
+        #[cfg(target_os = "android")]
+        return self.android;
+
+        #[cfg(target_os = "windows")]
+        return self.windows;
+    }
+}
+
+#[derive(Deserialize, Clone, Default)]
+pub struct AssetMetadata {
+    pub bundle_name: Option<String>
 }

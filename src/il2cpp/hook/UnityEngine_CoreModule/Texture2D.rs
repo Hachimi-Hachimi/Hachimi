@@ -74,7 +74,7 @@ pub fn load_image_file<P: AsRef<Path>>(this: *mut Il2CppObject, path: P, mark_no
 }
 
 // hook::UnityEngine_AssetBundleModule::AssetBundle
-pub fn on_LoadAsset(asset: &mut *mut Il2CppObject, name: &Utf16Str) {
+pub fn on_LoadAsset(_bundle: *mut Il2CppObject, asset: &mut *mut Il2CppObject, name: &Utf16Str) {
     if !name.starts_with(ASSET_PATH_PREFIX) {
         debug!("non-resource texture: {}", name);
         return;

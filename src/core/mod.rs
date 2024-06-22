@@ -1,4 +1,4 @@
-mod hachimi;
+pub mod hachimi;
 pub use hachimi::Hachimi;
 
 mod error;
