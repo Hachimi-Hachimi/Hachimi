@@ -9,10 +9,10 @@ adb push ./build/arm64-v8a/aarch64-linux-android/debug/libhachimi.so /sdcard/lib
 
 echo "-- Installing"
 adb shell am force-stop jp.co.cygames.umamusume
-adb shell su -c 'bash /sdcard/hachimi.sh'
+adb shell su < "$(dirname "$0")/hachimi.sh"
 
 echo "-- Launching"
-adb shell monkey -p jp.co.cygames.umamusume 1
+adb shell am start-activity jp.co.cygames.umamusume/jp.co.cygames.umamusume_activity.UmamusumeActivity
 
 echo "-- Logcat"
 adb logcat |& grep --line-buffered Hachimi
