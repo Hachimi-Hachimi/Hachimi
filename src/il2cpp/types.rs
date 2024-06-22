@@ -100,19 +100,19 @@ pub type __int64_t = ::std::os::raw::c_long;
 pub type __uint64_t = ::std::os::raw::c_ulong;
 #[repr(C)]
 #[repr(align(16))]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct max_align_t {
     pub __clang_max_align_nonce1: ::std::os::raw::c_longlong,
     pub __bindgen_padding_0: u64,
     pub __clang_max_align_nonce2: u128,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppProfiler {
     _unused: [u8; 0],
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppCustomAttrInfo {
     _unused: [u8; 0],
 }
@@ -172,21 +172,21 @@ pub const Il2CppRuntimeUnhandledExceptionPolicy_IL2CPP_UNHANDLED_POLICY_CURRENT:
     Il2CppRuntimeUnhandledExceptionPolicy = 1;
 pub type Il2CppRuntimeUnhandledExceptionPolicy = ::std::os::raw::c_uint;
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppStackFrameInfo {
     pub method: *const MethodInfo,
     pub raw_ip: usize,
 }
 pub type Il2CppMethodPointer = usize; // ::std::option::Option<unsafe extern "C" fn()>
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppMethodDebugInfo {
     pub methodPointer: Il2CppMethodPointer,
     pub code_size: i32,
     pub file: *const ::std::os::raw::c_char,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppMemoryCallbacks {
     pub malloc_func:
         ::std::option::Option<unsafe extern "C" fn(size: usize) -> *mut ::std::os::raw::c_void>,
@@ -214,7 +214,7 @@ pub struct Il2CppMemoryCallbacks {
     >,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppDebuggerTransport {
     pub name: *const ::std::os::raw::c_char,
     pub connect:
@@ -365,7 +365,7 @@ pub const kStringLiteralIndexInvalid: StringLiteralIndex = -1;
 pub const kInteropDataIndexInvalid: InteropDataIndex = -1;
 pub const kPublicKeyByteLength: ::std::os::raw::c_int = 8;
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppMethodSpec {
     pub methodDefinitionIndex: MethodIndex,
     pub classIndexIndex: GenericInstIndex,
@@ -378,63 +378,61 @@ pub const Il2CppRGCTXDataType_IL2CPP_RGCTX_DATA_METHOD: Il2CppRGCTXDataType = 3;
 pub const Il2CppRGCTXDataType_IL2CPP_RGCTX_DATA_ARRAY: Il2CppRGCTXDataType = 4;
 pub type Il2CppRGCTXDataType = ::std::os::raw::c_uint;
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub union Il2CppRGCTXDefinitionData {
     pub rgctxDataDummy: i32,
     pub __methodIndex: MethodIndex,
     pub __typeIndex: TypeIndex,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppRGCTXDefinition {
     pub type_: Il2CppRGCTXDataType,
     pub data: Il2CppRGCTXDefinitionData,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppGenericMethodIndices {
     pub methodIndex: MethodIndex,
     pub invokerIndex: MethodIndex,
     pub adjustorThunkIndex: MethodIndex,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppGenericMethodFunctionsDefinitions {
     pub genericMethodIndex: GenericMethodIndex,
     pub indices: Il2CppGenericMethodIndices,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct ___Il2CppMetadataImageHandle {
     _unused: [u8; 0],
 }
 pub type Il2CppMetadataImageHandle = *const ___Il2CppMetadataImageHandle;
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct ___Il2CppMetadataCustomAttributeHandle {
     _unused: [u8; 0],
 }
 pub type Il2CppMetadataCustomAttributeHandle = *const ___Il2CppMetadataCustomAttributeHandle;
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct ___Il2CppMetadataTypeHandle {
     _unused: [u8; 0],
 }
 pub type Il2CppMetadataTypeHandle = *const ___Il2CppMetadataTypeHandle;
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct ___Il2CppMetadataMethodHandle {
     _unused: [u8; 0],
 }
 pub type Il2CppMetadataMethodDefinitionHandle = *const ___Il2CppMetadataMethodHandle;
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct ___Il2CppMetadataGenericContainerHandle {
     _unused: [u8; 0],
 }
 pub type Il2CppMetadataGenericContainerHandle = *const ___Il2CppMetadataGenericContainerHandle;
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct ___Il2CppMetadataGenericParameterHandle {
     _unused: [u8; 0],
 }
@@ -449,13 +447,13 @@ pub const Il2CppMetadataUsage_kIl2CppMetadataUsageStringLiteral: Il2CppMetadataU
 pub const Il2CppMetadataUsage_kIl2CppMetadataUsageMethodRef: Il2CppMetadataUsage = 6;
 pub type Il2CppMetadataUsage = ::std::os::raw::c_uint;
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppInterfaceOffsetPair {
     pub interfaceTypeIndex: TypeIndex,
     pub offset: i32,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppTypeDefinition {
     pub nameIndex: StringIndex,
     pub namespaceIndex: StringIndex,
@@ -485,48 +483,48 @@ pub struct Il2CppTypeDefinition {
     pub token: u32,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppFieldDefinition {
     pub nameIndex: StringIndex,
     pub typeIndex: TypeIndex,
     pub token: u32,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppFieldDefaultValue {
     pub fieldIndex: FieldIndex,
     pub typeIndex: TypeIndex,
     pub dataIndex: DefaultValueDataIndex,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppFieldMarshaledSize {
     pub fieldIndex: FieldIndex,
     pub typeIndex: TypeIndex,
     pub size: i32,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppFieldRef {
     pub typeIndex: TypeIndex,
     pub fieldIndex: FieldIndex,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppParameterDefinition {
     pub nameIndex: StringIndex,
     pub token: u32,
     pub typeIndex: TypeIndex,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppParameterDefaultValue {
     pub parameterIndex: ParameterIndex,
     pub typeIndex: TypeIndex,
     pub dataIndex: DefaultValueDataIndex,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppMethodDefinition {
     pub nameIndex: StringIndex,
     pub declaringType: TypeDefinitionIndex,
@@ -540,7 +538,7 @@ pub struct Il2CppMethodDefinition {
     pub parameterCount: u16,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppEventDefinition {
     pub nameIndex: StringIndex,
     pub typeIndex: TypeIndex,
@@ -550,7 +548,7 @@ pub struct Il2CppEventDefinition {
     pub token: u32,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppPropertyDefinition {
     pub nameIndex: StringIndex,
     pub get: MethodIndex,
@@ -559,13 +557,13 @@ pub struct Il2CppPropertyDefinition {
     pub token: u32,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppStringLiteral {
     pub length: u32,
     pub dataIndex: StringLiteralIndex,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppAssemblyNameDefinition {
     pub nameIndex: StringIndex,
     pub cultureIndex: StringIndex,
@@ -580,7 +578,7 @@ pub struct Il2CppAssemblyNameDefinition {
     pub public_key_token: [u8; 8usize],
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppImageDefinition {
     pub nameIndex: StringIndex,
     pub assemblyIndex: AssemblyIndex,
@@ -594,7 +592,7 @@ pub struct Il2CppImageDefinition {
     pub customAttributeCount: u32,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppAssemblyDefinition {
     pub imageIndex: ImageIndex,
     pub token: u32,
@@ -603,20 +601,20 @@ pub struct Il2CppAssemblyDefinition {
     pub aname: Il2CppAssemblyNameDefinition,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppCustomAttributeTypeRange {
     pub token: u32,
     pub start: i32,
     pub count: i32,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppMetadataRange {
     pub start: i32,
     pub length: i32,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppGenericContainer {
     pub ownerIndex: i32,
     pub type_argc: i32,
@@ -624,7 +622,7 @@ pub struct Il2CppGenericContainer {
     pub genericParameterStart: GenericParameterIndex,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppGenericParameter {
     pub ownerIndex: GenericContainerIndex,
     pub nameIndex: StringIndex,
@@ -634,13 +632,13 @@ pub struct Il2CppGenericParameter {
     pub flags: u16,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppWindowsRuntimeTypeNamePair {
     pub nameIndex: StringIndex,
     pub typeIndex: TypeIndex,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppGlobalMetadataHeader {
     pub sanity: i32,
     pub version: i32,
@@ -708,7 +706,7 @@ pub struct Il2CppGlobalMetadataHeader {
     pub exportedTypeDefinitionsSize: i32,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppMetadataField {
     pub offset: u32,
     pub typeIndex: u32,
@@ -721,7 +719,7 @@ pub const Il2CppMetadataTypeFlags_kArray: Il2CppMetadataTypeFlags = 2;
 pub const Il2CppMetadataTypeFlags_kArrayRankMask: Il2CppMetadataTypeFlags = 4294901760;
 pub type Il2CppMetadataTypeFlags = ::std::os::raw::c_uint;
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppMetadataType {
     pub flags: Il2CppMetadataTypeFlags,
     pub fields: *mut Il2CppMetadataField,
@@ -735,32 +733,32 @@ pub struct Il2CppMetadataType {
     pub size: u32,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppMetadataSnapshot {
     pub typeCount: u32,
     pub types: *mut Il2CppMetadataType,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppManagedMemorySection {
     pub sectionStartAddress: u64,
     pub sectionSize: u32,
     pub sectionBytes: *mut u8,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppManagedHeap {
     pub sectionCount: u32,
     pub sections: *mut Il2CppManagedMemorySection,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppStacks {
     pub stackCount: u32,
     pub stacks: *mut Il2CppManagedMemorySection,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct NativeObject {
     pub gcHandleIndex: u32,
     pub size: u32,
@@ -770,13 +768,13 @@ pub struct NativeObject {
     pub referencedNativeObjectIndices: *mut u32,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppGCHandles {
     pub trackedObjectCount: u32,
     pub pointersToObjects: *mut u64,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppRuntimeInformation {
     pub pointerSize: u32,
     pub objectHeaderSize: u32,
@@ -786,7 +784,7 @@ pub struct Il2CppRuntimeInformation {
     pub allocationGranularity: u32,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppManagedMemorySnapshot {
     pub heap: Il2CppManagedHeap,
     pub stacks: Il2CppStacks,
@@ -833,7 +831,7 @@ pub const Il2CppTypeEnum_IL2CPP_TYPE_PINNED: Il2CppTypeEnum = 69;
 pub const Il2CppTypeEnum_IL2CPP_TYPE_ENUM: Il2CppTypeEnum = 85;
 pub type Il2CppTypeEnum = ::std::os::raw::c_uint;
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppArrayType {
     pub etype: *const Il2CppType,
     pub rank: u8,
@@ -843,32 +841,31 @@ pub struct Il2CppArrayType {
     pub lobounds: *mut ::std::os::raw::c_int,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppGenericInst {
     pub type_argc: u32,
     pub type_argv: *mut *const Il2CppType,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppGenericContext {
     pub class_inst: *const Il2CppGenericInst,
     pub method_inst: *const Il2CppGenericInst,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppGenericClass {
     pub type_: *const Il2CppType,
     pub context: Il2CppGenericContext,
     pub cached_class: *mut Il2CppClass,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppGenericMethod {
     pub methodDefinition: *const MethodInfo,
     pub context: Il2CppGenericContext,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppType {
     pub data: Il2CppType__bindgen_ty_1,
     pub _bitfield_align_1: [u16; 0],
@@ -876,7 +873,6 @@ pub struct Il2CppType {
     pub __bindgen_padding_0: u32,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub union Il2CppType__bindgen_ty_1 {
     pub dummy: *mut ::std::os::raw::c_void,
     pub __klassIndex: TypeDefinitionIndex,
@@ -976,14 +972,14 @@ impl Il2CppType {
     }
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppMetadataFieldInfo {
     pub type_: *const Il2CppType,
     pub name: *const ::std::os::raw::c_char,
     pub token: u32,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppMetadataMethodInfo {
     pub handle: Il2CppMetadataMethodDefinitionHandle,
     pub name: *const ::std::os::raw::c_char,
@@ -995,14 +991,14 @@ pub struct Il2CppMetadataMethodInfo {
     pub parameterCount: u16,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppMetadataParameterInfo {
     pub name: *const ::std::os::raw::c_char,
     pub token: u32,
     pub type_: *const Il2CppType,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppMetadataPropertyInfo {
     pub name: *const ::std::os::raw::c_char,
     pub get: *const MethodInfo,
@@ -1011,7 +1007,7 @@ pub struct Il2CppMetadataPropertyInfo {
     pub token: u32,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppMetadataEventInfo {
     pub name: *const ::std::os::raw::c_char,
     pub type_: *const Il2CppType,
@@ -1021,13 +1017,13 @@ pub struct Il2CppMetadataEventInfo {
     pub token: u32,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppInterfaceOffsetInfo {
     pub interfaceType: *const Il2CppType,
     pub offset: i32,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppGenericParameterInfo {
     pub containerHandle: Il2CppMetadataGenericContainerHandle,
     pub name: *const ::std::os::raw::c_char,
@@ -1046,24 +1042,22 @@ pub const Il2CppCharSet_CHARSET_UNICODE: Il2CppCharSet = 1;
 pub const Il2CppCharSet_CHARSET_NOT_SPECIFIED: Il2CppCharSet = 2;
 pub type Il2CppCharSet = ::std::os::raw::c_uint;
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppHString__ {
     pub unused: ::std::os::raw::c_int,
 }
 pub type Il2CppHString = *mut Il2CppHString__;
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppHStringHeader {
     pub Reserved: Il2CppHStringHeader__bindgen_ty_1,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub union Il2CppHStringHeader__bindgen_ty_1 {
     pub Reserved1: *mut ::std::os::raw::c_void,
     pub Reserved2: [::std::os::raw::c_char; 24usize],
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppGuid {
     pub data1: u32,
     pub data2: u16,
@@ -1071,13 +1065,13 @@ pub struct Il2CppGuid {
     pub data4: [u8; 8usize],
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppSafeArrayBound {
     pub element_count: u32,
     pub lower_bound: i32,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppSafeArray {
     pub dimension_count: u16,
     pub features: u16,
@@ -1173,12 +1167,11 @@ pub const Il2CppVarType_IL2CPP_VT_ILLEGALMASKED: Il2CppVarType = 4095;
 pub const Il2CppVarType_IL2CPP_VT_TYPEMASK: Il2CppVarType = 4095;
 pub type Il2CppVarType = ::std::os::raw::c_uint;
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppIUnknown {
     _unused: [u8; 0],
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppVariant {
     pub n1: Il2CppVariant__bindgen_ty_1,
 }
@@ -1252,13 +1245,13 @@ pub struct Il2CppVariant__bindgen_ty_1___tagVARIANT__bindgen_ty_1___tagBRECORD {
     pub pRecInfo: *mut ::std::os::raw::c_void,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppFileTime {
     pub low: u32,
     pub high: u32,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppStatStg {
     pub name: *mut Il2CppChar,
     pub type_: u32,
@@ -1277,7 +1270,7 @@ pub const Il2CppWindowsRuntimeTypeKind_kTypeKindMetadata: Il2CppWindowsRuntimeTy
 pub const Il2CppWindowsRuntimeTypeKind_kTypeKindCustom: Il2CppWindowsRuntimeTypeKind = 2;
 pub type Il2CppWindowsRuntimeTypeKind = ::std::os::raw::c_uint;
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppWindowsRuntimeTypeName {
     pub typeName: Il2CppHString,
     pub typeKind: Il2CppWindowsRuntimeTypeKind,
@@ -1299,7 +1292,7 @@ pub type PInvokeMarshalCleanupFunc =
 pub type CreateCCWFunc =
     ::std::option::Option<unsafe extern "C" fn(obj: *mut Il2CppObject) -> *mut Il2CppIUnknown>;
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppInteropData {
     pub delegatePInvokeWrapperFunction: Il2CppMethodPointer,
     pub pinvokeMarshalToNativeFunction: PInvokeMarshalToNativeFunc,
@@ -1310,12 +1303,12 @@ pub struct Il2CppInteropData {
     pub type_: *const Il2CppType,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppNameToTypeHandleHashTable {
     _unused: [u8; 0],
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct VirtualInvokeData {
     pub methodPtr: Il2CppMethodPointer,
     pub method: *const MethodInfo,
@@ -1326,12 +1319,12 @@ pub const Il2CppTypeNameFormat_IL2CPP_TYPE_NAME_FORMAT_FULL_NAME: Il2CppTypeName
 pub const Il2CppTypeNameFormat_IL2CPP_TYPE_NAME_FORMAT_ASSEMBLY_QUALIFIED: Il2CppTypeNameFormat = 3;
 pub type Il2CppTypeNameFormat = ::std::os::raw::c_uint;
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct MemberInfo {
     _unused: [u8; 0],
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct CustomAttributesCache {
     pub count: ::std::os::raw::c_int,
     pub attributes: *mut *mut Il2CppObject,
@@ -1339,7 +1332,7 @@ pub struct CustomAttributesCache {
 pub type CustomAttributesCacheGenerator =
     ::std::option::Option<unsafe extern "C" fn(arg1: *mut CustomAttributesCache)>;
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct FieldInfo {
     pub name: *const ::std::os::raw::c_char,
     pub type_: *const Il2CppType,
@@ -1348,7 +1341,7 @@ pub struct FieldInfo {
     pub token: u32,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct PropertyInfo {
     pub parent: *mut Il2CppClass,
     pub name: *const ::std::os::raw::c_char,
@@ -1358,7 +1351,7 @@ pub struct PropertyInfo {
     pub token: u32,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct EventInfo {
     pub name: *const ::std::os::raw::c_char,
     pub eventType: *const Il2CppType,
@@ -1369,7 +1362,7 @@ pub struct EventInfo {
     pub token: u32,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct ParameterInfo {
     pub name: *const ::std::os::raw::c_char,
     pub position: i32,
@@ -1392,45 +1385,45 @@ pub const SequencePointKind_kSequencePointKind_Normal: SequencePointKind = 0;
 pub const SequencePointKind_kSequencePointKind_StepOut: SequencePointKind = 1;
 pub type SequencePointKind = ::std::os::raw::c_uint;
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppMethodExecutionContextInfo {
     pub typeIndex: TypeIndex,
     pub nameIndex: i32,
     pub scopeIndex: i32,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppMethodExecutionContextInfoIndex {
     pub startIndex: i32,
     pub count: i32,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppMethodScope {
     pub startOffset: i32,
     pub endOffset: i32,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppMethodHeaderInfo {
     pub code_size: i32,
     pub startScope: i32,
     pub numScopes: i32,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppSequencePointSourceFile {
     pub file: *const ::std::os::raw::c_char,
     pub hash: [u8; 16usize],
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppTypeSourceFilePair {
     pub __klassIndex: TypeDefinitionIndex,
     pub sourceFileIndex: i32,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppSequencePoint {
     pub __methodDefinitionIndex: MethodIndex,
     pub sourceFileIndex: i32,
@@ -1444,7 +1437,7 @@ pub struct Il2CppSequencePoint {
     pub id: i32,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppCatchPoint {
     pub __methodDefinitionIndex: MethodIndex,
     pub catchTypeIndex: TypeIndex,
@@ -1453,7 +1446,7 @@ pub struct Il2CppCatchPoint {
     pub parentTryId: i32,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppDebuggerMetadataRegistration {
     pub methodExecutionContextInfos: *mut Il2CppMethodExecutionContextInfo,
     pub methodExecutionContextInfoIndexes: *mut Il2CppMethodExecutionContextInfoIndex,
@@ -1469,7 +1462,6 @@ pub struct Il2CppDebuggerMetadataRegistration {
     pub methodExecutionContextInfoStrings: *mut *const ::std::os::raw::c_char,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub union Il2CppRGCTXData {
     pub rgctxDataDummy: *mut ::std::os::raw::c_void,
     pub method: *const MethodInfo,
@@ -1477,7 +1469,6 @@ pub union Il2CppRGCTXData {
     pub klass: *mut Il2CppClass,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct MethodInfo {
     pub methodPointer: Il2CppMethodPointer,
     pub invoker_method: InvokerMethod,
@@ -1497,13 +1488,11 @@ pub struct MethodInfo {
     pub __bindgen_padding_0: u32,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub union MethodInfo__bindgen_ty_1 {
     pub rgctx_data: *const Il2CppRGCTXData,
     pub methodMetadataHandle: Il2CppMetadataMethodDefinitionHandle,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub union MethodInfo__bindgen_ty_2 {
     pub genericMethod: *const Il2CppGenericMethod,
     pub genericContainerHandle: Il2CppMetadataGenericContainerHandle,
@@ -1583,13 +1572,12 @@ impl MethodInfo {
     }
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppRuntimeInterfaceOffsetPair {
     pub interfaceType: *mut Il2CppClass,
     pub offset: i32,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppClass {
     pub image: *const Il2CppImage,
     pub gc_desc: *mut ::std::os::raw::c_void,
@@ -1900,7 +1888,6 @@ impl Il2CppClass {
     }
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppClass_0 {
     pub image: *const Il2CppImage,
     pub gc_desc: *mut ::std::os::raw::c_void,
@@ -1924,7 +1911,7 @@ pub struct Il2CppClass_0 {
     pub implementedInterfaces: *mut *mut Il2CppClass,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppClass_1 {
     pub typeHierarchy: *mut *mut Il2CppClass,
     pub unity_user_data: *mut ::std::os::raw::c_void,
@@ -2212,7 +2199,6 @@ impl Il2CppClass_1 {
     }
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppClass_Merged {
     pub _0: Il2CppClass_0,
     pub interfaceOffsets: *mut Il2CppRuntimeInterfaceOffsetPair,
@@ -2222,7 +2208,7 @@ pub struct Il2CppClass_Merged {
     pub vtable: [VirtualInvokeData; 32usize],
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppTypeDefinitionSizes {
     pub instance_size: u32,
     pub native_size: i32,
@@ -2230,7 +2216,7 @@ pub struct Il2CppTypeDefinitionSizes {
     pub thread_static_fields_size: u32,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppDomain {
     pub domain: *mut Il2CppAppDomain,
     pub setup: *mut Il2CppAppDomainSetup,
@@ -2241,7 +2227,7 @@ pub struct Il2CppDomain {
     pub agent_info: *mut ::std::os::raw::c_void,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppAssemblyName {
     pub name: *const ::std::os::raw::c_char,
     pub culture: *const ::std::os::raw::c_char,
@@ -2256,7 +2242,7 @@ pub struct Il2CppAssemblyName {
     pub public_key_token: [u8; 8usize],
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppImage {
     pub name: *const ::std::os::raw::c_char,
     pub nameNoExt: *const ::std::os::raw::c_char,
@@ -2271,7 +2257,7 @@ pub struct Il2CppImage {
     pub dynamic: u8,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppAssembly {
     pub image: *mut Il2CppImage,
     pub token: u32,
@@ -2280,25 +2266,25 @@ pub struct Il2CppAssembly {
     pub aname: Il2CppAssemblyName,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppCodeGenOptions {
     pub enablePrimitiveValueTypeGenericSharing: u8,
     pub maximumRuntimeGenericDepth: ::std::os::raw::c_int,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppRange {
     pub start: i32,
     pub length: i32,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppTokenRangePair {
     pub token: u32,
     pub range: Il2CppRange,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppTokenIndexMethodTuple {
     pub token: u32,
     pub index: i32,
@@ -2306,19 +2292,19 @@ pub struct Il2CppTokenIndexMethodTuple {
     pub __genericMethodIndex: u32,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppTokenAdjustorThunkPair {
     pub token: u32,
     pub adjustorThunk: Il2CppMethodPointer,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppWindowsRuntimeFactoryTableEntry {
     pub type_: *const Il2CppType,
     pub createFactoryFunction: Il2CppMethodPointer,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppCodeGenModule {
     pub moduleName: *const ::std::os::raw::c_char,
     pub methodPointerCount: u32,
@@ -2340,7 +2326,7 @@ pub struct Il2CppCodeGenModule {
     pub codeRegistaration: *const Il2CppCodeRegistration,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppCodeRegistration {
     pub reversePInvokeWrapperCount: u32,
     pub reversePInvokeWrappers: *const Il2CppMethodPointer,
@@ -2359,7 +2345,7 @@ pub struct Il2CppCodeRegistration {
     pub codeGenModules: *mut *const Il2CppCodeGenModule,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppMetadataRegistration {
     pub genericClassesCount: i32,
     pub genericClasses: *const *mut Il2CppGenericClass,
@@ -2379,7 +2365,7 @@ pub struct Il2CppMetadataRegistration {
     pub metadataUsages: *const *mut *mut ::std::os::raw::c_void,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppPerfCounters {
     pub jit_methods: u32,
     pub jit_bytes: u32,
@@ -2447,24 +2433,22 @@ pub struct Il2CppPerfCounters {
     pub threadpool_iothreads: ::std::os::raw::c_uint,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppWaitHandle {
     _unused: [u8; 0],
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct MonitorData {
     _unused: [u8; 0],
 }
 pub type Il2CppVTable = Il2CppClass;
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppObject {
     pub __bindgen_anon_1: Il2CppObject__bindgen_ty_1,
     pub monitor: *mut MonitorData,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub union Il2CppObject__bindgen_ty_1 {
     pub klass: *mut Il2CppClass,
     pub vtable: *mut Il2CppVTable,
@@ -2476,13 +2460,12 @@ impl Il2CppObject {
 }
 pub type il2cpp_array_lower_bound_t = i32;
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppArrayBounds {
     pub length: il2cpp_array_size_t,
     pub lower_bound: il2cpp_array_lower_bound_t,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppArray {
     pub obj: Il2CppObject,
     pub bounds: *mut Il2CppArrayBounds,
@@ -2521,13 +2504,11 @@ impl Il2CppString {
     }
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppReflectionType {
     pub object: Il2CppObject,
     pub type_: *const Il2CppType,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppReflectionRuntimeType {
     pub type_: Il2CppReflectionType,
     pub type_info: *mut Il2CppObject,
@@ -2535,25 +2516,22 @@ pub struct Il2CppReflectionRuntimeType {
     pub serializationCtor: *mut Il2CppObject,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppReflectionMonoType {
     pub type_: Il2CppReflectionRuntimeType,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppReflectionEvent {
     pub object: Il2CppObject,
     pub cached_add_event: *mut Il2CppObject,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppReflectionMonoEvent {
     pub event: Il2CppReflectionEvent,
     pub reflectedType: *mut Il2CppReflectionType,
     pub eventInfo: *const EventInfo,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppReflectionMonoEventInfo {
     pub declaringType: *mut Il2CppReflectionType,
     pub reflectedType: *mut Il2CppReflectionType,
@@ -2565,7 +2543,6 @@ pub struct Il2CppReflectionMonoEventInfo {
     pub otherMethods: *mut Il2CppArray,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppReflectionField {
     pub object: Il2CppObject,
     pub klass: *mut Il2CppClass,
@@ -2575,14 +2552,12 @@ pub struct Il2CppReflectionField {
     pub attrs: u32,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppReflectionProperty {
     pub object: Il2CppObject,
     pub klass: *mut Il2CppClass,
     pub property: *const PropertyInfo,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppReflectionMethod {
     pub object: Il2CppObject,
     pub method: *const MethodInfo,
@@ -2590,12 +2565,11 @@ pub struct Il2CppReflectionMethod {
     pub reftype: *mut Il2CppReflectionType,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppReflectionGenericMethod {
     pub base: Il2CppReflectionMethod,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppMethodInfo {
     pub parent: *mut Il2CppReflectionType,
     pub ret: *mut Il2CppReflectionType,
@@ -2604,7 +2578,7 @@ pub struct Il2CppMethodInfo {
     pub callconv: u32,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppPropertyInfo {
     pub parent: *mut Il2CppReflectionType,
     pub declaringType: *mut Il2CppReflectionType,
@@ -2614,7 +2588,6 @@ pub struct Il2CppPropertyInfo {
     pub attrs: u32,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppReflectionParameter {
     pub object: Il2CppObject,
     pub ClassImpl: *mut Il2CppReflectionType,
@@ -2626,7 +2599,6 @@ pub struct Il2CppReflectionParameter {
     pub MarshalAsImpl: *mut Il2CppObject,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppReflectionModule {
     pub obj: Il2CppObject,
     pub image: *const Il2CppImage,
@@ -2638,7 +2610,6 @@ pub struct Il2CppReflectionModule {
     pub token: u32,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppReflectionAssemblyName {
     pub obj: Il2CppObject,
     pub name: *mut Il2CppString,
@@ -2659,7 +2630,6 @@ pub struct Il2CppReflectionAssemblyName {
     pub contentType: u32,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppReflectionAssembly {
     pub object: Il2CppObject,
     pub assembly: *const Il2CppAssembly,
@@ -2674,7 +2644,6 @@ pub struct Il2CppReflectionAssembly {
     pub name: *mut Il2CppString,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppReflectionMarshal {
     pub object: Il2CppObject,
     pub count: i32,
@@ -2688,14 +2657,12 @@ pub struct Il2CppReflectionMarshal {
     pub has_size: u8,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppReflectionPointer {
     pub object: Il2CppObject,
     pub data: *mut ::std::os::raw::c_void,
     pub type_: *mut Il2CppReflectionType,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppInternalThread {
     pub obj: Il2CppObject,
     pub lock_thread_id: ::std::os::raw::c_int,
@@ -2739,7 +2706,6 @@ pub struct Il2CppInternalThread {
     pub last: *mut ::std::os::raw::c_void,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppIOSelectorJob {
     pub object: Il2CppObject,
     pub operation: i32,
@@ -2752,7 +2718,6 @@ pub const Il2CppCallType_Il2Cpp_CallType_EndInvoke: Il2CppCallType = 2;
 pub const Il2CppCallType_Il2Cpp_CallType_OneWay: Il2CppCallType = 3;
 pub type Il2CppCallType = ::std::os::raw::c_uint;
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppMethodMessage {
     pub obj: Il2CppObject,
     pub method: *mut Il2CppReflectionMethod,
@@ -2766,7 +2731,6 @@ pub struct Il2CppMethodMessage {
     pub call_type: u32,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppAppDomainSetup {
     pub object: Il2CppObject,
     pub application_base: *mut Il2CppString,
@@ -2793,7 +2757,6 @@ pub struct Il2CppAppDomainSetup {
     pub serialized_non_primitives: *mut Il2CppArray,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppThread {
     pub obj: Il2CppObject,
     pub internal_thread: *mut Il2CppInternalThread,
@@ -2806,7 +2769,6 @@ pub struct Il2CppThread {
     pub executionContextBelongsToOuterScope: u8,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppException {
     pub object: Il2CppObject,
     pub className: *mut Il2CppString,
@@ -2826,25 +2788,22 @@ pub struct Il2CppException {
     pub native_trace_ips: *mut Il2CppArray,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppSystemException {
     pub base: Il2CppException,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppArgumentException {
     pub base: Il2CppException,
     pub argName: *mut Il2CppString,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppTypedRef {
     pub type_: *const Il2CppType,
     pub value: *mut ::std::os::raw::c_void,
     pub klass: *mut Il2CppClass,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppDelegate {
     pub object: Il2CppObject,
     pub method_ptr: Il2CppMethodPointer,
@@ -2860,25 +2819,21 @@ pub struct Il2CppDelegate {
     pub method_is_virtual: u8,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppMulticastDelegate {
     pub delegate: Il2CppDelegate,
     pub delegates: *mut Il2CppArray,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppMarshalByRefObject {
     pub obj: Il2CppObject,
     pub identity: *mut Il2CppObject,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppAppDomain {
     pub mbr: Il2CppMarshalByRefObject,
     pub data: *mut Il2CppDomain,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppStackFrame {
     pub obj: Il2CppObject,
     pub il_offset: i32,
@@ -2892,7 +2847,6 @@ pub struct Il2CppStackFrame {
     pub internal_method_name: *mut Il2CppString,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppDateTimeFormatInfo {
     pub obj: Il2CppObject,
     pub CultureData: *mut Il2CppObject,
@@ -2947,7 +2901,6 @@ pub struct Il2CppDateTimeFormatInfo {
     pub dtfiTokenHash: *mut Il2CppArray,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppNumberFormatInfo {
     pub obj: Il2CppObject,
     pub numberGroupSizes: *mut Il2CppArray,
@@ -2986,7 +2939,6 @@ pub struct Il2CppNumberFormatInfo {
     pub validForParseAsCurrency: u8,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppCultureData {
     pub obj: Il2CppObject,
     pub AMDesignator: *mut Il2CppString,
@@ -2998,7 +2950,6 @@ pub struct Il2CppCultureData {
     pub CalendarWeekRule: u32,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppCalendarData {
     pub obj: Il2CppObject,
     pub NativeName: *mut Il2CppString,
@@ -3018,7 +2969,6 @@ pub struct Il2CppCalendarData {
     pub GenitiveAbbreviatedMonthNames: *mut Il2CppArray,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppCultureInfo {
     pub obj: Il2CppObject,
     pub is_read_only: u8,
@@ -3050,7 +3000,6 @@ pub struct Il2CppCultureInfo {
     pub isInherited: u8,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppRegionInfo {
     pub obj: Il2CppObject,
     pub geo_id: i32,
@@ -3065,7 +3014,6 @@ pub struct Il2CppRegionInfo {
     pub currency_native_name: *mut Il2CppString,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppSafeHandle {
     pub base: Il2CppObject,
     pub handle: *mut ::std::os::raw::c_void,
@@ -3074,7 +3022,6 @@ pub struct Il2CppSafeHandle {
     pub fullyInitialized: u8,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppStringBuilder {
     pub object: Il2CppObject,
     pub chunkChars: *mut Il2CppArray,
@@ -3084,7 +3031,6 @@ pub struct Il2CppStringBuilder {
     pub maxCapacity: ::std::os::raw::c_int,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppSocketAddress {
     pub base: Il2CppObject,
     pub m_Size: ::std::os::raw::c_int,
@@ -3093,7 +3039,6 @@ pub struct Il2CppSocketAddress {
     pub m_hash: ::std::os::raw::c_int,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppSortKey {
     pub base: Il2CppObject,
     pub str_: *mut Il2CppString,
@@ -3102,13 +3047,11 @@ pub struct Il2CppSortKey {
     pub lcid: i32,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppErrorWrapper {
     pub base: Il2CppObject,
     pub errorCode: i32,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppAsyncResult {
     pub base: Il2CppObject,
     pub async_state: *mut Il2CppObject,
@@ -3124,7 +3067,6 @@ pub struct Il2CppAsyncResult {
     pub original_context: *mut Il2CppObject,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppAsyncCall {
     pub base: Il2CppObject,
     pub msg: *mut Il2CppMethodMessage,
@@ -3135,12 +3077,11 @@ pub struct Il2CppAsyncCall {
     pub out_args: *mut Il2CppArray,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Il2CppExceptionWrapper {
     pub ex: *mut Il2CppException,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppIOAsyncResult {
     pub base: Il2CppObject,
     pub callback: *mut Il2CppDelegate,
@@ -3150,7 +3091,6 @@ pub struct Il2CppIOAsyncResult {
     pub completed: u8,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppSocketAsyncResult {
     pub base: Il2CppIOAsyncResult,
     pub socket: *mut Il2CppObject,
@@ -3178,7 +3118,6 @@ pub const Il2CppResourceLocation_IL2CPP_RESOURCE_LOCATION_ANOTHER_ASSEMBLY: Il2C
 pub const Il2CppResourceLocation_IL2CPP_RESOURCE_LOCATION_IN_MANIFEST: Il2CppResourceLocation = 4;
 pub type Il2CppResourceLocation = ::std::os::raw::c_uint;
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppManifestResourceInfo {
     pub object: Il2CppObject,
     pub assembly: *mut Il2CppReflectionAssembly,
@@ -3186,7 +3125,6 @@ pub struct Il2CppManifestResourceInfo {
     pub location: u32,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppAppContext {
     pub obj: Il2CppObject,
     pub domain_id: i32,
@@ -3194,7 +3132,6 @@ pub struct Il2CppAppContext {
     pub static_data: *mut ::std::os::raw::c_void,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct Il2CppDecimal {
     pub reserved: u16,
     pub u: Il2CppDecimal__bindgen_ty_1,
@@ -3372,7 +3309,6 @@ impl Il2CppSingle {
     }
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub union Il2CppSingle_float {
     pub s: Il2CppSingle,
     pub f: f32,
@@ -3391,7 +3327,7 @@ pub const ScreenOrientation_AutoRotation: ScreenOrientation = 5;
 pub const ScreenOrientation_Landscape: ScreenOrientation = 3;
 pub type ScreenOrientation = i32;
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Color_t {
     pub r: f32,
     pub g: f32,
@@ -3399,13 +3335,13 @@ pub struct Color_t {
     pub a: f32,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Vector2_t {
     pub x: f32,
     pub y: f32,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Vector2Int_t {
     pub x: i32,
     pub y: i32
@@ -3417,14 +3353,14 @@ impl std::ops::MulAssign<f32> for Vector2Int_t {
     }
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Vector3_t {
     pub x: f32,
     pub y: f32,
     pub z: f32,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Rect_t {
     pub x: f32,
     pub y: f32,
@@ -3432,7 +3368,7 @@ pub struct Rect_t {
     pub height: f32,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Quaternion_t {
     pub w: f32,
     pub x: f32,
@@ -3443,7 +3379,7 @@ pub const HorizontalWrapMode_Wrap: HorizontalWrapMode = 0;
 pub const HorizontalWrapMode_Overflow: HorizontalWrapMode = 1;
 pub type HorizontalWrapMode = ::std::os::raw::c_int;
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct TextGenerationSettings_t {
     pub font: *mut ::std::os::raw::c_void,
     pub color: Color_t,
@@ -3472,7 +3408,7 @@ pub const GroupAlertBehaviours_GroupAlertSummary: GroupAlertBehaviours = 1;
 pub const GroupAlertBehaviours_GroupAlertChildren: GroupAlertBehaviours = 2;
 pub type GroupAlertBehaviours = ::std::os::raw::c_int;
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct AndroidNotification {
     pub Title: *mut Il2CppString,
     pub Text: *mut Il2CppString,
