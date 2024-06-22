@@ -93,7 +93,6 @@ type LoadFromFileInternalFn = extern "C" fn(path: *mut Il2CppString, crc: u32, o
 extern "C" fn LoadFromFile_Internal(path: *mut Il2CppString, crc: u32, offset: u64) -> *mut Il2CppObject {
     let bundle = get_orig_fn!(LoadFromFile_Internal, LoadFromFileInternalFn)(path, crc, offset);
     if !bundle.is_null() {
-        debug!("adding {}", bundle as usize);
         BUNDLE_PATHS.lock().unwrap().insert(bundle as usize, GCHandle::new(path as _, false));
     }
     bundle
@@ -101,9 +100,7 @@ extern "C" fn LoadFromFile_Internal(path: *mut Il2CppString, crc: u32, offset: u
 
 type UnloadFn = extern "C" fn(this: *mut Il2CppObject, unload_all_loaded_objects: bool);
 extern "C" fn Unload(this: *mut Il2CppObject, unload_all_loaded_objects: bool) {
-    if BUNDLE_PATHS.lock().unwrap().remove(&(this as usize)).is_some() {
-        debug!("removed {}", this as usize);
-    }
+    BUNDLE_PATHS.lock().unwrap().remove(&(this as usize));
     get_orig_fn!(Unload, UnloadFn)(this, unload_all_loaded_objects);
 }
 
