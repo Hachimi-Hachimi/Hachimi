@@ -2,13 +2,10 @@ use std::os::raw::c_uint;
 
 use windows::Win32::{
     Foundation::{HWND, LPARAM, LRESULT, WPARAM},
-    UI::{
-        Input::KeyboardAndMouse::VK_HOME,
-        WindowsAndMessaging::{DefWindowProcW, SetWindowLongPtrW, GWLP_WNDPROC, WM_KEYDOWN, WM_SYSKEYDOWN, WNDPROC}
-    }
+    UI::WindowsAndMessaging::{DefWindowProcW, SetWindowLongPtrW, GWLP_WNDPROC, WM_KEYDOWN, WM_SYSKEYDOWN, WNDPROC}
 };
 
-use crate::{core::Gui, windows::proxy::dxgi};
+use crate::{core::{Gui, Hachimi}, windows::proxy::dxgi};
 
 use super::input;
 
@@ -22,7 +19,7 @@ extern "C" fn wnd_proc(hwnd: HWND, umsg: c_uint, wparam: WPARAM, lparam: LPARAM)
     // Check for Home key presses
     match umsg {
         WM_KEYDOWN | WM_SYSKEYDOWN => {
-            if wparam.0 as u16 == VK_HOME.0 {
+            if wparam.0 as u16 == Hachimi::instance().config.load().menu_open_key {
                 let Some(mut gui) = Gui::instance().map(|m| m.lock().unwrap()) else {
                     return unsafe { orig_fn(hwnd, umsg, wparam, lparam) };
                 };
