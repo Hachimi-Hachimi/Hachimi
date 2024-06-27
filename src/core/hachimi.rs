@@ -187,7 +187,9 @@ pub struct Config {
     #[serde(default)]
     pub disable_auto_update_check: bool,
     #[serde(default)]
-    pub disable_translations: bool
+    pub disable_translations: bool,
+    #[serde(default)]
+    pub load_libraries: Vec<String>
 }
 
 impl Config {
