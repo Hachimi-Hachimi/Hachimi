@@ -24,6 +24,8 @@ pub struct Hachimi {
 
     /// -1 = default
     pub target_fps: AtomicI32,
+
+    #[cfg(target_os = "windows")]
     pub vsync_count: AtomicI32
 }
 
@@ -72,6 +74,8 @@ impl Hachimi {
             template_parser: template::Parser::new(&template_filters::LIST),
 
             target_fps: AtomicI32::new(config.target_fps.unwrap_or(-1)),
+
+            #[cfg(target_os = "windows")]
             vsync_count: AtomicI32::new(config.vsync_count),
 
             config: ArcSwap::new(Arc::new(config))
@@ -176,6 +180,7 @@ pub struct Config {
     pub localized_data_dir: Option<String>,
     pub target_fps: Option<i32>,
     #[serde(default = "Config::default_vsync_count")]
+    #[cfg(target_os = "windows")]
     pub vsync_count: i32,
     #[serde(default = "Config::default_open_browser_url")]
     pub open_browser_url: String,
@@ -189,12 +194,14 @@ pub struct Config {
     #[serde(default)]
     pub disable_translations: bool,
     #[serde(default)]
+    #[cfg(target_os = "windows")]
     pub load_libraries: Vec<String>
 }
 
 impl Config {
     fn default_open_browser_url() -> String { "https://www.google.com/".to_owned() }
     fn default_virtual_res_mult() -> f32 { 1.0 }
+    #[cfg(target_os = "windows")]
     fn default_vsync_count() -> i32 { -1 }
 }
 
