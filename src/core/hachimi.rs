@@ -26,7 +26,10 @@ pub struct Hachimi {
     pub target_fps: AtomicI32,
 
     #[cfg(target_os = "windows")]
-    pub vsync_count: AtomicI32
+    pub vsync_count: AtomicI32,
+
+    #[cfg(target_os = "windows")]
+    pub updater: Arc<crate::windows::updater::Updater>
 }
 
 static INSTANCE: OnceCell<Arc<Hachimi>> = OnceCell::new();
@@ -77,6 +80,9 @@ impl Hachimi {
 
             #[cfg(target_os = "windows")]
             vsync_count: AtomicI32::new(config.vsync_count),
+
+            #[cfg(target_os = "windows")]
+            updater: Arc::default(),
 
             config: ArcSwap::new(Arc::new(config))
         })
@@ -160,6 +166,22 @@ impl Hachimi {
 
     pub fn get_data_path<P: AsRef<Path>>(&self, rel_path: P) -> PathBuf {
         self.game.data_dir.join(rel_path)
+    }
+
+    pub fn run_auto_update_check(&self) {
+        if !self.config.load().disable_auto_update_check {
+            #[cfg(not(target_os = "windows"))]
+            self.tl_updater.clone().check_for_updates();
+
+            // Check for hachimi updates first, then translations
+            // Don't auto check for tl updates if it's not up to date
+            #[cfg(target_os = "windows")]
+            self.updater.clone().check_for_updates(|new_update| {
+                if !new_update {
+                    Hachimi::instance().tl_updater.clone().check_for_updates();
+                }
+            });
+        }
     }
 }
 

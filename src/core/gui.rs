@@ -116,11 +116,9 @@ impl Gui {
         };
         unsafe {
             INSTANCE.set(Mutex::new(instance)).unwrap_unchecked();
+
             // Doing auto update check here to ensure that the updater can access the gui
-            // maaaybe we should decouple the updater from the gui?
-            if !hachimi.config.load().disable_auto_update_check {
-                hachimi.tl_updater.clone().check_for_updates();
-            }
+            hachimi.run_auto_update_check();
 
             INSTANCE.get().unwrap_unchecked()
         }
@@ -976,13 +974,19 @@ impl Window for AboutWindow {
                 });
             });
             ui.label("Copyright (c) 2024 LeadRDRK and contributors");
-            if ui.button("View license").clicked() {
-                thread::spawn(|| {
-                    Gui::instance().unwrap()
-                    .lock().unwrap()
-                    .show_window(Box::new(LicenseWindow::new()));
-                });
-            }
+            ui.horizontal(|ui| {
+                if ui.button("View license").clicked() {
+                    thread::spawn(|| {
+                        Gui::instance().unwrap()
+                        .lock().unwrap()
+                        .show_window(Box::new(LicenseWindow::new()));
+                    });
+                }
+                #[cfg(target_os = "windows")]
+                if ui.button("Check for updates").clicked() {
+                    Hachimi::instance().updater.clone().check_for_updates(|_| {});
+                }
+            });
         });
 
         open
@@ -1015,5 +1019,43 @@ impl Window for LicenseWindow {
         });
 
         open
+    }
+}
+
+pub struct PersistentMessageWindow {
+    id: egui::Id,
+    title: String,
+    content: String,
+    show: Arc<AtomicBool>
+}
+
+impl PersistentMessageWindow {
+    pub fn new(title: &str, content: &str, show: Arc<AtomicBool>) -> PersistentMessageWindow {
+        PersistentMessageWindow {
+            id: random_id(),
+            title: title.to_owned(),
+            content: content.to_owned(),
+            show
+        }
+    }
+}
+
+impl Window for PersistentMessageWindow {
+    fn run(&mut self, ctx: &egui::Context) -> bool {
+        new_window(ctx, &self.title)
+        .id(self.id)
+        .show(ctx, |ui| {
+            simple_window_layout(ui, self.id,
+                |ui| {
+                    ui.centered_and_justified(|ui| {
+                        ui.label(&self.content);
+                    });
+                },
+                |_| {
+                }
+            );
+        });
+
+        self.show.load(atomic::Ordering::Relaxed)
     }
 }

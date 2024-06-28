@@ -8,7 +8,7 @@ pub mod game;
 pub mod ext;
 pub mod template;
 
-mod gui;
+pub mod gui;
 pub use gui::Gui;
 
 pub mod plurals;

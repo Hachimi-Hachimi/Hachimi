@@ -53,6 +53,14 @@ pub fn get_json<T: DeserializeOwned>(url: &str) -> Result<T, Error> {
     Ok(serde_json::from_str(&res.into_string()?)?)
 }
 
+pub fn get_github_json<T: DeserializeOwned>(url: &str) -> Result<T, Error> {
+    let res = ureq::get(url)
+        .set("Accept", "application/vnd.github+json")
+        .set("X-GitHub-Api-Version", "2022-11-28")
+        .call()?;
+    Ok(serde_json::from_str(&res.into_string()?)?)
+}
+
 pub fn download_file_buffered(res: ureq::Response, file: &mut std::fs::File, buffer: &mut [u8], mut add_bytes: impl FnMut(&[u8])) -> Result<(), Error> {
     let mut reader = res.into_reader();
     let mut buffer_pos = 0usize;

@@ -70,3 +70,9 @@ pub unsafe fn kill_process_by_name(target_name: &CStr) -> Result<(), windows::co
 
     Ok(())
 }
+
+pub fn get_tmp_installer_path() -> PathBuf {
+    let mut installer_path = std::env::temp_dir();
+    installer_path.push("hachimi_installer.exe");
+    installer_path
+}

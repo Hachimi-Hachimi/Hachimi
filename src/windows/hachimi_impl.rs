@@ -24,4 +24,7 @@ pub fn on_hooking_finished(hachimi: &Hachimi) {
     if hachimi.vsync_count.load(atomic::Ordering::Relaxed) != -1 {
         QualitySettings::set_vSyncCount(1);
     }
+
+    // Clean up the update installer
+    _ = std::fs::remove_file(utils::get_tmp_installer_path());
 }

@@ -1,7 +1,7 @@
 use std::os::raw::{c_ulong, c_void};
 
 use widestring::U16CString;
-use windows::{core::PCWSTR, Win32::{Foundation::{BOOL, HINSTANCE, TRUE}, System::LibraryLoader::LoadLibraryW}};
+use windows::{core::PCWSTR, Win32::{Foundation::{BOOL, HMODULE, TRUE}, System::LibraryLoader::LoadLibraryW}};
 
 use crate::core::Hachimi;
 
@@ -29,10 +29,13 @@ pub fn load_libraries() {
     }
 }
 
+pub static mut DLL_HMODULE: HMODULE = HMODULE(0);
+
 #[no_mangle]
 #[allow(non_snake_case)]
-pub extern "C" fn DllMain(_dll_module: HINSTANCE, call_reason: c_ulong, _reserved: *mut c_void) -> BOOL {
+pub extern "C" fn DllMain(hmodule: HMODULE, call_reason: c_ulong, _reserved: *mut c_void) -> BOOL {
     if call_reason == DLL_PROCESS_ATTACH {
+        unsafe { DLL_HMODULE = hmodule; }
         if !Hachimi::init() {
             return TRUE;
         }
