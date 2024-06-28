@@ -229,7 +229,7 @@ impl Config {
     #[cfg(target_os = "windows")]
     fn default_vsync_count() -> i32 { -1 }
     #[cfg(target_os = "windows")]
-    fn default_menu_open_key() -> u16 { windows::Win32::UI::Input::KeyboardAndMouse::VK_HOME.0 }
+    fn default_menu_open_key() -> u16 { windows::Win32::UI::Input::KeyboardAndMouse::VK_RIGHT.0 }
 }
 
 impl Default for Config {

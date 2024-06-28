@@ -19,7 +19,7 @@ static mut PRESENT_ADDR: usize = 0;
 type PresentFn = extern "C" fn(this: *mut c_void, sync_interval: c_uint, flags: c_uint) -> HRESULT;
 extern "C" fn IDXGISwapChain_Present(this: *mut c_void, sync_interval: c_uint, flags: c_uint) -> HRESULT {
     let orig_fn: PresentFn = unsafe { std::mem::transmute(PRESENT_ADDR) };
-    let mut gui = Gui::instance_or_init("Home").lock().unwrap();
+    let mut gui = Gui::instance_or_init("Right arrow").lock().unwrap();
     let painter_mutex = match init_painter(this) {
         Ok(v) => v,
         Err(e) => {
