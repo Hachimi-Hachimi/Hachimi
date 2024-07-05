@@ -368,7 +368,13 @@ impl LocalizedData {
     pub fn load_asset_metadata<P: AsRef<Path>>(&self, rel_path: P) -> AssetMetadata {
         let mut path = rel_path.as_ref().to_owned();
         path.set_extension("json");
-        self.load_assets_dict(Some(path)).unwrap_or_else(|| AssetMetadataRoot::default()).get()
+        self.load_assets_dict(Some(path)).unwrap_or_else(|| AssetInfo::<()>::default()).metadata()
+    }
+
+    pub fn load_asset_info<P: AsRef<Path>, T: DeserializeOwned>(&self, rel_path: P) -> AssetInfo<T> {
+        let mut path = rel_path.as_ref().to_owned();
+        path.set_extension("json");
+        self.load_assets_dict(Some(path)).unwrap_or_else(|| AssetInfo::default())
     }
 }
 
@@ -422,24 +428,49 @@ impl Default for LocalizedDataConfig {
     }
 }
 
-#[derive(Deserialize, Default)]
-pub struct AssetMetadataRoot {
+#[derive(Deserialize)]
+pub struct AssetInfo<T> {
     #[cfg(target_os = "android")]
     #[serde(default)]
     android: AssetMetadata,
 
     #[cfg(target_os = "windows")]
     #[serde(default)]
-    windows: AssetMetadata
+    windows: AssetMetadata,
+
+    pub data: Option<T>
 }
 
-impl AssetMetadataRoot {
-    fn get(self) -> AssetMetadata {
+// Can't derive(Default), see rust-lang/rust#26925
+impl<T> Default for AssetInfo<T> {
+    fn default() -> Self {
+        Self {
+            #[cfg(target_os = "android")]
+            android: Default::default(),
+
+            #[cfg(target_os = "windows")]
+            windows: Default::default(),
+
+            data: None
+        }
+    }
+}
+
+impl<T> AssetInfo<T> {
+    pub fn metadata(self) -> AssetMetadata {
         #[cfg(target_os = "android")]
         return self.android;
 
         #[cfg(target_os = "windows")]
         return self.windows;
+    }
+
+    pub fn metadata_ref(&self) -> &AssetMetadata {
+        #[cfg(target_os = "android")]
+        return &self.android;
+
+        #[cfg(target_os = "windows")]
+        return &self.windows;
     }
 }
 

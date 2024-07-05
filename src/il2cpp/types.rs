@@ -4,6 +4,7 @@
 use std::hash::Hasher;
 
 use fnv::FnvHasher;
+use serde::Deserialize;
 use widestring::Utf16Str;
 
 #[repr(C)]
@@ -3353,7 +3354,7 @@ impl std::ops::MulAssign<f32> for Vector2Int_t {
     }
 }
 #[repr(C)]
-#[derive(Debug)]
+#[derive(Debug, Deserialize)]
 pub struct Vector3_t {
     pub x: f32,
     pub y: f32,

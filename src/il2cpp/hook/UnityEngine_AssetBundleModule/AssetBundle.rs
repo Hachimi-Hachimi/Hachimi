@@ -9,7 +9,7 @@ use crate::{core::{ext::Utf16StringExt, hachimi::AssetMetadata}, il2cpp::{
     hook::{
         umamusume::{StoryRaceTextAsset, StoryTimelineData},
         Cute_UI_Assembly::AtlasReference,
-        UnityEngine_CoreModule::Texture2D
+        UnityEngine_CoreModule::{GameObject, Texture2D}
     },
     symbols::GCHandle,
     types::*
@@ -70,7 +70,10 @@ pub fn on_LoadAsset(bundle: *mut Il2CppObject, asset: &mut *mut Il2CppObject, na
     let class = unsafe { (**asset).klass() };
     //debug!("{} {}", unsafe { std::ffi::CStr::from_ptr((*class).name).to_str().unwrap() }, unsafe { (*name).to_utf16str() });
 
-    let handler: OnLoadAssetFn = if class == StoryTimelineData::class() {
+    let handler: OnLoadAssetFn = if class == GameObject::class() {
+        GameObject::on_LoadAsset
+    }
+    else if class == StoryTimelineData::class() {
         StoryTimelineData::on_LoadAsset
     }
     else if class == Texture2D::class() {

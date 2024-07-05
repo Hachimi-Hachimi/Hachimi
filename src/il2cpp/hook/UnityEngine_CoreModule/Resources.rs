@@ -1,18 +1,12 @@
-use crate::il2cpp::{hook::Plugins::AnimateToUnity::AnMeshInfoParameterGroup, symbols::{create_delegate, get_method_addr}, types::*};
+use crate::il2cpp::{symbols::{create_delegate, get_method_addr}, types::*};
 
-use super::{AsyncOperation, Object};
+use super::AsyncOperation;
 
 type UnloadUnusedAssetsFn = extern "C" fn() -> *mut Il2CppObject;
 extern "C" fn UnloadUnusedAssets() -> *mut Il2CppObject {
     let res = get_orig_fn!(UnloadUnusedAssets, UnloadUnusedAssetsFn)();
     let delegate = create_delegate(unsafe { AsyncOperation::ACTION_ASYNCOPERATION_CLASS }, 1, || {
-        AnMeshInfoParameterGroup::PROCESSED_TEXTURES.lock().unwrap().retain(|_texture, gc_handle| {
-            let obj = gc_handle.target();
-            if obj.is_null() {
-                return false;
-            }
-            Object::IsNativeObjectAlive(obj)
-        });
+        // Do something here...
     }).unwrap();
     AsyncOperation::add_completed(res, delegate);
 

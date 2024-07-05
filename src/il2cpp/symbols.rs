@@ -189,8 +189,8 @@ pub fn get_field_object_value<T>(obj: *mut Il2CppObject, field: *mut FieldInfo) 
     value
 }
 
-pub fn set_field_value<T>(obj: *mut Il2CppObject, field: *mut FieldInfo, value: T) {
-    il2cpp_field_set_value(obj, field, unsafe { std::mem::transmute(&value) });
+pub fn set_field_value<T>(obj: *mut Il2CppObject, field: *mut FieldInfo, value: &T) {
+    il2cpp_field_set_value(obj, field, unsafe { std::mem::transmute(value) });
 }
 
 pub fn set_field_object_value<T>(obj: *mut Il2CppObject, field: *mut FieldInfo, value: *const T) {
