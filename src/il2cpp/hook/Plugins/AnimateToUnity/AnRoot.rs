@@ -59,7 +59,7 @@ struct AnTextParameterData {
 	base: AnObjectParameterBaseData
 }
 
-pub fn on_LoadAsset(bundle: *mut Il2CppObject, asset: &mut *mut Il2CppObject, name: &Utf16Str) {
+pub fn on_LoadAsset(bundle: *mut Il2CppObject, this: *mut Il2CppObject, name: &Utf16Str) {
 	if !name.starts_with(AssetBundle::ASSET_PATH_PREFIX) {
         debug!("non-resource anroot: {}", name);
         return;
@@ -75,8 +75,6 @@ pub fn on_LoadAsset(bundle: *mut Il2CppObject, asset: &mut *mut Il2CppObject, na
     if !AssetBundle::check_asset_bundle_name(bundle, asset_info.metadata_ref()) {
         return;
     }
-
-	let this = *asset;
 
 	/*** Texture set replacement ***/
 	let param_group = get__meshParameterGroup(this);

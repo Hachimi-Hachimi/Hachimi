@@ -72,7 +72,7 @@ struct TextBlockDict {
 // - assets/_gallopresources/bundle/resources/home/data/xxxxx/yy/hometimeline_xxxxx_yy_zzzzzzz.asset
 // - assets/_gallopresources/bundle/resources/story/data/xx/yyyy/storytimeline_xxyyyyzzz.asset
 // TODO: Implement clip length adjustment
-pub fn on_LoadAsset(_bundle: *mut Il2CppObject, asset: &mut *mut Il2CppObject, name: &Utf16Str) {
+pub fn on_LoadAsset(_bundle: *mut Il2CppObject, this: *mut Il2CppObject, name: &Utf16Str) {
     if !name.starts_with(ASSET_PATH_PREFIX) {
         // ???
         return;
@@ -96,7 +96,6 @@ pub fn on_LoadAsset(_bundle: *mut Il2CppObject, asset: &mut *mut Il2CppObject, n
     */
     let is_main_story = base_path.starts_with("story/data/02");
 
-    let this = *asset;
     if let Some(title) = &dict.title {
         set_Title(this, title.to_il2cpp_string());
     }

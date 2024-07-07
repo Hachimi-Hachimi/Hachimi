@@ -74,23 +74,20 @@ pub fn load_image_file<P: AsRef<Path>>(this: *mut Il2CppObject, path: P, mark_no
 }
 
 // hook::UnityEngine_AssetBundleModule::AssetBundle
-pub fn on_LoadAsset(_bundle: *mut Il2CppObject, asset: &mut *mut Il2CppObject, name: &Utf16Str) {
+pub fn on_LoadAsset(_bundle: *mut Il2CppObject, this: *mut Il2CppObject, name: &Utf16Str) {
     if !name.starts_with(ASSET_PATH_PREFIX) {
         debug!("non-resource texture: {}", name);
         return;
     }
 
     let orig_path = &name[ASSET_PATH_PREFIX.len()..];
-    let rel_replace_path = "textures/".to_owned() + &orig_path.to_string();
+    let rel_replace_path = Path::new("textures").join(orig_path.to_string());
     let localized_data = Hachimi::instance().localized_data.load();
     let Some(replace_path) = localized_data.get_assets_path(&rel_replace_path) else {
         return;
     };
 
-    // TODO: match params with texture's settings
-    if let Some(texture) = from_image_file(&replace_path, true, false) {
-        *asset = texture;
-    }
+    load_image_file(this, &replace_path, true);
 }
 
 pub fn init(UnityEngine_CoreModule: *const Il2CppImage) {

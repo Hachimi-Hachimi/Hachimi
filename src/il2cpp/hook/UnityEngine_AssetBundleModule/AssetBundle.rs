@@ -49,8 +49,8 @@ pub fn check_asset_bundle_name(this: *mut Il2CppObject, metadata: &AssetMetadata
 
 type LoadAssetFn = extern "C" fn(this: *mut Il2CppObject, name: *mut Il2CppString, type_: *mut Il2CppReflectionType) -> *mut Il2CppObject;
 extern "C" fn LoadAsset_Internal(this: *mut Il2CppObject, name: *mut Il2CppString, type_: *mut Il2CppReflectionType) -> *mut Il2CppObject {
-    let mut asset = get_orig_fn!(LoadAsset_Internal, LoadAssetFn)(this, name, type_);
-    on_LoadAsset(this, &mut asset, name);
+    let asset = get_orig_fn!(LoadAsset_Internal, LoadAssetFn)(this, name, type_);
+    on_LoadAsset(this, asset, name);
     asset
 }
 
@@ -65,9 +65,9 @@ extern "C" fn LoadAssetAsync_Internal(this: *mut Il2CppObject, name: *mut Il2Cpp
     request
 }
 
-type OnLoadAssetFn = fn(bundle: *mut Il2CppObject, asset: &mut *mut Il2CppObject, name: &Utf16Str);
-pub fn on_LoadAsset(bundle: *mut Il2CppObject, asset: &mut *mut Il2CppObject, name: *mut Il2CppString) {
-    let class = unsafe { (**asset).klass() };
+type OnLoadAssetFn = fn(bundle: *mut Il2CppObject, asset: *mut Il2CppObject, name: &Utf16Str);
+pub fn on_LoadAsset(bundle: *mut Il2CppObject, asset: *mut Il2CppObject, name: *mut Il2CppString) {
+    let class = unsafe { (*asset).klass() };
     //debug!("{} {}", unsafe { std::ffi::CStr::from_ptr((*class).name).to_str().unwrap() }, unsafe { (*name).to_utf16str() });
 
     let handler: OnLoadAssetFn = if class == GameObject::class() {

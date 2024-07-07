@@ -22,7 +22,7 @@ fn get_sprites(this: *mut Il2CppObject) -> *mut Il2CppObject {
 
 // hook::UnityEngine_AssetBundleModule::AssetBundle
 // name: assets/_gallopresources/bundle/resources/atlas/**.asset
-pub fn on_LoadAsset(bundle: *mut Il2CppObject, asset: &mut *mut Il2CppObject, name: &Utf16Str) {
+pub fn on_LoadAsset(bundle: *mut Il2CppObject, this: *mut Il2CppObject, name: &Utf16Str) {
     if !name.starts_with(AssetBundle::ASSET_PATH_PREFIX) {
         debug!("non-resource atlas: {}", name);
         return;
@@ -43,7 +43,6 @@ pub fn on_LoadAsset(bundle: *mut Il2CppObject, asset: &mut *mut Il2CppObject, na
         return;
     }
 
-    let this = *asset;
     let Some(mut enumerable) = IEnumerable::<*mut Il2CppObject>::new(get_sprites(this)) else {
         return;
     };

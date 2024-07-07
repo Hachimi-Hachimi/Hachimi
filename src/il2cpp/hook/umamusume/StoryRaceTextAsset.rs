@@ -34,7 +34,7 @@ fn Key_set_text(key: *mut Il2CppObject, value: *mut Il2CppString) {
 
 // hook::UnityEngine_AssetBundleModule::AssetBundle
 // name: assets/_gallopresources/bundle/resources/race/storyrace/text/storyrace_xxxxxxxxx.asset
-pub fn on_LoadAsset(_bundle: *mut Il2CppObject, asset: &mut *mut Il2CppObject, name: &Utf16Str) {
+pub fn on_LoadAsset(_bundle: *mut Il2CppObject, this: *mut Il2CppObject, name: &Utf16Str) {
     if !name.starts_with(ASSET_PATH_PREFIX) {
         // ???
         return;
@@ -47,7 +47,7 @@ pub fn on_LoadAsset(_bundle: *mut Il2CppObject, asset: &mut *mut Il2CppObject, n
         return;
     };
 
-    let Some(enumerable) = IEnumerable::new(get_textData(*asset)) else {
+    let Some(enumerable) = IEnumerable::new(get_textData(this)) else {
         return;
     };
 

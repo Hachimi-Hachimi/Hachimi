@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use fnv::FnvHashMap;
 
 use crate::{
@@ -13,7 +15,8 @@ extern "C" fn LoadCSV(path: *mut Il2CppString) -> *mut Il2CppObject {
     // ArrayList<ArrayList<String>>
     let array_list_obj = get_orig_fn!(LoadCSV, LoadCSVFn)(path);
 
-    let dict_path = "lyrics/".to_owned() + &path_str.path_filename().to_string() + ".json";
+    let mut dict_path = Path::new("lyrics").join(path_str.path_filename().to_string());
+    dict_path.set_extension("json");
     let localized_data = Hachimi::instance().localized_data.load();
     let Some(dict): Option<FnvHashMap<String, String>> = localized_data.load_assets_dict(Some(&dict_path)) else {
         return array_list_obj;

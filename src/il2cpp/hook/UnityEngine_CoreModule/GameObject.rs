@@ -16,12 +16,11 @@ impl_addr_wrapper_fn!(
 
 // hook::UnityEngine_AssetBundleModule::AssetBundle
 // Generic GameObject handler for prefabs. Currently only used for ui flash (through AnRoot)
-pub fn on_LoadAsset(bundle: *mut Il2CppObject, asset: &mut *mut Il2CppObject, name: &Utf16Str) {
-    let this = *asset;
+pub fn on_LoadAsset(bundle: *mut Il2CppObject, this: *mut Il2CppObject, name: &Utf16Str) {
     if name.path_filename().starts_with("pf_fl_") {
-        let mut root = GetComponentInChildren(this, AnRoot::type_object(), false);
+        let root = GetComponentInChildren(this, AnRoot::type_object(), false);
         if !root.is_null() {
-            AnRoot::on_LoadAsset(bundle, &mut root, name);
+            AnRoot::on_LoadAsset(bundle, root, name);
         }
     }
 }
