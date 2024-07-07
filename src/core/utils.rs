@@ -81,6 +81,9 @@ fn custom_word_separator(line: &str) -> Box<dyn Iterator<Item = Word<'_>> + '_> 
                         if i == tag_start + 1 {
                             in_closing_tag = true;
                         }
+                        else if expecting_tag_name {
+                            in_tag = false;
+                        }
                     }
                     _ => {
                         if expecting_tag_name && !char::from(c).is_ascii_alphabetic() {
