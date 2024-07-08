@@ -1,6 +1,7 @@
-use std::path::Path;
+use std::{path::Path, sync::Mutex};
 
 use fnv::FnvHashMap;
+use once_cell::sync::Lazy;
 use serde::Deserialize;
 use widestring::Utf16Str;
 
@@ -9,7 +10,7 @@ use crate::{
 	il2cpp::{
 		api::{il2cpp_class_get_type, il2cpp_type_get_object},
 		hook::{UnityEngine_AssetBundleModule::AssetBundle, UnityEngine_CoreModule::{Object, Texture2D}},
-		symbols::{get_field_from_name, get_field_object_value, IList},
+		symbols::{get_field_from_name, get_field_object_value, GCHandle, IList},
 		types::*
 	}
 };
@@ -57,6 +58,11 @@ struct AnTextParameterData {
 
 	#[serde(flatten)]
 	base: AnObjectParameterBaseData
+}
+
+pub static OVERRIDDEN_TEXT_PARAMS: Lazy<Mutex<FnvHashMap<usize, GCHandle>>> = Lazy::new(|| Mutex::default());
+pub fn is_text_param_overridden(text_param: *mut Il2CppObject) -> bool {
+    OVERRIDDEN_TEXT_PARAMS.lock().unwrap().contains_key(&(text_param as usize))
 }
 
 pub fn on_LoadAsset(bundle: *mut Il2CppObject, this: *mut Il2CppObject, name: &Utf16Str) {
@@ -126,6 +132,7 @@ pub fn on_LoadAsset(bundle: *mut Il2CppObject, this: *mut Il2CppObject, name: &U
 			}
 
 			let Some(motion_param) = motion_param_list.get(*i) else {
+				warn!("motion param {} out of range", *i);
 				continue;
 			};
 
@@ -135,11 +142,13 @@ pub fn on_LoadAsset(bundle: *mut Il2CppObject, this: *mut Il2CppObject, name: &U
 			
 			for (j, text_param_data) in motion_param_data.text_param_list.iter() {
 				let Some(text_param) = text_param_list.get(*j) else {
+					warn!("text param {} of motion param {} out of range", *j, *i);
 					continue;
 				};
 
 				if let Some(text) = &text_param_data.text {
 					AnTextParameter::set__text(text_param, text.to_il2cpp_string());
+					OVERRIDDEN_TEXT_PARAMS.lock().unwrap().insert(text_param as usize, GCHandle::new_weak_ref(this, false));
 				}
 
 				if let Some(position_offset) = &text_param_data.base.position_offset {

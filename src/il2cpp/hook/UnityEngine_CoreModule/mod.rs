@@ -1,12 +1,12 @@
 pub mod Texture2D;
-//mod Resources;
+mod Resources;
 pub mod Sprite;
 pub mod Object;
 pub mod Application;
 pub mod Material;
 #[cfg(target_os = "windows")]
 pub mod QualitySettings;
-//mod AsyncOperation;
+mod AsyncOperation;
 pub mod GameObject;
 
 pub const HideFlags_DontUnloadUnusedAsset: i32 = 32;
@@ -17,13 +17,13 @@ pub fn init() {
     get_assembly_image_or_return!(image, "UnityEngine.CoreModule.dll");
 
     Texture2D::init(image);
-    //Resources::init(image);
+    Resources::init(image);
     Sprite::init(image);
     Object::init(image);
     Application::init(image);
     Material::init(image);
     #[cfg(target_os = "windows")]
     QualitySettings::init(image);
-    //AsyncOperation::init(image);
+    AsyncOperation::init(image);
     GameObject::init(image);
 }
