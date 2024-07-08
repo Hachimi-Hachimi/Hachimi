@@ -110,20 +110,12 @@ fn custom_word_separator(line: &str) -> Box<dyn Iterator<Item = Word<'_>> + '_> 
         Some((&line[start..i], true))
     });
 
-    let Some((first_section, first_needs_break)) = split_iter.next() else {
-        return Box::new(std::iter::empty());
-    };
-
-    let mut unicode_break_iter: Option<Box<dyn Iterator<Item = Word<'_>> + '_>> = first_needs_break.then(||
-        UnicodeBreakProperties.find_words(first_section)
-    );
+    let mut unicode_break_iter: Box<dyn Iterator<Item = Word<'_>> + '_> = Box::new(std::iter::empty());
     Box::new(std::iter::from_fn(move || {
         // Continue breaking current split
-        if let Some(iter) = &mut unicode_break_iter {
-            let break_res = iter.next();
-            if break_res.is_some() {
-                return break_res;
-            }
+        let break_res = unicode_break_iter.next();
+        if break_res.is_some() {
+            return break_res;
         }
 
         // Advance to next (non-empty) split
@@ -133,12 +125,12 @@ fn custom_word_separator(line: &str) -> Box<dyn Iterator<Item = Word<'_>> + '_> 
                     let mut iter = UnicodeBreakProperties.find_words(next_section);
                     let break_res = iter.next();
                     if break_res.is_some() {
-                        unicode_break_iter = Some(iter);
+                        unicode_break_iter = iter;
                         return break_res;
                     }
                 }
                 else {
-                    unicode_break_iter = None;
+                    unicode_break_iter = Box::new(std::iter::empty());
                     return Some(Word::from(next_section));
                 }
             }
