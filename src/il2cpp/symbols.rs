@@ -224,7 +224,7 @@ pub unsafe fn unbox<T: Copy>(obj: *mut Il2CppObject) -> T {
 
 // IEnumerable wrapper
 // (for use with arrays only)
-pub struct IEnumerable<T> {
+pub struct IEnumerable<T = *mut Il2CppObject> {
     pub this: *mut Il2CppObject,
     pub enumerator: IEnumerator<T>
 }
@@ -257,7 +257,7 @@ impl<T> IEnumerable<T> {
 
 // IEnumerator wrapper
 #[allow(non_snake_case)]
-pub struct IEnumerator<T> {
+pub struct IEnumerator<T = *mut Il2CppObject> {
     pub this: *mut Il2CppObject,
     get_Current: fn(*mut Il2CppObject) -> T,
     MoveNext: fn(*mut Il2CppObject) -> bool
@@ -301,7 +301,7 @@ impl<T> Iterator for IEnumerator<T> {
 // IList wrapper
 // (because using IEnumerator on List`1[T] causes UB for some reason)
 #[allow(non_snake_case)]
-pub struct IList<T> {
+pub struct IList<T = *mut Il2CppObject> {
     pub this: *mut Il2CppObject,
     get_Item: fn(*mut Il2CppObject, i32) -> T,
     set_Item: fn(*mut Il2CppObject, i32, T),

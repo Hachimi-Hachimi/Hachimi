@@ -100,7 +100,7 @@ pub fn on_LoadAsset(_bundle: *mut Il2CppObject, this: *mut Il2CppObject, name: &
         set_Title(this, title.to_il2cpp_string());
     }
 
-    let Some(block_list) = IList::<*mut Il2CppObject>::new(get_BlockList(this)) else {
+    let Some(block_list) = IList::new(get_BlockList(this)) else {
         return;
     };
 
@@ -120,7 +120,7 @@ pub fn on_LoadAsset(_bundle: *mut Il2CppObject, this: *mut Il2CppObject, name: &
         }
 
         let clip_list_obj = StoryTimelineTrackData::get_ClipList(text_track);
-        let Some(clip_list) = IList::<*mut Il2CppObject>::new(clip_list_obj) else {
+        let Some(clip_list) = <IList>::new(clip_list_obj) else {
             continue;
         };
         for clip_data in clip_list.iter() {

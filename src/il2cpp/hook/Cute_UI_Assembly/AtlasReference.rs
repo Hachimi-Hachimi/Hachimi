@@ -43,7 +43,7 @@ pub fn on_LoadAsset(bundle: *mut Il2CppObject, this: *mut Il2CppObject, name: &U
         return;
     }
 
-    let Some(mut enumerable) = IEnumerable::<*mut Il2CppObject>::new(get_sprites(this)) else {
+    let Some(mut enumerable) = <IEnumerable>::new(get_sprites(this)) else {
         return;
     };
     // All of the sprites in the atlas uses the same texture so we just need to replace one of them
