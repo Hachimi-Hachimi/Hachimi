@@ -175,7 +175,7 @@ fn custom_wrap_algorithm<'a, 'b>(words: &'b [Word<'a>], line_widths: &'b [usize]
     // Create results with formatting tags added back
     // Note: The break word option doesn't really affect the extra long lines since
     // the individual tags are separate words (it breaks words, not lines, duh)
-    let mut lines = Vec::new();
+    let mut lines = Vec::with_capacity(wrapped.len());
     let mut start = 0;
     let mut clean_start = 0;
     let mut removed_indices_i = 0;
