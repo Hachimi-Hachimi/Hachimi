@@ -8,8 +8,8 @@ use super::hook;
 #[allow(non_camel_case_types)]
 type JniOnLoadFn = extern "C" fn(vm: JavaVM, reserved: *mut c_void) -> jint;
 
-const LIBRARY_NAME: &CStr = cstr!("libmain_orig.so");
-const JNI_ONLOAD_NAME: &CStr = cstr!("JNI_OnLoad");
+const LIBRARY_NAME: &CStr = c"libmain_orig.so";
+const JNI_ONLOAD_NAME: &CStr = c"JNI_OnLoad";
 
 #[allow(non_snake_case)]
 #[no_mangle]

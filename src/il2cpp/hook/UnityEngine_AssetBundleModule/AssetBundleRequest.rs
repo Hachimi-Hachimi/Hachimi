@@ -21,7 +21,7 @@ extern "C" fn GetResult(this: *mut Il2CppObject) -> *mut Il2CppObject {
 pub fn init(UnityEngine_AssetBundleModule: *const Il2CppImage) {
     get_class_or_return!(UnityEngine_AssetBundleModule, UnityEngine, AssetBundleRequest);
 
-    let GetResult_addr = get_method_addr(AssetBundleRequest, cstr!("GetResult"), 0);
+    let GetResult_addr = get_method_addr(AssetBundleRequest, c"GetResult", 0);
 
     new_hook!(GetResult_addr, GetResult);
 }

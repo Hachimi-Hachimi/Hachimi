@@ -111,16 +111,16 @@ pub fn init(_UnityEngine_AssetBundleModule: *const Il2CppImage) {
     //get_class_or_return!(UnityEngine_AssetBundleModule, UnityEngine, AssetBundle);
 
     let LoadAsset_Internal_addr = il2cpp_resolve_icall(
-        cstr!("UnityEngine.AssetBundle::LoadAsset_Internal(System.String,System.Type)").as_ptr()
+        c"UnityEngine.AssetBundle::LoadAsset_Internal(System.String,System.Type)".as_ptr()
     );
     let LoadAssetAsync_Internal_addr = il2cpp_resolve_icall(
-        cstr!("UnityEngine.AssetBundle::LoadAssetAsync_Internal(System.String,System.Type)").as_ptr()
+        c"UnityEngine.AssetBundle::LoadAssetAsync_Internal(System.String,System.Type)".as_ptr()
     );
     let LoadFromFile_Internal_addr = il2cpp_resolve_icall(
-        cstr!("UnityEngine.AssetBundle::LoadFromFile_Internal(System.String,System.UInt32,System.UInt64)").as_ptr()
+        c"UnityEngine.AssetBundle::LoadFromFile_Internal(System.String,System.UInt32,System.UInt64)".as_ptr()
     );
     let Unload_addr = il2cpp_resolve_icall(
-        cstr!("UnityEngine.AssetBundle::Unload(System.Boolean)").as_ptr()
+        c"UnityEngine.AssetBundle::Unload(System.Boolean)".as_ptr()
     );
 
     new_hook!(LoadAsset_Internal_addr, LoadAsset_Internal);

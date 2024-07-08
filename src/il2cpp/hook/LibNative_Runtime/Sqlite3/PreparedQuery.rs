@@ -18,7 +18,7 @@ extern "C" fn BindInt(this: *mut Il2CppObject, idx: i32, value: i32) -> bool {
 pub fn init(LibNative_Runtime: *const Il2CppImage) {
     get_class_or_return!(LibNative_Runtime, "LibNative.Sqlite3", PreparedQuery);
 
-    let BindInt_addr = get_method_addr(PreparedQuery, cstr!("BindInt"), 2);
+    let BindInt_addr = get_method_addr(PreparedQuery, c"BindInt", 2);
 
     new_hook!(BindInt_addr, BindInt);
 }

@@ -16,9 +16,9 @@ pub fn init(UnityEngine_CoreModule: *const Il2CppImage) {
     get_class_or_return!(UnityEngine_CoreModule, UnityEngine, Object);
 
     unsafe {
-        DESTROY_ADDR = get_method_addr(Object, cstr!("Destroy"), 1);
-        SET_HIDEFLAGS_ADDR = get_method_addr(Object, cstr!("set_hideFlags"), 1);
-        ISNATIVEOBJECTALIVE_ADDR = get_method_addr(Object, cstr!("IsNativeObjectAlive"), 1);
-        GET_NAME_ADDR = get_method_addr(Object, cstr!("get_name"), 0);
+        DESTROY_ADDR = get_method_addr(Object, c"Destroy", 1);
+        SET_HIDEFLAGS_ADDR = get_method_addr(Object, c"set_hideFlags", 1);
+        ISNATIVEOBJECTALIVE_ADDR = get_method_addr(Object, c"IsNativeObjectAlive", 1);
+        GET_NAME_ADDR = get_method_addr(Object, c"get_name", 0);
     }
 }

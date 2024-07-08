@@ -26,7 +26,7 @@ static mut KEY_TEXT_FIELD: *mut FieldInfo = null_mut();
 fn Key_set_text(key: *mut Il2CppObject, value: *mut Il2CppString) {
     unsafe {
         if KEY_TEXT_FIELD.is_null() {
-            KEY_TEXT_FIELD = get_field_from_name((*key).klass(), cstr!("text"));
+            KEY_TEXT_FIELD = get_field_from_name((*key).klass(), c"text");
         }
         set_field_object_value(key, KEY_TEXT_FIELD, value);
     }
@@ -63,6 +63,6 @@ pub fn init(umamusume: *const Il2CppImage) {
 
     unsafe {
         CLASS = StoryRaceTextAsset;
-        TEXT_DATA_FIELD = get_field_from_name(StoryRaceTextAsset, cstr!("textData"))
+        TEXT_DATA_FIELD = get_field_from_name(StoryRaceTextAsset, c"textData")
     }
 }

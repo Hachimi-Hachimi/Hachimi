@@ -110,15 +110,15 @@ pub fn GetInt(this: *mut Il2CppObject, index: i32) -> i32 {
 pub fn init(LibNative_Runtime: *const Il2CppImage) {
     get_class_or_return!(LibNative_Runtime, "LibNative.Sqlite3", Query);
 
-    let _Setup_addr = get_method_addr(Query, cstr!("_Setup"), 2);
-    let GetText_addr = get_method_addr(Query, cstr!("GetText"), 1);
-    let Dispose_addr = get_method_addr(Query, cstr!("Dispose"), 0);
+    let _Setup_addr = get_method_addr(Query, c"_Setup", 2);
+    let GetText_addr = get_method_addr(Query, c"GetText", 1);
+    let Dispose_addr = get_method_addr(Query, c"Dispose", 0);
 
     new_hook!(_Setup_addr, _Setup);
     new_hook!(GetText_addr, GetText);
     new_hook!(Dispose_addr, Dispose);
 
     unsafe {
-        GETINT_ADDR = get_method_addr(Query, cstr!("GetInt"), 1);
+        GETINT_ADDR = get_method_addr(Query, c"GetInt", 1);
     }
 }

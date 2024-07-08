@@ -10,7 +10,7 @@ extern "C" fn UpdateSkillName(this: *mut Il2CppObject) {
 pub fn init(umamusume: *const Il2CppImage) {
     get_class_or_return!(umamusume, Gallop, PartsSingleModeSkillLearningListItem);
 
-    let UpdateSkillName_addr = get_method_addr(PartsSingleModeSkillLearningListItem, cstr!("UpdateSkillName"), 0);
+    let UpdateSkillName_addr = get_method_addr(PartsSingleModeSkillLearningListItem, c"UpdateSkillName", 0);
 
     new_hook!(UpdateSkillName_addr, UpdateSkillName);
 }

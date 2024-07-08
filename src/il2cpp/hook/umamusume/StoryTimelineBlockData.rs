@@ -12,6 +12,6 @@ pub fn init(umamusume: *const Il2CppImage) {
     get_class_or_return!(umamusume, Gallop, StoryTimelineBlockData);
 
     unsafe {
-        TEXTTRACK_FIELD = get_field_from_name(StoryTimelineBlockData, cstr!("TextTrack"));
+        TEXTTRACK_FIELD = get_field_from_name(StoryTimelineBlockData, c"TextTrack");
     }
 }

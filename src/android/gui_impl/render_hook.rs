@@ -125,13 +125,13 @@ fn init_gl() -> glow::Context {
 
 fn init_internal() -> Result<(), Error> {
     info!("Hooking eglSwapBuffers");
-    let egl_handle = unsafe { libc::dlopen(cstr!("libEGL.so").as_ptr(), libc::RTLD_LAZY) };
-    let eglSwapBuffers_addr = unsafe { libc::dlsym(egl_handle, cstr!("eglSwapBuffers").as_ptr()) };
+    let egl_handle = unsafe { libc::dlopen(c"libEGL.so".as_ptr(), libc::RTLD_LAZY) };
+    let eglSwapBuffers_addr = unsafe { libc::dlsym(egl_handle, c"eglSwapBuffers".as_ptr()) };
 
     unsafe {
         EGLSWAPBUFFERS_ADDR = Hachimi::instance().interceptor.hook(eglSwapBuffers_addr as usize, eglSwapBuffers as usize)?;
-        EGLGETPROCADDRESS_ADDR = libc::dlsym(egl_handle, cstr!("eglGetProcAddress").as_ptr()) as usize;
-        EGLQUERYSURFACE_ADDR = libc::dlsym(egl_handle, cstr!("eglQuerySurface").as_ptr()) as usize
+        EGLGETPROCADDRESS_ADDR = libc::dlsym(egl_handle, c"eglGetProcAddress".as_ptr()) as usize;
+        EGLQUERYSURFACE_ADDR = libc::dlsym(egl_handle, c"eglQuerySurface".as_ptr()) as usize
     }
 
     Ok(())

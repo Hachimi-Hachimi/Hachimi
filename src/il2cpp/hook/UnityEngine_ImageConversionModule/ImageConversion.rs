@@ -7,6 +7,6 @@ pub fn init(UnityEngine_ImageConversionModule: *const Il2CppImage) {
     get_class_or_return!(UnityEngine_ImageConversionModule, UnityEngine, ImageConversion);
 
     unsafe {
-        LOADIMAGE_ADDR = get_method_addr(ImageConversion, cstr!("LoadImage"), 3);
+        LOADIMAGE_ADDR = get_method_addr(ImageConversion, c"LoadImage", 3);
     }
 }

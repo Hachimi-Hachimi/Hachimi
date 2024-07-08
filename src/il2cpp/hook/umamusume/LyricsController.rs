@@ -45,7 +45,7 @@ extern "C" fn LoadCSV(path: *mut Il2CppString) -> *mut Il2CppObject {
 pub fn init(umamusume: *const Il2CppImage) {
     get_class_or_return!(umamusume, "Gallop.Live", LyricsController);
 
-    let LoadCSV_addr = get_method_addr(LyricsController, cstr!("LoadCSV"), 1);
+    let LoadCSV_addr = get_method_addr(LyricsController, c"LoadCSV", 1);
 
     new_hook!(LoadCSV_addr, LoadCSV);
 }

@@ -168,7 +168,7 @@ pub fn init(Plugins: *const Il2CppImage) {
 
     unsafe {
         TYPE_OBJECT = il2cpp_type_get_object(il2cpp_class_get_type(AnRoot));
-		_PARAMETER_FIELD = get_field_from_name(AnRoot, cstr!("_parameter"));
-		_MESHPARAMETERGROUP_FIELD = get_field_from_name(AnRoot, cstr!("_meshParameterGroup"));
+		_PARAMETER_FIELD = get_field_from_name(AnRoot, c"_parameter");
+		_MESHPARAMETERGROUP_FIELD = get_field_from_name(AnRoot, c"_meshParameterGroup");
     }
 }

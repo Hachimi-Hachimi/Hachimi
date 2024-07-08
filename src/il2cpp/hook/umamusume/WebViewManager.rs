@@ -56,12 +56,12 @@ extern "C" fn GetUrl(this: *mut Il2CppObject, url_type: i32) -> *mut Il2CppStrin
 pub fn init(umamusume: *const Il2CppImage) {
     get_class_or_return!(umamusume, Gallop, WebViewManager);
 
-    let GetUrl_addr = get_method_addr(WebViewManager, cstr!("GetUrl"), 1);
+    let GetUrl_addr = get_method_addr(WebViewManager, c"GetUrl", 1);
 
     new_hook!(GetUrl_addr, GetUrl);
 
     unsafe {
         CLASS = WebViewManager;
-        OPEN_ADDR = get_method_addr(WebViewManager, cstr!("Open"), 5);
+        OPEN_ADDR = get_method_addr(WebViewManager, c"Open", 5);
     }
 }

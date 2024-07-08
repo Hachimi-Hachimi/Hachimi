@@ -10,7 +10,7 @@ pub fn init(UnityEngine_CoreModule: *const Il2CppImage) {
     get_class_or_return!(UnityEngine_CoreModule, UnityEngine, Material);
 
     unsafe {
-        GET_MAINTEXTURE_ADDR = get_method_addr(Material, cstr!("get_mainTexture"), 0);
-        SET_MAINTEXTURE_ADDR = get_method_addr(Material, cstr!("set_mainTexture"), 1);
+        GET_MAINTEXTURE_ADDR = get_method_addr(Material, c"get_mainTexture", 0);
+        SET_MAINTEXTURE_ADDR = get_method_addr(Material, c"set_mainTexture", 1);
     }
 }

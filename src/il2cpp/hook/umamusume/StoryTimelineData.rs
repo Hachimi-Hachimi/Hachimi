@@ -208,7 +208,7 @@ pub fn init(umamusume: *const Il2CppImage) {
 
     unsafe {
         CLASS = StoryTimelineData;
-        TITLE_FIELD = get_field_from_name(StoryTimelineData, cstr!("Title"));
-        BLOCKLIST_FIELD = get_field_from_name(StoryTimelineData, cstr!("BlockList"));
+        TITLE_FIELD = get_field_from_name(StoryTimelineData, c"Title");
+        BLOCKLIST_FIELD = get_field_from_name(StoryTimelineData, c"BlockList");
     }
 }

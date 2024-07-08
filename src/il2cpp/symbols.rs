@@ -236,7 +236,7 @@ impl<T> IEnumerable<T> {
         }
 
         let class = unsafe { (*this).klass() };
-        let get_enumerator_addr = get_method_addr_cached(class, cstr!("GetEnumerator"), 0);
+        let get_enumerator_addr = get_method_addr_cached(class, c"GetEnumerator", 0);
         if get_enumerator_addr == 0 {
             return None;
         }
@@ -270,8 +270,8 @@ impl<T> IEnumerator<T> {
         }
 
         let class = unsafe { (*this).klass() };
-        let get_current_addr = get_method_addr_cached(class, cstr!("get_Current"), 0);
-        let move_next_addr = get_method_addr_cached(class, cstr!("MoveNext"), 0);
+        let get_current_addr = get_method_addr_cached(class, c"get_Current", 0);
+        let move_next_addr = get_method_addr_cached(class, c"MoveNext", 0);
 
         if get_current_addr == 0 || move_next_addr == 0 {
             return None;
@@ -315,9 +315,9 @@ impl<T> IList<T> {
         }
 
         let class = unsafe { (*this).klass() };
-        let get_item_addr = get_method_addr_cached(class, cstr!("get_Item"), 1);
-        let set_item_addr = get_method_addr_cached(class, cstr!("set_Item"), 2);
-        let get_count_addr = get_method_addr_cached(class, cstr!("get_Count"), 0);
+        let get_item_addr = get_method_addr_cached(class, c"get_Item", 1);
+        let set_item_addr = get_method_addr_cached(class, c"set_Item", 2);
+        let get_count_addr = get_method_addr_cached(class, c"get_Count", 0);
 
         if get_item_addr == 0 || set_item_addr == 0 || get_count_addr == 0 {
             return None;
@@ -400,9 +400,9 @@ impl<K, V> IDictionary<K, V> {
         }
 
         let class = unsafe { (*this).klass() };
-        let get_item_addr = get_method_addr_cached(class, cstr!("get_Item"), 1);
-        let set_item_addr = get_method_addr_cached(class, cstr!("set_Item"), 2);
-        let contains_addr = get_method_addr_cached(class, cstr!("Contains"), 1);
+        let get_item_addr = get_method_addr_cached(class, c"get_Item", 1);
+        let set_item_addr = get_method_addr_cached(class, c"set_Item", 2);
+        let contains_addr = get_method_addr_cached(class, c"Contains", 1);
 
         if get_item_addr == 0 || set_item_addr == 0 || contains_addr == 0 {
             return None;
@@ -437,7 +437,7 @@ pub struct Thread(*mut Il2CppThread);
 impl Thread {
     fn sync_ctx(&self) -> *mut Il2CppObject {
         let class = unsafe { (*self.0).obj.klass() };
-        let get_exec_ctx_addr = get_method_addr_cached(class, cstr!("GetMutableExecutionContext"), 0);
+        let get_exec_ctx_addr = get_method_addr_cached(class, c"GetMutableExecutionContext", 0);
         if get_exec_ctx_addr == 0 {
             return null_mut();
         }
@@ -448,7 +448,7 @@ impl Thread {
         let exec_ctx = get_exec_ctx(self.0 as *mut Il2CppObject);
         let exec_ctx_class = unsafe { (*exec_ctx).klass() };
 
-        let sync_ctx_field = il2cpp_class_get_field_from_name(exec_ctx_class, cstr!("_syncContext").as_ptr());
+        let sync_ctx_field = il2cpp_class_get_field_from_name(exec_ctx_class, c"_syncContext".as_ptr());
         if sync_ctx_field.is_null() {
             return null_mut();
         }
@@ -465,11 +465,11 @@ impl Thread {
         let sync_ctx_class = unsafe { (*sync_ctx).klass() };
 
         let sync_ctx_post: fn(*mut Il2CppObject, *mut Il2CppDelegate, *mut Il2CppObject) = unsafe {
-            std::mem::transmute(get_method_addr_cached(sync_ctx_class, cstr!("Post"), 2))
+            std::mem::transmute(get_method_addr_cached(sync_ctx_class, c"Post", 2))
         };
 
-        let mscorlib = get_assembly_image(cstr!("mscorlib.dll")).expect("mscorlib");
-        let delegate_class = get_class(mscorlib, cstr!("System.Threading"), cstr!("SendOrPostCallback")).expect("SendOrPostCallback");
+        let mscorlib = get_assembly_image(c"mscorlib.dll").expect("mscorlib");
+        let delegate_class = get_class(mscorlib, c"System.Threading", c"SendOrPostCallback").expect("SendOrPostCallback");
         let delegate = create_delegate(delegate_class, 1, callback).unwrap();
 
         sync_ctx_post(sync_ctx, delegate, null_mut());
@@ -488,9 +488,9 @@ impl Thread {
 
 // Delegate creation
 pub fn create_delegate(delegate_class: *mut Il2CppClass, args_count: i32, method_ptr: fn()) -> Option<*mut Il2CppDelegate> {
-    let delegate_invoke = get_method_cached(delegate_class, cstr!("Invoke"), args_count).ok()?;
+    let delegate_invoke = get_method_cached(delegate_class, c"Invoke", args_count).ok()?;
     
-    let delegate_ctor_addr = get_method_addr_cached(delegate_class, cstr!(".ctor"), 2);
+    let delegate_ctor_addr = get_method_addr_cached(delegate_class, c".ctor", 2);
     if delegate_ctor_addr == 0 {
         return None;
     }
@@ -515,7 +515,7 @@ pub struct MonoSingleton {
 
 impl MonoSingleton {
     pub fn new(class: *mut Il2CppClass) -> Option<MonoSingleton> {
-        let instance_field = get_field_from_name(class, cstr!("_instance"));
+        let instance_field = get_field_from_name(class, c"_instance");
         if instance_field.is_null() {
             return None;
         }

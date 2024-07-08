@@ -101,7 +101,7 @@ impl template::Context for IgnoreTGFiltersContext {
 pub fn init(UnityEngine_TextRenderingModule: *const Il2CppImage) {
     get_class_or_return!(UnityEngine_TextRenderingModule, UnityEngine, TextGenerator);
 
-    let PopulateWithErrors_addr = get_method_addr(TextGenerator, cstr!("PopulateWithErrors"), 3);
+    let PopulateWithErrors_addr = get_method_addr(TextGenerator, c"PopulateWithErrors", 3);
 
     new_hook!(PopulateWithErrors_addr, PopulateWithErrors);
 }

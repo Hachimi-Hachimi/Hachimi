@@ -15,7 +15,7 @@ pub fn is_criware_lib(filename: &str) -> bool {
 pub fn on_hooking_finished(hachimi: &Hachimi) {
     // Kill unity crash handler (just to be safe)
     unsafe {
-        if let Err(e) = utils::kill_process_by_name(cstr!("UnityCrashHandler64.exe")) {
+        if let Err(e) = utils::kill_process_by_name(c"UnityCrashHandler64.exe") {
             warn!("Error occured while trying to kill crash handler: {}", e);
         }
     };

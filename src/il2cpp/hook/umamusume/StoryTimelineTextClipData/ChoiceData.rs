@@ -11,6 +11,6 @@ pub fn init(StoryTimelineTextClipData: *mut Il2CppClass) {
     find_nested_class_or_return!(StoryTimelineTextClipData, ChoiceData);
 
     unsafe {
-        TEXT_FIELD = get_field_from_name(ChoiceData, cstr!("Text"));
+        TEXT_FIELD = get_field_from_name(ChoiceData, c"Text");
     }
 }

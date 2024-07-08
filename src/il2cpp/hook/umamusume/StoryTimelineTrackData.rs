@@ -12,6 +12,6 @@ pub fn init(umamusume: *const Il2CppImage) {
     get_class_or_return!(umamusume, Gallop, StoryTimelineTrackData);
 
     unsafe {
-        CLIPLIST_FIELD = get_field_from_name(StoryTimelineTrackData, cstr!("ClipList"));
+        CLIPLIST_FIELD = get_field_from_name(StoryTimelineTrackData, c"ClipList");
     }
 }

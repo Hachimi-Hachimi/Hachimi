@@ -13,6 +13,6 @@ pub fn init(Plugins: *const Il2CppImage) {
     get_class_or_return!(Plugins, AnimateToUnity, AnTextParameter);
 
     unsafe {
-        _TEXT_FIELD = get_field_from_name(AnTextParameter, cstr!("_text"));
+        _TEXT_FIELD = get_field_from_name(AnTextParameter, c"_text");
     }
 }

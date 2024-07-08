@@ -13,7 +13,7 @@ pub extern "C" fn set_targetFrameRate(mut value: i32) {
 
 pub fn init(_UnityEngine_CoreModule: *const Il2CppImage) {
     let set_targetFrameRate_addr = il2cpp_resolve_icall(
-        cstr!("UnityEngine.Application::set_targetFrameRate(System.Int32)").as_ptr()
+        c"UnityEngine.Application::set_targetFrameRate(System.Int32)".as_ptr()
     );
 
     new_hook!(set_targetFrameRate_addr, set_targetFrameRate);

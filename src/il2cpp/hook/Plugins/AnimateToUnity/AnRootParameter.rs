@@ -10,6 +10,6 @@ pub fn init(Plugins: *const Il2CppImage) {
     get_class_or_return!(Plugins, AnimateToUnity, AnRootParameter);
 
     unsafe {
-        _MOTIONPARAMETERGROUP_FIELD = get_field_from_name(AnRootParameter, cstr!("_motionParameterGroup"));
+        _MOTIONPARAMETERGROUP_FIELD = get_field_from_name(AnRootParameter, c"_motionParameterGroup");
     }
 }

@@ -7,6 +7,6 @@ pub fn init(mscorlib: *const Il2CppImage) {
     get_class_or_return!(mscorlib, "System.IO", File);
 
     unsafe {
-        READALLBYTES_ADDR = get_method_addr(File, cstr!("ReadAllBytes"), 1);
+        READALLBYTES_ADDR = get_method_addr(File, c"ReadAllBytes", 1);
     }
 }

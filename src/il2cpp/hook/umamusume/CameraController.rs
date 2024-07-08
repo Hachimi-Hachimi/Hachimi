@@ -14,7 +14,7 @@ extern "C" fn GetCanvasSize(this: *mut Il2CppObject) -> Vector2_t {
 pub fn init(umamusume: *const Il2CppImage) {
     get_class_or_return!(umamusume, Gallop, CameraController);
 
-    let GetCanvasSize_addr = get_method_addr(CameraController, cstr!("GetCanvasSize"), 0);
+    let GetCanvasSize_addr = get_method_addr(CameraController, c"GetCanvasSize", 0);
 
     new_hook!(GetCanvasSize_addr, GetCanvasSize);
 }

@@ -9,7 +9,7 @@ use crate::{core::{Error, Hachimi}, windows::utils};
 extern "C" fn InitParameters(_param_1: i32, _param_2: *mut c_void) {}
 
 fn init_internal(handle: HMODULE) -> Result<(), Error> {
-    let InitParameters_addr = utils::get_proc_address(handle, cstr!("InitParameters"));
+    let InitParameters_addr = utils::get_proc_address(handle, c"InitParameters");
     if InitParameters_addr != 0 {
         info!("Hooking more fun stuff");
         Hachimi::instance().interceptor.hook(InitParameters_addr, InitParameters as usize)?;

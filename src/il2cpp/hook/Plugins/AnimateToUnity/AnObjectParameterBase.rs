@@ -14,7 +14,7 @@ pub fn init(Plugins: *const Il2CppImage) {
     get_class_or_return!(Plugins, AnimateToUnity, AnObjectParameterBase);
 
     unsafe {
-        _POSITIONOFFSET_FIELD = get_field_from_name(AnObjectParameterBase, cstr!("_positionOffset"));
-        _SCALE_FIELD = get_field_from_name(AnObjectParameterBase, cstr!("_scale"));
+        _POSITIONOFFSET_FIELD = get_field_from_name(AnObjectParameterBase, c"_positionOffset");
+        _SCALE_FIELD = get_field_from_name(AnObjectParameterBase, c"_scale");
     }
 }

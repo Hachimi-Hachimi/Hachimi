@@ -43,11 +43,11 @@ pub fn init(umamusume: *const Il2CppImage) {
 
     unsafe {
         CLASS = StoryTimelineTextClipData;
-        NAME_FIELD = get_field_from_name(StoryTimelineTextClipData, cstr!("Name"));
-        TEXT_FIELD = get_field_from_name(StoryTimelineTextClipData, cstr!("Text"));
-        SIZE_FIELD = get_field_from_name(StoryTimelineTextClipData, cstr!("Size"));
-        CHOICEDDATALIST_FIELD = get_field_from_name(StoryTimelineTextClipData, cstr!("ChoiceDataList"));
-        COLORTEXTINFOLIST_FIELD = get_field_from_name(StoryTimelineTextClipData, cstr!("ColorTextInfoList"));
+        NAME_FIELD = get_field_from_name(StoryTimelineTextClipData, c"Name");
+        TEXT_FIELD = get_field_from_name(StoryTimelineTextClipData, c"Text");
+        SIZE_FIELD = get_field_from_name(StoryTimelineTextClipData, c"Size");
+        CHOICEDDATALIST_FIELD = get_field_from_name(StoryTimelineTextClipData, c"ChoiceDataList");
+        COLORTEXTINFOLIST_FIELD = get_field_from_name(StoryTimelineTextClipData, c"ColorTextInfoList");
     }
 
     ChoiceData::init(StoryTimelineTextClipData);

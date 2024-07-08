@@ -22,7 +22,7 @@ extern "C" fn UnloadUnusedAssets() -> *mut Il2CppObject {
 pub fn init(UnityEngine_CoreModule: *const Il2CppImage) {
     get_class_or_return!(UnityEngine_CoreModule, UnityEngine, Resources);
 
-    let UnloadUnusedAssets_addr = get_method_addr(Resources, cstr!("UnloadUnusedAssets"), 0);
+    let UnloadUnusedAssets_addr = get_method_addr(Resources, c"UnloadUnusedAssets", 0);
 
     new_hook!(UnloadUnusedAssets_addr, UnloadUnusedAssets);
 }

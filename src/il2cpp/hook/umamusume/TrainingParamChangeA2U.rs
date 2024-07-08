@@ -19,7 +19,7 @@ extern "C" fn GetCaptionText(this: *mut Il2CppObject, info: *mut Il2CppObject) -
 pub fn init(umamusume: *const Il2CppImage) {
     get_class_or_return!(umamusume, Gallop, TrainingParamChangeA2U);
 
-    let GetCaptionText_addr = get_method_addr(TrainingParamChangeA2U, cstr!("GetCaptionText"), 1);
+    let GetCaptionText_addr = get_method_addr(TrainingParamChangeA2U, c"GetCaptionText", 1);
 
     new_hook!(GetCaptionText_addr, GetCaptionText);
 }

@@ -25,6 +25,6 @@ pub fn init(DialogCommon: *mut Il2CppClass) {
 
     unsafe {
         CLASS = Data;
-        SETSIMPLEONEBUTTONMESSAGE_ADDR = get_method_addr(Data, cstr!("SetSimpleOneButtonMessage"), 5);
+        SETSIMPLEONEBUTTONMESSAGE_ADDR = get_method_addr(Data, c"SetSimpleOneButtonMessage", 5);
     }
 }

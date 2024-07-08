@@ -57,6 +57,6 @@ pub fn init(Cute_UI_Assembly: *const Il2CppImage) {
 
     unsafe {
         CLASS = AtlasReference;
-        SPRITES_FIELD = get_field_from_name(AtlasReference, cstr!("sprites"))
+        SPRITES_FIELD = get_field_from_name(AtlasReference, c"sprites")
     }
 }

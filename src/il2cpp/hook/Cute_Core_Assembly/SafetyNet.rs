@@ -14,7 +14,7 @@ pub extern "C" fn GetSafetyNetStatus(
 pub fn init(Cute_Core_Assembly: *const Il2CppImage) {
     get_class_or_return!(Cute_Core_Assembly, "Cute.Core", SafetyNet);
 
-    let GetSafetyNetStatus_addr = get_method_addr(SafetyNet, cstr!("GetSafetyNetStatus"), 4);
+    let GetSafetyNetStatus_addr = get_method_addr(SafetyNet, c"GetSafetyNetStatus", 4);
 
     new_hook!(GetSafetyNetStatus_addr, GetSafetyNetStatus);
 }

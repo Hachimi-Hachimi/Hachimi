@@ -7,6 +7,6 @@ pub fn init(UnityEngine_CoreModule: *const Il2CppImage) {
     get_class_or_return!(UnityEngine_CoreModule, UnityEngine, Sprite);
 
     unsafe {
-        GET_TEXTURE_ADDR = get_method_addr(Sprite, cstr!("get_texture"), 0);
+        GET_TEXTURE_ADDR = get_method_addr(Sprite, c"get_texture", 0);
     }
 }

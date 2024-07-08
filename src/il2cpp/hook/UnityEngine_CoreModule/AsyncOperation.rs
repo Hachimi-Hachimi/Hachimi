@@ -10,10 +10,10 @@ pub static mut ACTION_ASYNCOPERATION_CLASS: *mut Il2CppClass = null_mut();
 pub fn init(UnityEngine_CoreModule: *const Il2CppImage) {
     get_class_or_return!(UnityEngine_CoreModule, UnityEngine, AsyncOperation);
 
-    let m_completeCallback_field = get_field_from_name(AsyncOperation, cstr!("m_completeCallback"));
+    let m_completeCallback_field = get_field_from_name(AsyncOperation, c"m_completeCallback");
 
     unsafe {
-        ADD_COMPLETED_ADDR = get_method_addr(AsyncOperation, cstr!("add_completed"), 1);
+        ADD_COMPLETED_ADDR = get_method_addr(AsyncOperation, c"add_completed", 1);
         ACTION_ASYNCOPERATION_CLASS = il2cpp_class_from_il2cpp_type((*m_completeCallback_field).type_);
     }
 }

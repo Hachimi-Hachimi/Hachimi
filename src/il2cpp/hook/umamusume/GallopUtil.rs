@@ -19,11 +19,11 @@ impl_addr_wrapper_fn!(GotoTitleOnError, GOTOTITLEONERROR_ADDR, (), text: *mut Il
 pub fn init(umamusume: *const Il2CppImage) {
     get_class_or_return!(umamusume, Gallop, GallopUtil);
 
-    let LineHeadWrapCommon_addr = get_method_addr(GallopUtil, cstr!("LineHeadWrapCommon"), 4);
+    let LineHeadWrapCommon_addr = get_method_addr(GallopUtil, c"LineHeadWrapCommon", 4);
 
     new_hook!(LineHeadWrapCommon_addr, LineHeadWrapCommon);
 
     unsafe {
-        GOTOTITLEONERROR_ADDR = get_method_addr(GallopUtil, cstr!("GotoTitleOnError"), 1);
+        GOTOTITLEONERROR_ADDR = get_method_addr(GallopUtil, c"GotoTitleOnError", 1);
     }
 }

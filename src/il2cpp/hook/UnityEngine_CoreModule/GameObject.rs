@@ -30,6 +30,6 @@ pub fn init(UnityEngine_CoreModule: *const Il2CppImage) {
 
     unsafe {
         CLASS = GameObject;
-        GETCOMPONENTINCHILDREN_ADDR = get_method_addr(GameObject, cstr!("GetComponentInChildren"), 2);
+        GETCOMPONENTINCHILDREN_ADDR = get_method_addr(GameObject, c"GetComponentInChildren", 2);
     }
 }

@@ -14,7 +14,7 @@ pub fn init(Plugins: *const Il2CppImage) {
     get_class_or_return!(Plugins, AnimateToUnity, AnMeshInfoParameterGroup);
 
     unsafe {
-        GET_TEXTURESETNAME_ADDR = get_method_addr(AnMeshInfoParameterGroup, cstr!("get_TextureSetName"), 0);
-        _TEXTURESETCOLOR_FIELD = get_field_from_name(AnMeshInfoParameterGroup, cstr!("_textureSetColor"));
+        GET_TEXTURESETNAME_ADDR = get_method_addr(AnMeshInfoParameterGroup, c"get_TextureSetName", 0);
+        _TEXTURESETCOLOR_FIELD = get_field_from_name(AnMeshInfoParameterGroup, c"_textureSetColor");
     }
 }

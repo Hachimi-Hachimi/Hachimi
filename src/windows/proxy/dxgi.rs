@@ -178,13 +178,13 @@ pub fn init(system_dir: &Utf16Str) -> std::result::Result<(), crate::core::Error
     let dll_path_cstr = U16CString::from_vec(dll_path.into_vec()).unwrap();
     let handle = unsafe { LoadLibraryW(PCWSTR(dll_path_cstr.as_ptr())).expect("dxgi.dll") };
 
-    let CreateDXGIFactory_addr = utils::get_proc_address(handle, cstr!("CreateDXGIFactory"));
-    let CreateDXGIFactory1_addr = utils::get_proc_address(handle, cstr!("CreateDXGIFactory1"));
-    let CreateDXGIFactory2_addr = utils::get_proc_address(handle, cstr!("CreateDXGIFactory2"));
-    let DXGIGetDebugInterface1_addr = utils::get_proc_address(handle, cstr!("DXGIGetDebugInterface1"));
-    let DXGIDeclareAdapterRemovalSupport_addr = utils::get_proc_address(handle, cstr!("DXGIDeclareAdapterRemovalSupport"));
-    let DXGID3D10CreateDevice_addr = utils::get_proc_address(handle, cstr!("DXGID3D10CreateDevice"));
-    let DXGID3D10RegisterLayers_addr = utils::get_proc_address(handle, cstr!("DXGID3D10RegisterLayers"));
+    let CreateDXGIFactory_addr = utils::get_proc_address(handle, c"CreateDXGIFactory");
+    let CreateDXGIFactory1_addr = utils::get_proc_address(handle, c"CreateDXGIFactory1");
+    let CreateDXGIFactory2_addr = utils::get_proc_address(handle, c"CreateDXGIFactory2");
+    let DXGIGetDebugInterface1_addr = utils::get_proc_address(handle, c"DXGIGetDebugInterface1");
+    let DXGIDeclareAdapterRemovalSupport_addr = utils::get_proc_address(handle, c"DXGIDeclareAdapterRemovalSupport");
+    let DXGID3D10CreateDevice_addr = utils::get_proc_address(handle, c"DXGID3D10CreateDevice");
+    let DXGID3D10RegisterLayers_addr = utils::get_proc_address(handle, c"DXGID3D10RegisterLayers");
 
     let interceptor = &Hachimi::instance().interceptor;
     interceptor.hook(CreateDXGIFactory_addr, CreateDXGIFactory as usize)?;

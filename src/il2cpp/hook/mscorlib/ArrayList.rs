@@ -10,7 +10,7 @@ pub fn init(mscorlib: *const Il2CppImage) {
     get_class_or_return!(mscorlib, "System.Collections", ArrayList);
 
     unsafe {
-        GET_ITEM_ADDR = get_method_addr(ArrayList, cstr!("get_Item"), -1);
-        SET_ITEM_ADDR = get_method_addr(ArrayList, cstr!("set_Item"), -1);
+        GET_ITEM_ADDR = get_method_addr(ArrayList, c"get_Item", -1);
+        SET_ITEM_ADDR = get_method_addr(ArrayList, c"set_Item", -1);
     }
 }

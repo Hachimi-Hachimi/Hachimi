@@ -95,6 +95,6 @@ pub fn init(UnityEngine_CoreModule: *const Il2CppImage) {
 
     unsafe {
         CLASS = Texture2D;
-        CTOR_ADDR = get_method_addr(Texture2D, cstr!(".ctor"), 5);
+        CTOR_ADDR = get_method_addr(Texture2D, c".ctor", 5);
     }
 }

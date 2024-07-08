@@ -19,7 +19,7 @@ extern "C" fn get_Name(this: *mut Il2CppObject) -> *mut Il2CppString {
 pub fn init(MasterMissionData: *mut Il2CppClass) {
     find_nested_class_or_return!(MasterMissionData, MissionData);
 
-    let get_Name_addr = get_method_addr(MissionData, cstr!("get_Name"), 0);
+    let get_Name_addr = get_method_addr(MissionData, c"get_Name", 0);
 
     new_hook!(get_Name_addr, get_Name);
 }

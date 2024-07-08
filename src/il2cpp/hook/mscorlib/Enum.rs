@@ -20,10 +20,10 @@ pub fn init(mscorlib: *const Il2CppImage) {
 
     unsafe {
         TOOBJECT_ADDR = get_method_overload_addr(Enum, "ToObject", &[Il2CppTypeEnum_IL2CPP_TYPE_CLASS, Il2CppTypeEnum_IL2CPP_TYPE_I4]);
-        TOSTRING_ADDR = get_method_addr(Enum, cstr!("ToString"), 0);
+        TOSTRING_ADDR = get_method_addr(Enum, c"ToString", 0);
         // ToInt32 would make more sense here; but for some reason it doesn't exist!
-        TOUINT64_ADDR = get_method_addr(Enum, cstr!("ToUInt64"), 1);
-        PARSE_ADDR = get_method_addr(Enum, cstr!("Parse"), 2);
-        GETVALUES_ADDR = get_method_addr(Enum, cstr!("GetValues"), 1);
+        TOUINT64_ADDR = get_method_addr(Enum, c"ToUInt64", 1);
+        PARSE_ADDR = get_method_addr(Enum, c"Parse", 2);
+        GETVALUES_ADDR = get_method_addr(Enum, c"GetValues", 1);
     }
 }

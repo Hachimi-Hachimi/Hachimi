@@ -35,9 +35,9 @@ extern "C" fn GetVirtualResolutionWidth3D(this: *mut Il2CppObject) -> i32 {
 pub fn init(umamusume: *const Il2CppImage) {
     get_class_or_return!(umamusume, Gallop, GraphicSettings);
 
-    let GetVirtualResolution3D_addr = get_method_addr(GraphicSettings, cstr!("GetVirtualResolution3D"), 1);
-    let GetVirtualResolution_addr = get_method_addr(GraphicSettings, cstr!("GetVirtualResolution"), 0);
-    let GetVirtualResolutionWidth3D_addr = get_method_addr(GraphicSettings, cstr!("GetVirtualResolutionWidth3D"), 0);
+    let GetVirtualResolution3D_addr = get_method_addr(GraphicSettings, c"GetVirtualResolution3D", 1);
+    let GetVirtualResolution_addr = get_method_addr(GraphicSettings, c"GetVirtualResolution", 0);
+    let GetVirtualResolutionWidth3D_addr = get_method_addr(GraphicSettings, c"GetVirtualResolutionWidth3D", 0);
 
     new_hook!(GetVirtualResolution3D_addr, GetVirtualResolution3D);
     new_hook!(GetVirtualResolution_addr, GetVirtualResolution);

@@ -56,12 +56,12 @@ extern "C" fn _UpdateText(this: *mut Il2CppObject) { // _UpdateText
 pub fn init(Plugins: *const Il2CppImage) {
     get_class_or_return!(Plugins, AnimateToUnity, AnText);
 
-    let _UpdateText_addr = get_method_addr(AnText, cstr!("_UpdateText"), 0);
+    let _UpdateText_addr = get_method_addr(AnText, c"_UpdateText", 0);
 
     new_hook!(_UpdateText_addr, _UpdateText);
 
     unsafe {
-        TEXT_FIELD = get_field_from_name(AnText, cstr!("_text"));
-        TEXTPARAM_FIELD = get_field_from_name(AnText, cstr!("_textParam"));
+        TEXT_FIELD = get_field_from_name(AnText, c"_text");
+        TEXTPARAM_FIELD = get_field_from_name(AnText, c"_textParam");
     }
 }
