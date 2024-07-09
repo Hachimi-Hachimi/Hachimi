@@ -64,19 +64,50 @@ impl<'a> template::Context for TemplateContext<'a> {
                 // 4  5  6
                 // 7  8  9
                 // Example: $(anchor 6) = middle right
-                if let Some(value) = args.get(0) {
-                    let template::Token::NumberLit(anchor_num) = *value else {
-                        return None;
-                    };
-                    let anchor = (anchor_num as i32) - 1;
-                    if anchor < 0 || anchor > 8 {
-                        return None;
-                    }
-                    self.settings.textAnchor = anchor;
-                }
-                else {
+                let value = args.get(0)?;
+                let template::Token::NumberLit(anchor_num) = *value else {
+                    return None;
+                };
+                let anchor = (anchor_num as i32) - 1;
+                if anchor < 0 || anchor > 8 {
                     return None;
                 }
+                self.settings.textAnchor = anchor;
+            }
+
+            "scale" => {
+                // Example: $(scale 80) = scale font size to 80%
+                let value = args.get(0)?;
+                let template::Token::NumberLit(percentage) = value else {
+                    return None;
+                };
+                self.settings.fontSize = (self.settings.fontSize as f64 * (percentage / 100.0)) as i32;
+            }
+
+            "ho" => {
+                // $(ho 0) or $(ho 1)
+                let value = args.get(0)?;
+                let template::Token::NumberLit(overflow_num) = *value else {
+                    return None;
+                };
+                let overflow = overflow_num as i32;
+                if overflow != 0 && overflow != 1 {
+                    return None;
+                }
+                self.settings.horizontalOverflow = overflow;
+            }
+
+            "vo" => {
+                // $(vo 0) or $(vo 1)
+                let value = args.get(0)?;
+                let template::Token::NumberLit(overflow_num) = *value else {
+                    return None;
+                };
+                let overflow = overflow_num as i32;
+                if overflow != 0 && overflow != 1 {
+                    return None;
+                }
+                self.settings.verticalOverflow = overflow;
             }
 
             _ => return None
@@ -92,7 +123,7 @@ pub struct IgnoreTGFiltersContext();
 impl template::Context for IgnoreTGFiltersContext {
     fn on_filter_eval(&mut self, _name: &str, _args: &[template::Token]) -> Option<String> {
         match _name {
-            "nb" | "anchor" => Some(String::new()),
+            "nb" | "anchor" | "scale" => Some(String::new()),
             _ => None
         }
     }

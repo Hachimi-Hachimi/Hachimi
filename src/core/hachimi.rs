@@ -393,6 +393,8 @@ pub struct LocalizedDataConfig {
     #[serde(default)]
     pub ordinal_types: Vec<String>,
     #[serde(default)]
+    pub months: Vec<String>,
+    #[serde(default)]
     pub use_text_wrapper: bool,
     pub text_wrapper: Option<i32>, // DEPRECATED
     #[serde(default = "LocalizedDataConfig::default_line_width_multiplier")]
