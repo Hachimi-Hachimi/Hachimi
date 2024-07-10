@@ -403,6 +403,7 @@ pub struct LocalizedDataConfig {
     pub story_line_count_offset: Option<i32>,
     pub text_frame_line_spacing_multiplier: Option<f32>,
     pub text_frame_font_size_multiplier: Option<f32>,
+    pub skill_list_item_desc_font_size_multiplier: Option<f32>,
 
     pub news_url: Option<String>,
 

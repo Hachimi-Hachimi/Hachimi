@@ -18,6 +18,7 @@ mod MasterMissionData;
 mod TrainingParamChangeA2U;
 pub mod WebViewDefine;
 pub mod TextFrame;
+mod PartsSingleModeSkillListItem;
 
 pub fn init() {
     get_assembly_image_or_return!(image, "umamusume.dll");
@@ -41,4 +42,5 @@ pub fn init() {
     MasterMissionData::init(image);
     TrainingParamChangeA2U::init(image);
     TextFrame::init(image);
+    PartsSingleModeSkillListItem::init(image);
 }
