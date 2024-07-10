@@ -400,6 +400,10 @@ pub struct LocalizedDataConfig {
     #[serde(default = "LocalizedDataConfig::default_line_width_multiplier")]
     pub line_width_multiplier: f32,
 
+    pub story_line_count_offset: Option<i32>,
+    pub text_frame_line_spacing_multiplier: Option<f32>,
+    pub text_frame_font_size_multiplier: Option<f32>,
+
     pub news_url: Option<String>,
 
     // UNIMPLEMENTED

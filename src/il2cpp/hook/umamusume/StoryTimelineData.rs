@@ -16,10 +16,15 @@ use super::{StoryTimelineBlockData, StoryTimelineTextClipData, StoryTimelineTrac
 
 const CLIP_TEXT_LINE_WIDTH: i32 = 21;
 const CLIP_TEXT_LINE_COUNT: i32 = 3;
-const CLIP_TEXT_FONT_SIZE: i32 = 42;
+const CLIP_TEXT_FONT_SIZE_DEFAULT: i32 = 42;
+/*
+const CLIP_TEXT_FONT_SIZE_LARGE: i32 = 84;
+const CLIP_TEXT_FONT_SIZE_SMALL: i32 = 32;
+const CLIP_TEXT_FONT_SIZE_BOLD_CAPTION: i32 = 64;
+*/
 
 // probably?
-const MAIN_STORY_CLIP_TEXT_LINE_WIDTH: i32 = 32;
+const STORY_VIEW_CLIP_TEXT_LINE_WIDTH: i32 = 32;
 
 static mut CLASS: *mut Il2CppClass = null_mut();
 pub fn class() -> *mut Il2CppClass {
@@ -94,7 +99,11 @@ pub fn on_LoadAsset(_bundle: *mut Il2CppObject, this: *mut Il2CppObject, name: &
         30
     };
     */
-    let is_main_story = base_path.starts_with("story/data/02");
+    let is_story_view = base_path.starts_with("story/data/") && (
+        base_path[11..].starts_with("02/") ||
+        base_path[11..].starts_with("04/") ||
+        base_path[11..].starts_with("09/")
+    );
 
     if let Some(title) = &dict.title {
         set_Title(this, title.to_il2cpp_string());
@@ -103,6 +112,21 @@ pub fn on_LoadAsset(_bundle: *mut Il2CppObject, this: *mut Il2CppObject, name: &
     let Some(block_list) = IList::new(get_BlockList(this)) else {
         return;
     };
+
+    // Init wrapping parameters
+    let mut line_count = CLIP_TEXT_LINE_COUNT;
+    if let Some(offset) = localized_data.config.story_line_count_offset {
+        line_count += offset;
+    }
+
+    let mut font_size = CLIP_TEXT_FONT_SIZE_DEFAULT;
+    let mut line_width = CLIP_TEXT_LINE_WIDTH;
+    let mut story_view_line_width = STORY_VIEW_CLIP_TEXT_LINE_WIDTH;
+    if let Some(mult) = localized_data.config.text_frame_font_size_multiplier {
+        font_size = (font_size as f32 * mult).round() as i32;
+        line_width = (line_width as f32 / mult).round() as i32;
+        story_view_line_width = (story_view_line_width as f32 / mult).round() as i32;
+    }
 
     for (mut i, block_data) in block_list.iter().enumerate() {
         // cy leaves a single empty text block at the start of every story for some reason
@@ -134,10 +158,10 @@ pub fn on_LoadAsset(_bundle: *mut Il2CppObject, this: *mut Il2CppObject, name: &
             }
             if let Some(text) = &text_block_dict.text {
                 let text_str: *mut Il2CppString;
-                if is_main_story {
+                if is_story_view {
                     // Sizing tags are not used at all in main stories, simply wrap it
                     // Add an extra space to each line because the vertical log screen ignores newlines
-                    text_str = if let Some(wrapped) = utils::wrap_text(text, MAIN_STORY_CLIP_TEXT_LINE_WIDTH) {
+                    text_str = if let Some(wrapped) = utils::wrap_text(text, story_view_line_width) {
                         wrapped.join(" \n").to_il2cpp_string()
                     }
                     else {
@@ -147,9 +171,7 @@ pub fn on_LoadAsset(_bundle: *mut Il2CppObject, this: *mut Il2CppObject, name: &
                 else {
                     let size = StoryTimelineTextClipData::get_Size(this);
                     text_str = if size == StoryTimelineTextClipData::FontSize_Default {
-                        if let Some(fitted) = utils::wrap_fit_text(text,
-                            CLIP_TEXT_LINE_WIDTH, CLIP_TEXT_LINE_COUNT, CLIP_TEXT_FONT_SIZE
-                        ) {
+                        if let Some(fitted) = utils::wrap_fit_text(text, line_width, line_count, font_size) {
                             fitted.to_il2cpp_string()
                         }
                         else {
@@ -157,15 +179,8 @@ pub fn on_LoadAsset(_bundle: *mut Il2CppObject, this: *mut Il2CppObject, name: &
                         }
                     }
                     else {
-                        // dont wanna mess other sizes for now, but at least wrap the text if enabled
-                        // TODO: wrap fit text with line width relative to font size value
-                        // (which stories is it even used in...?)
-                        if let Some(wrapped) = utils::wrap_text(text, CLIP_TEXT_LINE_WIDTH) {
-                            wrapped.join("\n").to_il2cpp_string()
-                        }
-                        else {
-                            text.to_il2cpp_string()
-                        }
+                        // not doing anything with text of other sizes for now...
+                        text.to_il2cpp_string()
                     };
                 }
                 StoryTimelineTextClipData::set_Text(clip_data, text_str);

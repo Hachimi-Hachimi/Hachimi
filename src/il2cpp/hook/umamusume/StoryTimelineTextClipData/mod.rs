@@ -6,6 +6,9 @@ use std::ptr::null_mut;
 use crate::il2cpp::{symbols::{get_field_from_name, get_field_object_value, get_field_value, set_field_object_value}, types::*};
 
 pub const FontSize_Default: i32 = 0;
+pub const FontSize_Large: i32 = 1;
+pub const FontSize_Small: i32 = 2;
+pub const FontSize_BoldCaption: i32 = 3;
 
 static mut CLASS: *mut Il2CppClass = null_mut();
 pub fn class() -> *mut Il2CppClass {
