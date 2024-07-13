@@ -123,7 +123,7 @@ pub struct IgnoreTGFiltersContext();
 impl template::Context for IgnoreTGFiltersContext {
     fn on_filter_eval(&mut self, _name: &str, _args: &[template::Token]) -> Option<String> {
         match _name {
-            "nb" | "anchor" | "scale" => Some(String::new()),
+            "nb" | "anchor" | "scale" | "ho" | "vo" => Some(String::new()),
             _ => None
         }
     }
