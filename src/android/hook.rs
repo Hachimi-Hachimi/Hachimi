@@ -30,6 +30,21 @@ extern "C" fn loader_dlopen(filename: *const c_char, flags: c_int, caller_addr: 
     handle
 }
 
+type DlopenV30Fn = extern "C" fn(filename: *const c_char, flags: c_int, extinfo: *const c_void, caller_addr: *const c_void) -> *mut c_void;
+extern "C" fn dlopen_v30(filename: *const c_char, flags: c_int, extinfo: *const c_void, caller_addr: *const c_void) -> *mut c_void {
+    let hachimi = Hachimi::instance();
+    let orig_fn: DlopenV30Fn = unsafe {
+        std::mem::transmute(hachimi.interceptor.get_trampoline_addr(dlopen_v30 as usize))
+    };
+
+    let handle = orig_fn(filename, flags, extinfo, caller_addr);
+    let filename_str = unsafe { CStr::from_ptr(filename).to_str().unwrap() };
+    if hachimi.on_dlopen(filename_str, handle as usize) {
+        hachimi.interceptor.unhook(dlopen_v30 as usize);
+    }
+    handle
+}
+
 type RegisterNativesFn = extern "C" fn(env: JNIEnv, class: jclass, methods: *const JNINativeMethod, count: jint) -> jint;
 #[allow(non_snake_case)]
 extern "C" fn JNINativeInterface_RegisterNatives(env: JNIEnv, class: jclass, methods_: *const JNINativeMethod, count: jint) -> jint {
@@ -55,25 +70,32 @@ fn init_internal(env: *mut jni::sys::JNIEnv) -> Result<(), Error> {
     let api_level = ffi::get_device_api_level();
     info!("API level: {}", api_level);
 
-    // A6, A7, A7.1      (api >= 23): __dl_open
-    // A8, A8.1          (api >= 26): __dl__Z8__dlopenPKciPKv
-    // A9, A10, A12, A13 (api >= 28): __dl___loader_dlopen
-    let loader_dlopen_symbol = if api_level >= 28 {
-        "__dl___loader_dlopen"
-    }
-    else if api_level >= 26 {
-        "__dl__Z8__dlopenPKciPKv"
-    }
-    else {
-        "__dl_open"
-    };
-
-    
     let hachimi = Hachimi::instance();
 
-    info!("Hooking dlopen: {}", loader_dlopen_symbol);
-    let loader_dlopen_addr = Interceptor::find_symbol_by_name(LINKER_MODULE, loader_dlopen_symbol)?;
-    hachimi.interceptor.hook(loader_dlopen_addr, loader_dlopen as usize)?;
+    // A11
+    if api_level == 30 {
+        let dlopen_addr = Interceptor::find_symbol_by_name(LINKER_MODULE, "__dl__Z9do_dlopenPKciPK17android_dlextinfoPKv")?;
+        info!("Hooking dlopen_v30: {}", dlopen_addr);
+        hachimi.interceptor.hook(dlopen_addr, dlopen_v30 as usize)?;
+    }
+    else {
+        // A6, A7, A7.1      (api >= 23): __dl_open
+        // A8, A8.1          (api >= 26): __dl__Z8__dlopenPKciPKv
+        // A9, A10, A12, A13 (api >= 28): __dl___loader_dlopen
+        let loader_dlopen_symbol = if api_level >= 28 {
+            "__dl___loader_dlopen"
+        }
+        else if api_level >= 26 {
+            "__dl__Z8__dlopenPKciPKv"
+        }
+        else {
+            "__dl_open"
+        };
+
+        info!("Hooking dlopen: {}", loader_dlopen_symbol);
+        let loader_dlopen_addr = Interceptor::find_symbol_by_name(LINKER_MODULE, loader_dlopen_symbol)?;
+        hachimi.interceptor.hook(loader_dlopen_addr, loader_dlopen as usize)?;
+    }
 
     if !hachimi.config.load().disable_gui {
         info!("Hooking JNINativeInterface RegisterNatives");

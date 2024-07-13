@@ -270,7 +270,7 @@ dependencies = [
 [[package]]
 name = "dobby-sys"
 version = "0.1.0"
-source = "git+https://github.com/LeadRDRK/dobby-sys.git#738f2d921e9b4d99a1b577e3e5e55d2517bf1e11"
+source = "git+https://github.com/LeadRDRK/dobby-sys.git#b2ffb3ce47302420132bdc205a73ef318176ae35"
 
 [[package]]
 name = "ecolor"
