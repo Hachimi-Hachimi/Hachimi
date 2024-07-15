@@ -1,7 +1,6 @@
-use std::{path::Path, sync::Mutex};
+use std::path::Path;
 
 use fnv::FnvHashMap;
-use once_cell::sync::Lazy;
 use serde::Deserialize;
 use widestring::Utf16Str;
 
@@ -10,7 +9,7 @@ use crate::{
 	il2cpp::{
 		api::{il2cpp_class_get_type, il2cpp_type_get_object},
 		hook::{UnityEngine_AssetBundleModule::AssetBundle, UnityEngine_CoreModule::{Object, Texture2D}},
-		symbols::{get_field_from_name, get_field_object_value, GCHandle, IList},
+		symbols::{get_field_from_name, get_field_object_value, IList},
 		types::*
 	}
 };
@@ -58,11 +57,6 @@ struct AnTextParameterData {
 
 	#[serde(flatten)]
 	base: AnObjectParameterBaseData
-}
-
-pub static OVERRIDDEN_TEXT_PARAMS: Lazy<Mutex<FnvHashMap<usize, GCHandle>>> = Lazy::new(|| Mutex::default());
-pub fn is_text_param_overridden(text_param: *mut Il2CppObject) -> bool {
-    OVERRIDDEN_TEXT_PARAMS.lock().unwrap().contains_key(&(text_param as usize))
 }
 
 pub fn on_LoadAsset(bundle: *mut Il2CppObject, this: *mut Il2CppObject, name: &Utf16Str) {
@@ -148,7 +142,6 @@ pub fn on_LoadAsset(bundle: *mut Il2CppObject, this: *mut Il2CppObject, name: &U
 
 				if let Some(text) = &text_param_data.text {
 					AnTextParameter::set__text(text_param, text.to_il2cpp_string());
-					OVERRIDDEN_TEXT_PARAMS.lock().unwrap().insert(text_param as usize, GCHandle::new_weak_ref(this, false));
 				}
 
 				if let Some(position_offset) = &text_param_data.base.position_offset {

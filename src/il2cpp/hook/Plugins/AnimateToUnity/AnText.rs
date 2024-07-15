@@ -3,16 +3,11 @@ use std::ptr::null_mut;
 use crate::{
     core::{ext::StringExt, Hachimi},
     il2cpp::{
-        hook::{
-            Plugins::AnimateToUnity::AnTextParameter,
-            UnityEngine_TextRenderingModule::TextGenerator::IgnoreTGFiltersContext
-        },
+        hook::UnityEngine_TextRenderingModule::TextGenerator::IgnoreTGFiltersContext,
         symbols::{get_field_from_name, get_field_object_value, get_method_addr, set_field_object_value},
         types::*
     }
 };
-
-use super::AnRoot;
 
 static mut TEXT_FIELD: *mut FieldInfo = null_mut();
 fn get__text(this: *mut Il2CppObject) -> *mut Il2CppString {
@@ -23,19 +18,8 @@ fn set__text(this: *mut Il2CppObject, value: *mut Il2CppString) {
     set_field_object_value(this, unsafe { TEXT_FIELD }, value);
 }
 
-static mut TEXTPARAM_FIELD: *mut FieldInfo = null_mut();
-fn get__textParam(this: *mut Il2CppObject) -> *mut Il2CppObject {
-    get_field_object_value(this, unsafe { TEXTPARAM_FIELD })
-}
-
 type _UpdateTextFn = extern "C" fn(this: *mut Il2CppObject);
-extern "C" fn _UpdateText(this: *mut Il2CppObject) { // _UpdateText
-    let text_param = get__textParam(this);
-    if !text_param.is_null() && AnRoot::is_text_param_overridden(text_param) {
-        set__text(this, AnTextParameter::get__text(text_param));
-        return get_orig_fn!(_UpdateText, _UpdateTextFn)(this);
-    }
-
+extern "C" fn _UpdateText(this: *mut Il2CppObject) {
     let text_ptr = get__text(this);
     if text_ptr.is_null() {
         return get_orig_fn!(_UpdateText, _UpdateTextFn)(this);
@@ -62,6 +46,5 @@ pub fn init(Plugins: *const Il2CppImage) {
 
     unsafe {
         TEXT_FIELD = get_field_from_name(AnText, c"_text");
-        TEXTPARAM_FIELD = get_field_from_name(AnText, c"_textParam");
     }
 }
