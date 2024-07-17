@@ -1,5 +1,5 @@
 # Android Dev Tools
-These scripts are intended for development on Linux.
+These scripts are intended for development on Linux and macOS.
 
 - `build.sh`: Helper script to build binaries for both `arm64-v8a` and `armeabi-v7a`
 - `dev.sh`: Run the build script, deploy the binaries to the current adb device and run logcat. Device must be arm64 and rooted.

@@ -1,11 +1,17 @@
 #!/usr/bin/env bash
 set -e
 
+if [ "$RELEASE" = "1" ]; then
+    BUILD_TYPE="release"
+else
+    BUILD_TYPE="debug"
+fi
+
 echo "-- Building"
 ./tools/android/build.sh
 
 echo "-- Uploading"
-adb push ./build/arm64-v8a/aarch64-linux-android/debug/libhachimi.so /sdcard/libmain.so
+adb push ./build/aarch64-linux-android/$BUILD_TYPE/libhachimi.so /sdcard/libmain.so
 
 echo "-- Installing"
 adb shell am force-stop jp.co.cygames.umamusume
