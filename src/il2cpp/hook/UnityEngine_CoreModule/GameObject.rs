@@ -1,6 +1,16 @@
 use widestring::Utf16Str;
 
-use crate::{core::ext::Utf16StringExt, il2cpp::{hook::Plugins::AnimateToUnity::AnRoot, symbols::get_method_addr, types::*}};
+use crate::{
+    core::ext::Utf16StringExt,
+    il2cpp::{
+        hook::{
+            umamusume::FlashActionPlayer, Plugins::AnimateToUnity::AnRoot,
+            UnityEngine_AssetBundleModule::AssetBundle
+        },
+        symbols::get_method_addr,
+        types::*
+    }
+};
 
 static mut CLASS: *mut Il2CppClass = 0 as _;
 pub fn class() -> *mut Il2CppClass {
@@ -15,12 +25,23 @@ impl_addr_wrapper_fn!(
 );
 
 // hook::UnityEngine_AssetBundleModule::AssetBundle
-// Generic GameObject handler for prefabs. Currently only used for ui flash (through AnRoot)
+// Generic GameObject handler for prefabs. Used for ui flash and combined ui flash
 pub fn on_LoadAsset(bundle: *mut Il2CppObject, this: *mut Il2CppObject, name: &Utf16Str) {
-    if name.path_filename().starts_with("pf_fl_") {
+    if !name.starts_with(AssetBundle::ASSET_PATH_PREFIX) {
+        return;
+    }
+    let path = &name[AssetBundle::ASSET_PATH_PREFIX.len()..];
+
+    if path.starts_with("uianimation/flash/") {
         let root = GetComponentInChildren(this, AnRoot::type_object(), false);
         if !root.is_null() {
             AnRoot::on_LoadAsset(bundle, root, name);
+        }
+    }
+    else if path.starts_with("uianimation/flashcombine/") {
+        let player = GetComponentInChildren(this, FlashActionPlayer::type_object(), false);
+        if !player.is_null() {
+            FlashActionPlayer::on_LoadAsset(bundle, player, name);
         }
     }
 }

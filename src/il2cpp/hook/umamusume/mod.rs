@@ -19,6 +19,7 @@ mod TrainingParamChangeA2U;
 pub mod WebViewDefine;
 pub mod TextFrame;
 mod PartsSingleModeSkillListItem;
+pub mod FlashActionPlayer;
 
 pub fn init() {
     get_assembly_image_or_return!(image, "umamusume.dll");
@@ -43,4 +44,5 @@ pub fn init() {
     TrainingParamChangeA2U::init(image);
     TextFrame::init(image);
     PartsSingleModeSkillListItem::init(image);
+    FlashActionPlayer::init(image);
 }

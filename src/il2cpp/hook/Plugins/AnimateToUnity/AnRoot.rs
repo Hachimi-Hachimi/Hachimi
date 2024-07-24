@@ -14,7 +14,10 @@ use crate::{
     }
 };
 
-use super::{AnMeshInfoParameterGroup, AnMeshParameter, AnMeshParameterGroup, AnMotionParameter, AnMotionParameterGroup, AnObjectParameterBase, AnRootParameter, AnTextParameter};
+use super::{
+    AnMeshInfoParameterGroup, AnMeshParameter, AnMeshParameterGroup, AnMotionParameter, AnMotionParameterGroup,
+    AnObjectParameterBase, AnRootParameter, AnTextParameter
+};
 
 static mut TYPE_OBJECT: *mut Il2CppObject = 0 as _;
 pub fn type_object() -> *mut Il2CppObject {
@@ -34,7 +37,7 @@ pub fn get__meshParameterGroup(this: *mut Il2CppObject) -> *mut Il2CppObject {
 }
 
 #[derive(Deserialize)]
-struct AnRootData {
+pub struct AnRootData {
     #[serde(default)]
     motion_parameter_list: FnvHashMap<i32, AnMotionParameterData>
 }
@@ -60,28 +63,26 @@ struct AnTextParameterData {
 }
 
 pub fn on_LoadAsset(bundle: *mut Il2CppObject, this: *mut Il2CppObject, name: &Utf16Str) {
-    if !name.starts_with(AssetBundle::ASSET_PATH_PREFIX) {
-        debug!("non-resource anroot: {}", name);
-        return;
-    }
-
+    // SAFETY: The asset path has been checked prior to this being called in GameObject::on_LoadAsset
     let base_path = name[AssetBundle::ASSET_PATH_PREFIX.len()..].path_basename();
-    if !base_path.starts_with("uianimation/flash/") {
-        debug!("bad path: {}", name);
-        return;
-    }
+
     let localized_data = Hachimi::instance().localized_data.load();
     let asset_info: AssetInfo<AnRootData> = localized_data.load_asset_info(&base_path.to_string());
     if !AssetBundle::check_asset_bundle_name(bundle, asset_info.metadata_ref()) {
         return;
     }
 
+    patch_asset(this, asset_info.data.as_ref());
+}
+
+pub fn patch_asset(this: *mut Il2CppObject, data_opt: Option<&AnRootData>) {
     /*** Texture set replacement ***/
     let param_group = get__meshParameterGroup(this);
     let Some(param_list) = IList::new(AnMeshParameterGroup::get__meshParameterList(param_group)) else {
         return;
     };
 
+    let localized_data = Hachimi::instance().localized_data.load();
     for param in param_list.iter() {
         let Some(group_list) = IList::new(AnMeshParameter::get__meshParameterGroupList(param)) else {
             return;
@@ -99,7 +100,6 @@ pub fn on_LoadAsset(bundle: *mut Il2CppObject, this: *mut Il2CppObject, name: &U
             let texture_set_filename = texture_set_name_utf16.to_string() + ".png";
             let rel_path = texture_sets_path.join(texture_set_filename);
 
-            let localized_data = Hachimi::instance().localized_data.load();
             if let Some(path) = localized_data.get_assets_path(&rel_path) {
                 Texture2D::load_image_file(texture, &path, true);
             }
@@ -107,7 +107,7 @@ pub fn on_LoadAsset(bundle: *mut Il2CppObject, this: *mut Il2CppObject, name: &U
     }
 
     /*** Asset data patches ***/
-    if let Some(data) = asset_info.data {
+    if let Some(data) = data_opt {
         // quick escape!!!11
         if data.motion_parameter_list.is_empty() {
             return;
