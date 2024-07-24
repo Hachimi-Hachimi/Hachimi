@@ -10,6 +10,6 @@ pub fn init(Plugins: *const Il2CppImage) {
     get_class_or_return!(Plugins, AnimateToUnity, AnMeshParameterGroup);
 
     unsafe {
-		_MESHPARAMETERLIST_FIELD = get_field_from_name(AnMeshParameterGroup, c"_meshParameterList");
+        _MESHPARAMETERLIST_FIELD = get_field_from_name(AnMeshParameterGroup, c"_meshParameterList");
     }
 }
