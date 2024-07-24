@@ -11,7 +11,9 @@ pub struct Game {
 #[derive(PartialEq, Eq)]
 pub enum Region {
     Unknown,
-    Japan
+    Japan,
+    Taiwan,
+    Korea
 }
 
 impl Game {
