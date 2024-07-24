@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-APP_DIR=$(dirname $(pm path jp.co.cygames.umamusume | cut -c 9-))
+APP_DIR=$(dirname $(pm path jp.co.cygames.umamusume | head -n 1 | cut -c 9-))
 LIB_PATH="$APP_DIR/lib/arm64"
 LIBMAIN_PATH="$LIB_PATH/libmain.so"
 LIBMAIN_ORIG_PATH="$LIB_PATH/libmain_orig.so"
