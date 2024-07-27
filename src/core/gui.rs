@@ -66,6 +66,7 @@ impl Gui {
 
         let mut style = egui::Style::default();
         style.spacing.button_padding = egui::Vec2::new(8.0, 6.0);
+        style.interaction.selectable_labels = false;
         context.set_style(style);
 
         let mut visuals = egui::Visuals::dark();
