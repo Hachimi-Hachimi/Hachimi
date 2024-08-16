@@ -775,7 +775,7 @@ impl ConfigEditor {
         #[cfg(target_os = "windows")]
         {
             ui.label("VSync");
-            Gui::run_vsync_combo(ui, &mut config.vsync_count);
+            Gui::run_vsync_combo(ui, &mut config.windows.vsync_count);
             ui.end_row();
         }
 

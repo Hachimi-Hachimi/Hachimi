@@ -79,7 +79,7 @@ impl Hachimi {
             target_fps: AtomicI32::new(config.target_fps.unwrap_or(-1)),
 
             #[cfg(target_os = "windows")]
-            vsync_count: AtomicI32::new(config.vsync_count),
+            vsync_count: AtomicI32::new(config.windows.vsync_count),
 
             #[cfg(target_os = "windows")]
             updater: Arc::default(),
@@ -191,7 +191,7 @@ fn default_serde_instance<'a, T: Deserialize<'a>>() -> Option<T> {
     T::deserialize(empty_deserializer).ok()
 }
 
-#[derive(Deserialize, Clone, Serialize)]
+#[derive(Deserialize, Serialize, Clone)]
 pub struct Config {
     #[serde(default)]
     pub debug_mode: bool,
@@ -201,9 +201,6 @@ pub struct Config {
     pub disable_gui: bool,
     pub localized_data_dir: Option<String>,
     pub target_fps: Option<i32>,
-    #[serde(default = "Config::default_vsync_count")]
-    #[cfg(target_os = "windows")]
-    pub vsync_count: i32,
     #[serde(default = "Config::default_open_browser_url")]
     pub open_browser_url: String,
     #[serde(default = "Config::default_virtual_res_mult")]
@@ -215,21 +212,15 @@ pub struct Config {
     pub disable_auto_update_check: bool,
     #[serde(default)]
     pub disable_translations: bool,
-    #[serde(default)]
+
     #[cfg(target_os = "windows")]
-    pub load_libraries: Vec<String>,
-    #[serde(default = "Config::default_menu_open_key")]
-    #[cfg(target_os = "windows")]
-    pub menu_open_key: u16
+    #[serde(flatten)]
+    pub windows: hachimi_impl::Config
 }
 
 impl Config {
     fn default_open_browser_url() -> String { "https://www.google.com/".to_owned() }
     fn default_virtual_res_mult() -> f32 { 1.0 }
-    #[cfg(target_os = "windows")]
-    fn default_vsync_count() -> i32 { -1 }
-    #[cfg(target_os = "windows")]
-    fn default_menu_open_key() -> u16 { windows::Win32::UI::Input::KeyboardAndMouse::VK_RIGHT.0 }
 }
 
 impl Default for Config {

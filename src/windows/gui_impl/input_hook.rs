@@ -19,7 +19,7 @@ extern "C" fn wnd_proc(hwnd: HWND, umsg: c_uint, wparam: WPARAM, lparam: LPARAM)
     // Check for Home key presses
     match umsg {
         WM_KEYDOWN | WM_SYSKEYDOWN => {
-            if wparam.0 as u16 == Hachimi::instance().config.load().menu_open_key {
+            if wparam.0 as u16 == Hachimi::instance().config.load().windows.menu_open_key {
                 let Some(mut gui) = Gui::instance().map(|m| m.lock().unwrap()) else {
                     return unsafe { orig_fn(hwnd, umsg, wparam, lparam) };
                 };

@@ -11,7 +11,7 @@ const DLL_PROCESS_ATTACH: c_ulong = 1;
 //const DLL_PROCESS_DETACH: c_ulong = 0;
 
 pub fn load_libraries() {
-    for name in Hachimi::instance().config.load().load_libraries.iter() {
+    for name in Hachimi::instance().config.load().windows.load_libraries.iter() {
         let Ok(name_cstr) = U16CString::from_str(name) else {
             warn!("Invalid library name: {}", name);
             continue;
