@@ -3431,3 +3431,19 @@ pub struct AndroidNotification {
     pub m_RepeatInterval: bool,
     pub m_CustomTimestamp: bool,
 }
+
+/************** ACTk (READ-ONLY) **************/
+#[repr(C)]
+#[derive(Default, Debug)]
+pub struct ObscuredInt {
+    current_crypto_key: i32,
+    hidden_value: i32,
+    inited: bool,
+    fake_value: i32,
+    fake_value_active: bool
+}
+impl ObscuredInt {
+    pub fn value(&self) -> i32 {
+        self.hidden_value ^ self.current_crypto_key
+    }
+}

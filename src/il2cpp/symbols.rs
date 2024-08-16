@@ -189,6 +189,10 @@ pub fn get_field_object_value<T>(obj: *mut Il2CppObject, field: *mut FieldInfo) 
     value
 }
 
+pub fn get_field_ptr<T>(obj: *mut Il2CppObject, field: *mut FieldInfo) -> *mut T {
+    unsafe { (obj as usize + (*field).offset as usize) as _ }
+}
+
 pub fn set_field_value<T>(obj: *mut Il2CppObject, field: *mut FieldInfo, value: &T) {
     il2cpp_field_set_value(obj, field, unsafe { std::mem::transmute(value) });
 }
@@ -241,7 +245,7 @@ impl<T> IEnumerable<T> {
             return None;
         }
         
-        let get_enumerator: fn(*mut Il2CppObject) -> *mut Il2CppObject = unsafe {
+        let get_enumerator: extern "C" fn(*mut Il2CppObject) -> *mut Il2CppObject = unsafe {
             std::mem::transmute(get_enumerator_addr)
         };
         let Some(enumerator) = IEnumerator::new(get_enumerator(this)) else {
@@ -259,8 +263,8 @@ impl<T> IEnumerable<T> {
 #[allow(non_snake_case)]
 pub struct IEnumerator<T = *mut Il2CppObject> {
     pub this: *mut Il2CppObject,
-    get_Current: fn(*mut Il2CppObject) -> T,
-    MoveNext: fn(*mut Il2CppObject) -> bool
+    get_Current: extern "C" fn(*mut Il2CppObject) -> T,
+    MoveNext: extern "C" fn(*mut Il2CppObject) -> bool
 }
 
 impl<T> IEnumerator<T> {
@@ -303,9 +307,9 @@ impl<T> Iterator for IEnumerator<T> {
 #[allow(non_snake_case)]
 pub struct IList<T = *mut Il2CppObject> {
     pub this: *mut Il2CppObject,
-    get_Item: fn(*mut Il2CppObject, i32) -> T,
-    set_Item: fn(*mut Il2CppObject, i32, T),
-    get_Count: fn(*mut Il2CppObject) -> i32
+    get_Item: extern "C" fn(*mut Il2CppObject, i32) -> T,
+    set_Item: extern "C" fn(*mut Il2CppObject, i32, T),
+    get_Count: extern "C" fn(*mut Il2CppObject) -> i32
 }
 
 impl<T> IList<T> {
@@ -321,7 +325,7 @@ impl<T> IList<T> {
 
         if get_item_addr == 0 || set_item_addr == 0 || get_count_addr == 0 {
             return None;
-        }
+        }       
 
         Some(IList {
             this,
@@ -370,6 +374,12 @@ impl<'a, T> IntoIterator for &'a IList<T> {
     }
 }
 
+impl<T> Into<Vec<T>> for IList<T> {
+    fn into(self) -> Vec<T> {
+        self.iter().collect()
+    }
+}
+
 pub struct IListIter<'a, T> {
     list: &'a IList<T>,
     i: i32
@@ -388,9 +398,9 @@ impl<'a, T> Iterator for IListIter<'a, T> {
 #[allow(non_snake_case)]
 pub struct IDictionary<K, V> {
     pub this: *mut Il2CppObject,
-    get_Item: fn(*mut Il2CppObject, K) -> V,
-    set_Item: fn(*mut Il2CppObject, K, V),
-    Contains: fn(*mut Il2CppObject, K) -> bool
+    get_Item: extern "C" fn(*mut Il2CppObject, K) -> V,
+    set_Item: extern "C" fn(*mut Il2CppObject, K, V),
+    Contains: extern "C" fn(*mut Il2CppObject, K) -> bool
 }
 
 impl<K, V> IDictionary<K, V> {
@@ -442,7 +452,7 @@ impl Thread {
             return null_mut();
         }
 
-        let get_exec_ctx: fn(*mut Il2CppObject) -> *mut Il2CppObject = unsafe {
+        let get_exec_ctx: extern "C" fn(*mut Il2CppObject) -> *mut Il2CppObject = unsafe {
             std::mem::transmute(get_exec_ctx_addr)
         };
         let exec_ctx = get_exec_ctx(self.0 as *mut Il2CppObject);
@@ -464,7 +474,7 @@ impl Thread {
         }
         let sync_ctx_class = unsafe { (*sync_ctx).klass() };
 
-        let sync_ctx_post: fn(*mut Il2CppObject, *mut Il2CppDelegate, *mut Il2CppObject) = unsafe {
+        let sync_ctx_post: extern "C" fn(*mut Il2CppObject, *mut Il2CppDelegate, *mut Il2CppObject) = unsafe {
             std::mem::transmute(get_method_addr_cached(sync_ctx_class, c"Post", 2))
         };
 
@@ -494,7 +504,7 @@ pub fn create_delegate(delegate_class: *mut Il2CppClass, args_count: i32, method
     if delegate_ctor_addr == 0 {
         return None;
     }
-    let delegate_ctor: fn(*mut Il2CppObject, *mut Il2CppObject, *const MethodInfo) = unsafe {
+    let delegate_ctor: extern "C" fn(*mut Il2CppObject, *mut Il2CppObject, *const MethodInfo) = unsafe {
         std::mem::transmute(delegate_ctor_addr)
     };
 
