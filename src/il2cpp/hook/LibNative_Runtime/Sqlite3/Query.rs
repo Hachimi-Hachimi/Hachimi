@@ -101,11 +101,7 @@ extern "C" fn Dispose(this: *mut Il2CppObject) {
 }
 
 static mut GETINT_ADDR: usize = 0;
-type GetIntFn = extern "C" fn(this: *mut Il2CppObject, index: i32) -> i32;
-pub fn GetInt(this: *mut Il2CppObject, index: i32) -> i32 {
-    let orig_fn: GetIntFn = unsafe { std::mem::transmute(GETINT_ADDR) };
-    orig_fn(this, index)
-}
+impl_addr_wrapper_fn!(GetInt, GETINT_ADDR, i32, this: *mut Il2CppObject, index: i32);
 
 pub fn init(LibNative_Runtime: *const Il2CppImage) {
     get_class_or_return!(LibNative_Runtime, "LibNative.Sqlite3", Query);
