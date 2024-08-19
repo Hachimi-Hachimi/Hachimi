@@ -73,6 +73,8 @@ pub mod LibNative_Runtime;
 pub mod umamusume;
 pub mod Cute_UI_Assembly;
 pub mod Plugins;
+mod Cute_Cri_Assembly;
+
 #[cfg(target_os = "android")]
 mod Cute_Core_Assembly;
 
@@ -94,6 +96,8 @@ pub fn init() {
     umamusume::init();
     Cute_UI_Assembly::init();
     Plugins::init();
+    Cute_Cri_Assembly::init();
+
     #[cfg(target_os = "android")]
     Cute_Core_Assembly::init();
 
