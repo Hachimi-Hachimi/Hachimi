@@ -4,7 +4,7 @@ use once_cell::sync::OnceCell;
 
 use crate::il2cpp::{
     hook::{
-        umamusume::{GallopUtil, Localize},
+        umamusume::{GameSystem, Localize},
         UnityEngine_CoreModule::Application
     },
     symbols::Thread
@@ -16,7 +16,7 @@ use crate::il2cpp::hook::umamusume::WebViewManager;
 #[cfg(target_os = "windows")]
 use crate::il2cpp::hook::UnityEngine_CoreModule::QualitySettings;
 
-use super::{ext::StringExt, hachimi, http::AsyncRequest, tl_repo::{self, RepoInfo}, utils, Hachimi};
+use super::{hachimi, http::AsyncRequest, tl_repo::{self, RepoInfo}, utils, Hachimi};
 
 type BoxedWindow = Box<dyn Window + Send + Sync>;
 pub struct Gui {
@@ -326,7 +326,7 @@ impl Gui {
                         show_window = Some(Box::new(SimpleYesNoDialog::new("Confirm", "Are you sure you want to soft restart the game?", |ok| {
                             if !ok { return; }
                             Thread::main_thread().schedule(|| {
-                                GallopUtil::GotoTitleOnError("Click the button below to restart the game.".to_il2cpp_string());
+                                GameSystem::SoftwareReset(GameSystem::instance());
                             });
                         })));
                     }

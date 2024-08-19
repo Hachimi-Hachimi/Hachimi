@@ -21,6 +21,7 @@ pub mod TextFrame;
 mod PartsSingleModeSkillListItem;
 pub mod FlashActionPlayer;
 pub mod TextRubyData;
+pub mod GameSystem;
 
 pub fn init() {
     get_assembly_image_or_return!(image, "umamusume.dll");
@@ -47,4 +48,5 @@ pub fn init() {
     PartsSingleModeSkillListItem::init(image);
     FlashActionPlayer::init(image);
     TextRubyData::init(image);
+    GameSystem::init(image);
 }
