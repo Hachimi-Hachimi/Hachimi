@@ -1,6 +1,6 @@
 use crate::{core::Hachimi, il2cpp::{symbols::get_method_addr, types::*}};
 
-use super::{LowResolutionCamera, SingleModeStartResultCharaViewer};
+use super::SingleModeStartResultCharaViewer;
 
 type GetVirtualResolutionFn = extern "C" fn(this: *mut Il2CppObject) -> Vector2Int_t;
 extern "C" fn GetVirtualResolution(this: *mut Il2CppObject) -> Vector2Int_t {
@@ -16,10 +16,7 @@ type GetVirtualResolution3DFn = extern "C" fn(this: *mut Il2CppObject, is_forced
 extern "C" fn GetVirtualResolution3D(this: *mut Il2CppObject, is_forced_wide_aspect: bool) -> Vector2Int_t {
     let mut res = get_orig_fn!(GetVirtualResolution3D, GetVirtualResolution3DFn)(this, is_forced_wide_aspect);
     let mult = Hachimi::instance().config.load().virtual_res_mult;
-    if mult != 1.0 &&
-        !SingleModeStartResultCharaViewer::setting_up_image_effect() &&
-        !LowResolutionCamera::creating_render_texture()
-    {
+    if mult != 1.0 && !SingleModeStartResultCharaViewer::setting_up_image_effect() {
         res *= mult;
     }
     res

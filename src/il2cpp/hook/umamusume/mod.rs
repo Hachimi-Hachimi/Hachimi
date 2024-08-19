@@ -20,7 +20,6 @@ pub mod WebViewDefine;
 pub mod TextFrame;
 mod PartsSingleModeSkillListItem;
 pub mod FlashActionPlayer;
-mod LowResolutionCamera;
 
 pub fn init() {
     get_assembly_image_or_return!(image, "umamusume.dll");
@@ -46,5 +45,4 @@ pub fn init() {
     TextFrame::init(image);
     PartsSingleModeSkillListItem::init(image);
     FlashActionPlayer::init(image);
-    LowResolutionCamera::init(image);
 }
