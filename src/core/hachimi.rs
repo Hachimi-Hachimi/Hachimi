@@ -385,6 +385,7 @@ pub struct LocalizedDataConfig {
     pub ordinal_types: Vec<String>,
     #[serde(default)]
     pub months: Vec<String>,
+
     #[serde(default)]
     pub use_text_wrapper: bool,
     pub text_wrapper: Option<i32>, // DEPRECATED
@@ -395,6 +396,9 @@ pub struct LocalizedDataConfig {
     pub text_frame_line_spacing_multiplier: Option<f32>,
     pub text_frame_font_size_multiplier: Option<f32>,
     pub skill_list_item_desc_font_size_multiplier: Option<f32>,
+
+    #[serde(default)]
+    pub remove_ruby: bool,
 
     pub news_url: Option<String>,
 
