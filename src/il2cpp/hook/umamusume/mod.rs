@@ -24,6 +24,7 @@ pub mod TextRubyData;
 pub mod GameSystem;
 mod StoryViewTextControllerLandscape;
 mod StoryViewTextControllerSingleMode;
+mod JikkyoDisplay;
 
 pub fn init() {
     get_assembly_image_or_return!(image, "umamusume.dll");
@@ -53,4 +54,5 @@ pub fn init() {
     GameSystem::init(image);
     StoryViewTextControllerLandscape::init(image);
     StoryViewTextControllerSingleMode::init(image);
+    JikkyoDisplay::init(image);
 }
