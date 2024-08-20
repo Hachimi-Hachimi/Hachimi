@@ -22,6 +22,8 @@ mod PartsSingleModeSkillListItem;
 pub mod FlashActionPlayer;
 pub mod TextRubyData;
 pub mod GameSystem;
+mod StoryViewTextControllerLandscape;
+mod StoryViewTextControllerSingleMode;
 
 pub fn init() {
     get_assembly_image_or_return!(image, "umamusume.dll");
@@ -49,4 +51,6 @@ pub fn init() {
     FlashActionPlayer::init(image);
     TextRubyData::init(image);
     GameSystem::init(image);
+    StoryViewTextControllerLandscape::init(image);
+    StoryViewTextControllerSingleMode::init(image);
 }
