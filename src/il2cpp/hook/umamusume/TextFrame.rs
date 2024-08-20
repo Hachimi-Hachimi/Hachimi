@@ -28,11 +28,6 @@ extern "C" fn Initialize(this: *mut Il2CppObject) {
         let line_spacing = Text::get_lineSpacing(text_label);
         Text::set_lineSpacing(text_label, line_spacing * mult);
     }
-
-    if let Some(mult) = localized_data.config.text_frame_font_size_multiplier {
-        let font_size = Text::get_fontSize(text_label);
-        Text::set_fontSize(text_label, (font_size as f32 * mult).round() as i32);
-    }
 }
 
 pub fn init(umamusume: *const Il2CppImage) {

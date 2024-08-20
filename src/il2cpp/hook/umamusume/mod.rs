@@ -20,6 +20,8 @@ pub mod WebViewDefine;
 pub mod TextFrame;
 mod PartsSingleModeSkillListItem;
 pub mod FlashActionPlayer;
+mod StoryViewTextControllerLandscape;
+mod StoryViewTextControllerSingleMode;
 
 pub fn init() {
     get_assembly_image_or_return!(image, "umamusume.dll");
@@ -45,4 +47,6 @@ pub fn init() {
     TextFrame::init(image);
     PartsSingleModeSkillListItem::init(image);
     FlashActionPlayer::init(image);
+    StoryViewTextControllerLandscape::init(image);
+    StoryViewTextControllerSingleMode::init(image);
 }
