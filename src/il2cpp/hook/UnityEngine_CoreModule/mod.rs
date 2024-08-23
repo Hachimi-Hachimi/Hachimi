@@ -4,14 +4,20 @@ pub mod Sprite;
 pub mod Object;
 pub mod Application;
 pub mod Material;
-#[cfg(target_os = "windows")]
-pub mod QualitySettings;
 mod AsyncOperation;
 pub mod GameObject;
+
+#[cfg(target_os = "windows")]
+pub mod QualitySettings;
+#[cfg(target_os = "windows")]
+pub mod Screen;
 
 pub const HideFlags_DontUnloadUnusedAsset: i32 = 32;
 
 pub const TextureFormat_RGBA32: i32 = 4;
+
+pub const FullScreenMode_ExclusiveFullScreen: i32 = 0;
+pub const FullScreenMode_FullScreenWindow: i32 = 1;
 
 pub fn init() {
     get_assembly_image_or_return!(image, "UnityEngine.CoreModule.dll");
@@ -22,8 +28,12 @@ pub fn init() {
     Object::init(image);
     Application::init(image);
     Material::init(image);
-    #[cfg(target_os = "windows")]
-    QualitySettings::init(image);
     AsyncOperation::init(image);
     GameObject::init(image);
+
+    #[cfg(target_os = "windows")]
+    {
+        QualitySettings::init(image);
+        Screen::init(image);
+    }
 }

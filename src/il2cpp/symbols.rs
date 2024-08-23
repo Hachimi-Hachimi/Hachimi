@@ -6,6 +6,7 @@ use std::sync::Mutex;
 use fnv::FnvHashMap;
 use once_cell::sync::Lazy;
 
+use crate::core::Hachimi;
 use crate::symbols_impl;
 use crate::core::Error;
 
@@ -263,9 +264,11 @@ impl<T> IEnumerable<T> {
 #[allow(non_snake_case)]
 pub struct IEnumerator<T = *mut Il2CppObject> {
     pub this: *mut Il2CppObject,
-    get_Current: extern "C" fn(*mut Il2CppObject) -> T,
-    MoveNext: extern "C" fn(*mut Il2CppObject) -> bool
+    get_Current: Option<extern "C" fn(*mut Il2CppObject) -> T>,
+    MoveNext: MoveNextFn
 }
+
+pub type MoveNextFn = extern "C" fn(*mut Il2CppObject) -> bool;
 
 impl<T> IEnumerator<T> {
     pub fn new(this: *mut Il2CppObject) -> Option<IEnumerator<T>> {
@@ -274,10 +277,11 @@ impl<T> IEnumerator<T> {
         }
 
         let class = unsafe { (*this).klass() };
-        let get_current_addr = get_method_addr_cached(class, c"get_Current", 0);
+        let get_current_method = get_method_cached(class, c"get_Current", 0);
+        let get_current_addr = get_current_method.map(|m| unsafe { (*m).methodPointer }).unwrap_or(0);
         let move_next_addr = get_method_addr_cached(class, c"MoveNext", 0);
 
-        if get_current_addr == 0 || move_next_addr == 0 {
+        if move_next_addr == 0 {
             return None;
         }
 
@@ -287,14 +291,22 @@ impl<T> IEnumerator<T> {
             MoveNext: unsafe { std::mem::transmute(move_next_addr) }
         })
     }
+
+    pub fn hook_move_next(&self, hook_fn: extern "C" fn(*mut Il2CppObject) -> bool) -> Result<usize, Error> {
+        Hachimi::instance().interceptor.hook(self.MoveNext as usize, hook_fn as usize)
+    }
 }
 
 impl<T> Iterator for IEnumerator<T> {
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
+        let Some(get_current) = self.get_Current else {
+            return None;
+        };
+
         if (self.MoveNext)(self.this) {
-            Some((self.get_Current)(self.this))
+            Some(get_current(self.this))
         }
         else {
             None

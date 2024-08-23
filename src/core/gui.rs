@@ -365,25 +365,31 @@ impl Gui {
 
     #[cfg(target_os = "windows")]
     fn run_vsync_combo(ui: &mut egui::Ui, value: &mut i32) {
-        egui::ComboBox::new(ui.id().with("vsync_combo"), "")
-        .selected_text(
-            match value {
-                -1 => "Default",
-                0 => "Off",
-                1 => "On",
-                2 => "1/2",
-                3 => "1/3",
-                4 => "1/4",
-                _ => "Unknown"
+        Self::run_combo(ui, "vsync_combo", value, &[
+            (-1, "Default"),
+            (0, "Off"),
+            (1, "On"),
+            (2, "1/2"),
+            (3, "1/3"),
+            (4, "1/4")
+        ]);
+    }
+
+    #[cfg(target_os = "windows")]
+    fn run_combo<T: PartialEq + Copy>(ui: &mut egui::Ui, id_child: impl std::hash::Hash, value: &mut T, choices: &[(T, &str)]) {
+        let mut selected = "Unknown";
+        for choice in choices.iter() {
+            if *value == choice.0 {
+                selected = choice.1;
             }
-        )
+        }
+
+        egui::ComboBox::new(ui.id().with(id_child), "")
+        .selected_text(selected)
         .show_ui(ui, |ui| {
-            ui.selectable_value(value, -1, "Default");
-            ui.selectable_value(value, 0, "Off");
-            ui.selectable_value(value, 1, "On");
-            ui.selectable_value(value, 2, "1/2");
-            ui.selectable_value(value, 3, "1/3");
-            ui.selectable_value(value, 4, "1/4");
+            for choice in choices.iter() {
+                ui.selectable_value(value, choice.0, choice.1);
+            }
         });
     }
 
@@ -772,16 +778,33 @@ impl ConfigEditor {
 
         Self::option_slider(ui, "Target FPS", &mut config.target_fps, 30..=240);
 
-        #[cfg(target_os = "windows")]
-        {
-            ui.label("VSync");
-            Gui::run_vsync_combo(ui, &mut config.windows.vsync_count);
-            ui.end_row();
-        }
-
         ui.label("Virtual resolution\nmultiplier");
         ui.add(egui::Slider::new(&mut config.virtual_res_mult, 1.0..=4.0).step_by(0.1));
         ui.end_row();
+
+        ui.label("UI scale");
+        ui.add(egui::Slider::new(&mut config.ui_scale, 0.1..=10.0).step_by(0.05));
+        ui.end_row();
+
+        #[cfg(target_os = "windows")]
+        {
+            use crate::windows::hachimi_impl::FullScreenMode;
+
+            ui.label("VSync");
+            Gui::run_vsync_combo(ui, &mut config.windows.vsync_count);
+            ui.end_row();
+
+            ui.label("Auto full screen");
+            ui.checkbox(&mut config.windows.auto_full_screen, "");
+            ui.end_row();
+
+            ui.label("Full screen mode");
+            Gui::run_combo(ui, "full_screen_mode", &mut config.windows.full_screen_mode, &[
+                (FullScreenMode::ExclusiveFullScreen, "Exclusive"),
+                (FullScreenMode::FullScreenWindow, "Borderless")
+            ]);
+            ui.end_row();
+        }
     }
 }
 

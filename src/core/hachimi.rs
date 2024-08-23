@@ -4,7 +4,7 @@ use fnv::FnvHashMap;
 use once_cell::sync::OnceCell;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
-use crate::{gui_impl, hachimi_impl, il2cpp};
+use crate::{gui_impl, hachimi_impl, il2cpp::{self, hook::umamusume::GameSystem}};
 
 use super::{game::Game, plurals, template, template_filters, tl_repo, utils, Error, Interceptor};
 
@@ -158,6 +158,9 @@ impl Hachimi {
     }
 
     fn on_hooking_finished(&self) {
+        // By the time it finished hooking the game will have already finished initializing
+        GameSystem::on_game_initialized();
+
         if !self.config.load().disable_gui {
             gui_impl::init();
         }
@@ -212,6 +215,8 @@ pub struct Config {
     pub disable_auto_update_check: bool,
     #[serde(default)]
     pub disable_translations: bool,
+    #[serde(default = "Config::default_ui_scale")]
+    pub ui_scale: f32,
 
     #[cfg(target_os = "windows")]
     #[serde(flatten)]
@@ -221,6 +226,7 @@ pub struct Config {
 impl Config {
     fn default_open_browser_url() -> String { "https://www.google.com/".to_owned() }
     fn default_virtual_res_mult() -> f32 { 1.0 }
+    fn default_ui_scale() -> f32 { 1.0 }
 }
 
 impl Default for Config {

@@ -4,7 +4,7 @@
 use std::hash::Hasher;
 
 use fnv::FnvHasher;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use widestring::Utf16Str;
 
 #[repr(C)]
@@ -3336,7 +3336,7 @@ pub struct Color_t {
     pub a: f32,
 }
 #[repr(C)]
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Vector2_t {
     pub x: f32,
     pub y: f32,
@@ -3430,6 +3430,13 @@ pub struct AndroidNotification {
     pub m_Color: Color_t,
     pub m_RepeatInterval: bool,
     pub m_CustomTimestamp: bool,
+}
+#[repr(C)]
+#[derive(Debug, Deserialize, Serialize, Clone, Default)]
+pub struct Resolution {
+    pub width: i32,
+    pub height: i32,
+    pub refresh_rate: i32
 }
 
 /************** ACTk (READ-ONLY) **************/

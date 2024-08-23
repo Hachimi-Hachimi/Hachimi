@@ -2,7 +2,16 @@ use std::sync::atomic;
 
 use serde::{Deserialize, Serialize};
 
-use crate::{core::Hachimi, il2cpp::hook::UnityEngine_CoreModule::QualitySettings};
+use crate::{
+    core::Hachimi,
+    il2cpp::{
+        hook::UnityEngine_CoreModule::{
+            FullScreenMode_ExclusiveFullScreen, FullScreenMode_FullScreenWindow,
+            QualitySettings, Screen
+        },
+        types::Resolution
+    }
+};
 
 use super::utils;
 
@@ -27,6 +36,9 @@ pub fn on_hooking_finished(hachimi: &Hachimi) {
         QualitySettings::set_vSyncCount(1);
     }
 
+    // Apply auto full screen
+    Screen::apply_auto_full_screen(Screen::get_width(), Screen::get_height());
+
     // Clean up the update installer
     _ = std::fs::remove_file(utils::get_tmp_installer_path());
 }
@@ -38,7 +50,28 @@ pub struct Config {
     #[serde(default)]
     pub load_libraries: Vec<String>,
     #[serde(default = "Config::default_menu_open_key")]
-    pub menu_open_key: u16
+    pub menu_open_key: u16,
+    #[serde(default)]
+    pub auto_full_screen: bool,
+    #[serde(default)]
+    pub full_screen_mode: FullScreenMode,
+    #[serde(default)]
+    pub full_screen_res: Resolution
+}
+
+#[derive(Deserialize, Serialize, Copy, Clone, Default, Eq, PartialEq)]
+pub enum FullScreenMode {
+    #[default] ExclusiveFullScreen,
+    FullScreenWindow
+}
+
+impl FullScreenMode {
+    pub fn value(&self) -> i32 {
+        match self {
+            FullScreenMode::ExclusiveFullScreen => FullScreenMode_ExclusiveFullScreen,
+            FullScreenMode::FullScreenWindow => FullScreenMode_FullScreenWindow
+        }
+    }
 }
 
 impl Config {

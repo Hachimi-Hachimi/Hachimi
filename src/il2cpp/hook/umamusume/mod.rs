@@ -26,6 +26,9 @@ mod StoryViewTextControllerLandscape;
 mod StoryViewTextControllerSingleMode;
 mod JikkyoDisplay;
 
+#[cfg(target_os = "android")]
+mod Screen;
+
 pub fn init() {
     get_assembly_image_or_return!(image, "umamusume.dll");
 
@@ -55,4 +58,7 @@ pub fn init() {
     StoryViewTextControllerLandscape::init(image);
     StoryViewTextControllerSingleMode::init(image);
     JikkyoDisplay::init(image);
+
+    #[cfg(target_os = "android")]
+    Screen::init(image);
 }

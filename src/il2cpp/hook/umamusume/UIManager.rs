@@ -1,4 +1,40 @@
-use crate::{core::{ext::StringExt, Hachimi}, il2cpp::{symbols::get_method_overload_addr, types::*}};
+use crate::{core::{ext::StringExt, Hachimi}, il2cpp::{hook::UnityEngine_UI::CanvasScaler, symbols::{get_method_addr, get_method_overload_addr, IEnumerable, MonoSingleton}, types::*}};
+
+static mut CLASS: *mut Il2CppClass = 0 as _;
+pub fn class() -> *mut Il2CppClass {
+    unsafe { CLASS }
+}
+
+pub fn instance() -> *mut Il2CppObject {
+    let Some(singleton) = MonoSingleton::new(class()) else {
+        return 0 as _;
+    };
+    singleton.instance()
+}
+
+static mut GETCANVASSCALERLIST_ADDR: usize = 0;
+impl_addr_wrapper_fn!(GetCanvasScalerList, GETCANVASSCALERLIST_ADDR, *mut Il2CppObject, this: *mut Il2CppObject);
+
+pub fn apply_ui_scale() {
+    let scale = Hachimi::instance().config.load().ui_scale;
+    let ui_manager = instance();
+    let Some(canvas_scaler_list) = IEnumerable::new(GetCanvasScalerList(ui_manager)) else {
+        return
+    };
+    for scaler in canvas_scaler_list.enumerator {
+        #[cfg(target_os = "android")]
+        {
+            let res = CanvasScaler::get_m_ReferenceResolution(scaler);
+            unsafe {
+                (*res).x /= scale;
+                (*res).y /= scale;
+            }
+        }
+        
+        #[cfg(target_os = "windows")]
+        CanvasScaler::set_scaleFactor(scaler, scale);
+    }
+}
 
 type SetHeaderTitleTextFn = extern "C" fn(this: *mut Il2CppObject, text: *mut Il2CppString, guide_id: i32);
 extern "C" fn SetHeaderTitleText(this: *mut Il2CppObject, text_: *mut Il2CppString, guide_id: i32) {
@@ -18,11 +54,63 @@ extern "C" fn SetHeaderTitleText(this: *mut Il2CppObject, text_: *mut Il2CppStri
     get_orig_fn!(SetHeaderTitleText, SetHeaderTitleTextFn)(this, new_text, guide_id)
 }
 
+#[cfg(target_os = "windows")]
+type ChangeResizeUIForPCFn = extern "C" fn(this: *mut Il2CppObject, width: i32, height: i32);
+#[cfg(target_os = "windows")]
+extern "C" fn ChangeResizeUIForPC(this: *mut Il2CppObject, width: i32, height: i32) {
+    get_orig_fn!(ChangeResizeUIForPC, ChangeResizeUIForPCFn)(this, width, height);
+    apply_ui_scale();
+}
+
+#[cfg(target_os = "android")]
+extern "C" fn WaitBootSetup_MoveNext(enumerator: *mut Il2CppObject) -> bool {
+    use crate::il2cpp::symbols::MoveNextFn;
+    let moved = get_orig_fn!(WaitBootSetup_MoveNext, MoveNextFn)(enumerator);
+    if !moved {
+        apply_ui_scale();
+    }
+    moved
+}
+
+#[cfg(target_os = "android")]
+type WaitBootSetupFn = extern "C" fn(this: *mut Il2CppObject) -> *mut Il2CppObject;
+#[cfg(target_os = "android")]
+extern "C" fn WaitBootSetup(this: *mut Il2CppObject) -> *mut Il2CppObject {
+    let res = get_orig_fn!(WaitBootSetup, WaitBootSetupFn)(this);
+    if Hachimi::instance().config.load().ui_scale == 1.0 { return res; }
+
+    if let Some(enumerator) = <crate::il2cpp::symbols::IEnumerator>::new(res) {
+        if let Err(e) = enumerator.hook_move_next(WaitBootSetup_MoveNext) {
+            error!("Failed to hook enumerator: {}", e);
+        }
+    }
+    res
+}
+
 pub fn init(umamusume: *const Il2CppImage) {
     get_class_or_return!(umamusume, Gallop, UIManager);
 
     let SetHeaderTitleText_addr = get_method_overload_addr(UIManager, "SetHeaderTitleText",
         &[Il2CppTypeEnum_IL2CPP_TYPE_STRING, Il2CppTypeEnum_IL2CPP_TYPE_VALUETYPE]);
-    
+
     new_hook!(SetHeaderTitleText_addr, SetHeaderTitleText);
+
+    #[cfg(target_os = "windows")]
+    {
+        let ChangeResizeUIForPC_addr = get_method_addr(UIManager, c"ChangeResizeUIForPC", 2);
+
+        new_hook!(ChangeResizeUIForPC_addr, ChangeResizeUIForPC);
+    }
+
+    #[cfg(target_os = "android")]
+    {
+        let WaitBootSetup_addr = get_method_addr(UIManager, c"WaitBootSetup", 0);
+
+        new_hook!(WaitBootSetup_addr, WaitBootSetup);
+    }
+
+    unsafe {
+        CLASS = UIManager;
+        GETCANVASSCALERLIST_ADDR = get_method_addr(UIManager, c"GetCanvasScalerList", 0);
+    }
 }
