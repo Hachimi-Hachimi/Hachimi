@@ -41,6 +41,13 @@ fn setup_version_env() {
         else {
             println!("cargo:warning=Failed to retrieve git repo status");
         }
+
+        if let Some(output) = execute_command(Command::new("git").args(["rev-parse", "--git-dir"])) {
+            println!("cargo:rerun-if-changed={}", command_output_to_string(output));
+        }
+        else {
+            println!("cargo:warning=Failed to retrieve git directory");
+        }
     }
     else {
         println!("cargo:warning=Failed to execute git. Is git installed?");
