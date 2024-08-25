@@ -29,7 +29,6 @@ pub struct Gui {
     fps_text: String,
 
     show_menu: bool,
-    version_str: String,
 
     splash_visible: bool,
     splash_tween: TweenInOutWithDelay,
@@ -97,7 +96,6 @@ impl Gui {
             fps_text: "FPS: 0".to_string(),
 
             show_menu: false,
-            version_str: "v".to_owned() + env!("CARGO_PKG_VERSION"),
 
             splash_visible: true,
             splash_tween: TweenInOutWithDelay::new(0.8, 3.0, Easing::OutQuad),
@@ -216,7 +214,7 @@ impl Gui {
                 ui.horizontal(|ui| {
                     ui.add(Self::icon());
                     ui.heading("Hachimi");
-                    ui.label(&self.version_str);
+                    ui.label(env!("HACHIMI_DISPLAY_VERSION"));
                 });
                 ui.label(&self.splash_sub_str);
             });
@@ -241,7 +239,7 @@ impl Gui {
                         show_window = Some(Box::new(AboutWindow::new()));
                     }
                 });
-                ui.label(&self.version_str);
+                ui.label(env!("HACHIMI_DISPLAY_VERSION"));
                 if ui.button("🗙 Close menu").clicked() {
                     self.show_menu = false;
                     self.menu_anim_time = None;
@@ -1006,7 +1004,7 @@ impl Window for AboutWindow {
                 ui.add(Gui::icon_2x());
                 ui.vertical(|ui| {
                     ui.heading("Hachimi");
-                    ui.label("v".to_owned() + env!("CARGO_PKG_VERSION"));
+                    ui.label(env!("HACHIMI_DISPLAY_VERSION"));
                 });
             });
             ui.label("Copyright (c) 2024 LeadRDRK and contributors");

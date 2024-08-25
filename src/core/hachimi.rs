@@ -51,7 +51,7 @@ impl Hachimi {
 
             super::log::init(&instance);
 
-            info!("Hachimi v{}", env!("CARGO_PKG_VERSION"));
+            info!("Hachimi {}", env!("HACHIMI_DISPLAY_VERSION"));
             INSTANCE.set(Arc::new(instance)).is_ok()
     }
 
