@@ -2,6 +2,21 @@ use crate::{core::Hachimi, il2cpp::{symbols::get_method_addr, types::*}};
 
 use super::SingleModeStartResultCharaViewer;
 
+#[cfg(target_os = "windows")]
+static mut CLASS: *mut Il2CppClass = 0 as _;
+#[cfg(target_os = "windows")]
+pub fn class() -> *mut Il2CppClass {
+    unsafe { CLASS }
+}
+
+#[cfg(target_os = "windows")]
+pub fn instance() -> *mut Il2CppObject {
+    let Some(singleton) = crate::il2cpp::symbols::MonoSingleton::new(class()) else {
+        return 0 as _;
+    };
+    singleton.instance()
+}
+
 type GetVirtualResolutionFn = extern "C" fn(this: *mut Il2CppObject) -> Vector2Int_t;
 extern "C" fn GetVirtualResolution(this: *mut Il2CppObject) -> Vector2Int_t {
     let mut res = get_orig_fn!(GetVirtualResolution, GetVirtualResolutionFn)(this);
@@ -32,6 +47,11 @@ extern "C" fn GetVirtualResolutionWidth3D(this: *mut Il2CppObject) -> i32 {
     width
 }
 
+#[cfg(target_os = "windows")]
+static mut UPDATE3DRENDERTEXTURE_ADDR: usize = 0;
+#[cfg(target_os = "windows")]
+impl_addr_wrapper_fn!(Update3DRenderTexture, UPDATE3DRENDERTEXTURE_ADDR, (), this: *mut Il2CppObject);
+
 pub fn init(umamusume: *const Il2CppImage) {
     get_class_or_return!(umamusume, Gallop, GraphicSettings);
 
@@ -42,4 +62,10 @@ pub fn init(umamusume: *const Il2CppImage) {
     new_hook!(GetVirtualResolution3D_addr, GetVirtualResolution3D);
     new_hook!(GetVirtualResolution_addr, GetVirtualResolution);
     new_hook!(GetVirtualResolutionWidth3D_addr, GetVirtualResolutionWidth3D);
+
+    #[cfg(target_os = "windows")]
+    unsafe {
+        CLASS = GraphicSettings;
+        UPDATE3DRENDERTEXTURE_ADDR = get_method_addr(GraphicSettings, c"Update3DRenderTexture", 0);
+    }
 }

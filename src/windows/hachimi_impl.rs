@@ -13,7 +13,7 @@ use crate::{
     }
 };
 
-use super::utils;
+use super::{utils, wnd_hook};
 
 pub fn is_il2cpp_lib(filename: &str) -> bool {
     filename == "GameAssembly.dll"
@@ -24,6 +24,8 @@ pub fn is_criware_lib(filename: &str) -> bool {
 }
 
 pub fn on_hooking_finished(hachimi: &Hachimi) {
+    wnd_hook::init();
+
     // Kill unity crash handler (just to be safe)
     unsafe {
         if let Err(e) = utils::kill_process_by_name(c"UnityCrashHandler64.exe") {
@@ -56,13 +58,33 @@ pub struct Config {
     #[serde(default)]
     pub full_screen_mode: FullScreenMode,
     #[serde(default)]
-    pub full_screen_res: Resolution
+    pub full_screen_res: Resolution,
+    #[serde(default)]
+    pub resolution_scaling: ResolutionScaling,
+    #[serde(default)]
+    pub block_minimize_in_full_screen: bool
+}
+
+impl Config {
+    fn default_vsync_count() -> i32 { -1 }
+    fn default_menu_open_key() -> u16 { windows::Win32::UI::Input::KeyboardAndMouse::VK_RIGHT.0 }
 }
 
 #[derive(Deserialize, Serialize, Copy, Clone, Default, Eq, PartialEq)]
 pub enum FullScreenMode {
     #[default] ExclusiveFullScreen,
     FullScreenWindow
+}
+
+#[derive(Deserialize, Serialize, Copy, Clone, Default, Eq, PartialEq)]
+pub enum ResolutionScaling {
+    #[default] Default,
+    ScaleToScreenSize,
+    ScaleToWindowSize
+}
+
+impl ResolutionScaling {
+    pub fn is_not_default(&self) -> bool { *self != Self::Default }
 }
 
 impl FullScreenMode {
@@ -72,9 +94,4 @@ impl FullScreenMode {
             FullScreenMode::FullScreenWindow => FullScreenMode_FullScreenWindow
         }
     }
-}
-
-impl Config {
-    fn default_vsync_count() -> i32 { -1 }
-    fn default_menu_open_key() -> u16 { windows::Win32::UI::Input::KeyboardAndMouse::VK_RIGHT.0 }
 }

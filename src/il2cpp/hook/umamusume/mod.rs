@@ -25,8 +25,6 @@ pub mod GameSystem;
 mod StoryViewTextControllerLandscape;
 mod StoryViewTextControllerSingleMode;
 mod JikkyoDisplay;
-
-#[cfg(target_os = "android")]
 mod Screen;
 
 pub fn init() {
@@ -58,7 +56,5 @@ pub fn init() {
     StoryViewTextControllerLandscape::init(image);
     StoryViewTextControllerSingleMode::init(image);
     JikkyoDisplay::init(image);
-
-    #[cfg(target_os = "android")]
     Screen::init(image);
 }

@@ -788,7 +788,7 @@ impl ConfigEditor {
 
         #[cfg(target_os = "windows")]
         {
-            use crate::windows::hachimi_impl::FullScreenMode;
+            use crate::windows::hachimi_impl::{FullScreenMode, ResolutionScaling};
 
             ui.label("VSync");
             Gui::run_vsync_combo(ui, &mut config.windows.vsync_count);
@@ -802,6 +802,18 @@ impl ConfigEditor {
             Gui::run_combo(ui, "full_screen_mode", &mut config.windows.full_screen_mode, &[
                 (FullScreenMode::ExclusiveFullScreen, "Exclusive"),
                 (FullScreenMode::FullScreenWindow, "Borderless")
+            ]);
+            ui.end_row();
+
+            ui.label("Block minimize in\nfull screen");
+            ui.checkbox(&mut config.windows.block_minimize_in_full_screen, "");
+            ui.end_row();
+
+            ui.label("Resolution scaling");
+            Gui::run_combo(ui, "resolution_scaling", &mut config.windows.resolution_scaling, &[
+                (ResolutionScaling::Default, "Default (1080p)"),
+                (ResolutionScaling::ScaleToScreenSize, "Scale to screen size"),
+                (ResolutionScaling::ScaleToWindowSize, "Scale to window size")
             ]);
             ui.end_row();
         }

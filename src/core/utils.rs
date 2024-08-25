@@ -331,3 +331,27 @@ pub fn game_str_has_newline(string: *mut Il2CppString) -> bool {
 
     false
 }
+
+pub fn scale_to_aspect_ratio(sizes: (i32, i32), aspect_ratio: f32, prefer_larger: bool) -> (i32, i32) {
+    let (mut width, mut height) = sizes;
+    let orig_aspect_ratio = width as f32 / height as f32;
+    // Use original values if possible
+    if (aspect_ratio - orig_aspect_ratio).abs() <= 0.001 {
+        return sizes;
+    }
+    else if (aspect_ratio - 1.0/orig_aspect_ratio).abs() <= 0.001 {
+        return (height, width);
+    }
+
+    let scale_by_height = if prefer_larger { height > width } else { width > height };
+    if scale_by_height {
+        width = (height as f32 * aspect_ratio).round() as i32;
+        height = height;
+    }
+    else {
+        width = width;
+        height = (width as f32 / aspect_ratio).round() as i32;
+    }
+
+    (width, height)
+}

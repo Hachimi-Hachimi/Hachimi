@@ -16,7 +16,23 @@ static mut GETCANVASSCALERLIST_ADDR: usize = 0;
 impl_addr_wrapper_fn!(GetCanvasScalerList, GETCANVASSCALERLIST_ADDR, *mut Il2CppObject, this: *mut Il2CppObject);
 
 pub fn apply_ui_scale() {
-    let scale = Hachimi::instance().config.load().ui_scale;
+    let config = Hachimi::instance().config.load();
+
+    #[allow(unused_mut)]
+    let mut scale = config.ui_scale;
+
+    #[cfg(target_os = "windows")]
+    {
+        if let Some((width, height)) = crate::windows::utils::get_scaling_res() {
+            if width < height {
+                scale *= width as f32 / 1080.0;
+            }
+            else {
+                scale *= height as f32 / 1080.0;
+            }
+        }
+    }
+
     let ui_manager = instance();
     let Some(canvas_scaler_list) = IEnumerable::new(GetCanvasScalerList(ui_manager)) else {
         return
@@ -58,7 +74,14 @@ extern "C" fn SetHeaderTitleText(this: *mut Il2CppObject, text_: *mut Il2CppStri
 type ChangeResizeUIForPCFn = extern "C" fn(this: *mut Il2CppObject, width: i32, height: i32);
 #[cfg(target_os = "windows")]
 extern "C" fn ChangeResizeUIForPC(this: *mut Il2CppObject, width: i32, height: i32) {
+    use super::GraphicSettings;
+
     get_orig_fn!(ChangeResizeUIForPC, ChangeResizeUIForPCFn)(this, width, height);
+    // Recreate the render texture so it scales with the resolution
+    if Hachimi::instance().config.load().windows.resolution_scaling.is_not_default() {
+        CreateRenderTextureFromScreen(this);
+        GraphicSettings::Update3DRenderTexture(GraphicSettings::instance());
+    }
     apply_ui_scale();
 }
 
@@ -87,6 +110,11 @@ extern "C" fn WaitBootSetup(this: *mut Il2CppObject) -> *mut Il2CppObject {
     res
 }
 
+#[cfg(target_os = "windows")]
+static mut CREATERENDERTEXTUREFROMSCREEN_ADDR: usize = 0;
+#[cfg(target_os = "windows")]
+impl_addr_wrapper_fn!(CreateRenderTextureFromScreen, CREATERENDERTEXTUREFROMSCREEN_ADDR, (), this: *mut Il2CppObject);
+
 pub fn init(umamusume: *const Il2CppImage) {
     get_class_or_return!(umamusume, Gallop, UIManager);
 
@@ -112,5 +140,8 @@ pub fn init(umamusume: *const Il2CppImage) {
     unsafe {
         CLASS = UIManager;
         GETCANVASSCALERLIST_ADDR = get_method_addr(UIManager, c"GetCanvasScalerList", 0);
+
+        #[cfg(target_os = "windows")]
+        { CREATERENDERTEXTUREFROMSCREEN_ADDR = get_method_addr(UIManager, c"CreateRenderTextureFromScreen", 0); }
     }
 }

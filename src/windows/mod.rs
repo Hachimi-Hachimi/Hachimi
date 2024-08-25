@@ -1,7 +1,7 @@
 mod main;
 mod hook;
-mod proxy;
-mod utils;
+pub mod proxy;
+pub mod utils;
 mod ffi;
 pub mod symbols_impl;
 pub mod log_impl;
@@ -11,3 +11,4 @@ pub mod interceptor_impl;
 pub mod gui_impl;
 mod libnative_hook;
 pub mod updater;
+pub mod wnd_hook;

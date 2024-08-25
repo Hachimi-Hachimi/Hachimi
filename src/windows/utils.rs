@@ -14,6 +14,10 @@ use windows::{
     }
 };
 
+use crate::{core::{utils::scale_to_aspect_ratio, Hachimi}, il2cpp::hook::UnityEngine_CoreModule::Screen};
+
+use super::hachimi_impl::ResolutionScaling;
+
 pub fn get_system_directory() -> Utf16String {
     let mut buffer = [0u16; MAX_PATH as usize];
     let length = unsafe { GetSystemDirectoryW(Some(&mut buffer)) };
@@ -75,4 +79,16 @@ pub fn get_tmp_installer_path() -> PathBuf {
     let mut installer_path = std::env::temp_dir();
     installer_path.push("hachimi_installer.exe");
     installer_path
+}
+
+pub fn get_scaling_res() -> Option<(i32, i32)> {
+    match Hachimi::instance().config.load().windows.resolution_scaling {
+        ResolutionScaling::Default => None,
+        ResolutionScaling::ScaleToScreenSize => {
+            let res = Screen::get_currentResolution();
+            let aspect_ratio = Screen::get_width() as f32 / Screen::get_height() as f32;
+            Some(scale_to_aspect_ratio((res.width, res.height), aspect_ratio, true))
+        },
+        ResolutionScaling::ScaleToWindowSize => Some((Screen::get_width(), Screen::get_height())),
+    }
 }

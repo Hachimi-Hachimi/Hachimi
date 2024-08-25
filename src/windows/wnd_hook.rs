@@ -2,16 +2,20 @@ use std::os::raw::c_uint;
 
 use windows::Win32::{
     Foundation::{HWND, LPARAM, LRESULT, WPARAM},
-    UI::WindowsAndMessaging::{DefWindowProcW, SetWindowLongPtrW, GWLP_WNDPROC, WM_KEYDOWN, WM_SYSKEYDOWN, WNDPROC}
+    System::Threading::GetCurrentThreadId,
+    UI::WindowsAndMessaging::{
+        CallNextHookEx, DefWindowProcW, SetWindowLongPtrW, SetWindowsHookExW,
+        GWLP_WNDPROC, HCBT_MINMAX, HHOOK, SW_RESTORE, WH_CBT, WM_KEYDOWN, WM_SYSKEYDOWN, WNDPROC
+    }
 };
 
-use crate::{core::{Gui, Hachimi}, windows::proxy::dxgi};
+use crate::{core::{Gui, Hachimi}, il2cpp::hook::UnityEngine_CoreModule, windows::proxy::dxgi};
 
-use super::input;
+use super::gui_impl::input;
 
 // Safety: only modified once on init
 static mut WNDPROC_ORIG: isize = 0;
-extern "C" fn wnd_proc(hwnd: HWND, umsg: c_uint, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
+extern "system" fn wnd_proc(hwnd: HWND, umsg: c_uint, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
     let Some(orig_fn) = (unsafe { std::mem::transmute::<isize, WNDPROC>(WNDPROC_ORIG) }) else {
         return unsafe { DefWindowProcW(hwnd, umsg, wparam, lparam) };
     };
@@ -56,10 +60,28 @@ extern "C" fn wnd_proc(hwnd: HWND, umsg: c_uint, wparam: WPARAM, lparam: LPARAM)
     LRESULT(0)
 }
 
+static mut HCBTHOOK: HHOOK = HHOOK(0);
+extern "system" fn cbt_proc(ncode: i32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
+    if ncode == HCBT_MINMAX as i32 &&
+        lparam.0 as i32 != SW_RESTORE.0 &&
+        Hachimi::instance().config.load().windows.block_minimize_in_full_screen &&
+        UnityEngine_CoreModule::Screen::get_fullScreen()
+    {
+        return LRESULT(1);
+    }
+
+    unsafe { CallNextHookEx(HCBTHOOK, ncode, wparam, lparam) }
+}
+
 pub fn init() {
-    info!("Replacing WndProc");
     let hwnd = dxgi::get_swap_chain_hwnd();
     unsafe {
+        info!("Replacing WndProc");
         WNDPROC_ORIG = SetWindowLongPtrW(hwnd, GWLP_WNDPROC, wnd_proc as isize);
+
+        info!("Adding CBT hook");
+        if let Ok(hhook) = SetWindowsHookExW(WH_CBT, Some(cbt_proc), None, GetCurrentThreadId()) {
+            HCBTHOOK = hhook;
+        }
     }
 }
