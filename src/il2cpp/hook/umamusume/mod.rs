@@ -26,6 +26,7 @@ mod StoryViewTextControllerLandscape;
 mod StoryViewTextControllerSingleMode;
 mod JikkyoDisplay;
 mod Screen;
+mod TrainingParamChangePlate;
 
 pub fn init() {
     get_assembly_image_or_return!(image, "umamusume.dll");
@@ -57,4 +58,5 @@ pub fn init() {
     StoryViewTextControllerSingleMode::init(image);
     JikkyoDisplay::init(image);
     Screen::init(image);
+    TrainingParamChangePlate::init(image);
 }
