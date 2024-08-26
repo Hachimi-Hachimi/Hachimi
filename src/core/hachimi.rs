@@ -395,7 +395,6 @@ pub struct LocalizedDataConfig {
 
     #[serde(default)]
     pub use_text_wrapper: bool,
-    pub text_wrapper: Option<i32>, // DEPRECATED
     #[serde(default = "LocalizedDataConfig::default_line_width_multiplier")]
     pub line_width_multiplier: f32,
 
@@ -425,10 +424,6 @@ impl LocalizedDataConfig {
     // Predefined line widths are counts of cjk characters.
     // 1 cjk char = 2 columns, so this value replicates the default behaviour.
     fn default_line_width_multiplier() -> f32 { 2.0 }
-
-    pub fn use_text_wrapper(&self) -> bool {
-        self.use_text_wrapper || self.text_wrapper.is_some()
-    }
 }
 
 impl Default for LocalizedDataConfig {
