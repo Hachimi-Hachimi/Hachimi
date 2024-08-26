@@ -391,6 +391,7 @@ pub struct LocalizedDataConfig {
     pub ordinal_types: Vec<String>,
     #[serde(default)]
     pub months: Vec<String>,
+    pub month_text_format: Option<String>,
 
     #[serde(default)]
     pub use_text_wrapper: bool,

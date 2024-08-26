@@ -22,7 +22,7 @@ static mut TEXTID_NAME_CACHE: Lazy<FnvHashMap<i32, String>> = Lazy::new(|| FnvHa
  * so we'll just map them to their actual name instead
  */
 type GetFn = extern "C" fn(id: i32) -> *mut Il2CppString;
-extern "C" fn Get(id: i32) -> *mut Il2CppString {
+pub extern "C" fn Get(id: i32) -> *mut Il2CppString {
     let localized_data = Hachimi::instance().localized_data.load();
     if localized_data.localize_dict.is_empty() {
         return get_orig_fn!(Get, GetFn)(id);
