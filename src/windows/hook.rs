@@ -6,7 +6,7 @@ use fnv::FnvHashSet;
 use once_cell::sync::Lazy;
 use widestring::{utf16str, Utf16Str, Utf16String};
 use windows::{
-    core::{w, PCWSTR},
+    core::{w, wcslen, PCWSTR},
     Win32::{
         Foundation::{BOOL, HANDLE, HMODULE, INVALID_HANDLE_VALUE},
         Storage::FileSystem::{FINDEX_INFO_LEVELS, FINDEX_SEARCH_OPS, FIND_FIRST_EX_FLAGS, WIN32_FIND_DATAW}
@@ -148,7 +148,7 @@ fn get_ffd_filename_str(ffd_: *mut WIN32_FIND_DATAW) -> Option<&'static Utf16Str
 
     unsafe {
         Some(Utf16Str::from_slice_unchecked(
-            &ffd.cFileName[..PCWSTR::from_raw(ffd.cFileName.as_ptr()).len()]
+            &ffd.cFileName[..wcslen(PCWSTR::from_raw(ffd.cFileName.as_ptr()))]
         ))
     }
 }
