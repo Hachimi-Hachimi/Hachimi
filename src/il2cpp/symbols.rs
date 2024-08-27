@@ -1,5 +1,6 @@
 use std::collections::hash_map;
 use std::ffi::CStr;
+use std::marker::PhantomData;
 use std::os::raw::c_void;
 use std::sync::Mutex;
 
@@ -573,5 +574,39 @@ impl GCHandle {
 impl Drop for GCHandle {
     fn drop(&mut self) {
         il2cpp_gchandle_free(self.0);
+    }
+}
+
+// Il2CppArray wrapper
+#[repr(transparent)]
+pub struct Array<T> {
+    pub this: *mut Il2CppArray,
+    _phantom: PhantomData<T>
+}
+
+impl<T> Array<T> {
+    pub fn new(element_type: *mut Il2CppClass, length: il2cpp_array_size_t) -> Array<T> {
+        Array {
+            this: il2cpp_array_new(element_type, length),
+            _phantom: PhantomData,
+        }
+    }
+
+    pub unsafe fn data_ptr(&self) -> *mut T {
+        self.this.add(1) as _
+    }
+
+    pub unsafe fn as_slice(&self) -> &mut [T] {
+        std::slice::from_raw_parts_mut(self.data_ptr(), (*self.this).max_length)
+    }
+
+    pub fn len(&self) -> usize {
+        unsafe { (*self.this).max_length }
+    }
+}
+
+impl<T> Into<*mut Il2CppArray> for Array<T> {
+    fn into(self) -> *mut Il2CppArray {
+        self.this
     }
 }

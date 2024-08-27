@@ -3,12 +3,17 @@ use std::{path::Path, ptr::null_mut};
 use widestring::Utf16Str;
 
 use crate::{core::{ext::{StringExt, Utf16StringExt}, Hachimi}, il2cpp::{
-    api::il2cpp_object_new,
-    hook::{mscorlib, UnityEngine_AssetBundleModule::AssetBundle::ASSET_PATH_PREFIX, UnityEngine_ImageConversionModule::ImageConversion},
-    symbols::get_method_addr, types::*
+    api::{il2cpp_object_new, il2cpp_resolve_icall},
+    hook::{
+        mscorlib,
+        UnityEngine_AssetBundleModule::AssetBundle::ASSET_PATH_PREFIX,
+        UnityEngine_ImageConversionModule::ImageConversion
+    },
+    symbols::{get_method_addr, Array},
+    types::*, utils::replace_texture_with_diff
 }};
 
-use super::TextureFormat_RGBA32;
+use super::{Graphics, RenderTexture, Texture, TextureFormat_RGBA32};
 
 static mut CLASS: *mut Il2CppClass = null_mut();
 pub fn class() -> *mut Il2CppClass {
@@ -60,7 +65,11 @@ pub fn load_image_file<P: AsRef<Path>>(this: *mut Il2CppObject, path: P, mark_no
     }
 
     // we've done everything we can, can't catch C# exceptions, yolo :)
-    if let Some(path_str) = path_ref.to_str() {
+    unsafe { load_image_file_unsafe(this, path, mark_non_readable) }
+}
+
+pub unsafe fn load_image_file_unsafe<P: AsRef<Path>>(this: *mut Il2CppObject, path: P, mark_non_readable: bool) -> bool {
+    if let Some(path_str) = path.as_ref().to_str() {
         let bytes = mscorlib::File::ReadAllBytes(path_str.to_il2cpp_string());
         if ImageConversion::LoadImage(this, bytes, mark_non_readable) {
             return true;
@@ -71,6 +80,34 @@ pub fn load_image_file<P: AsRef<Path>>(this: *mut Il2CppObject, path: P, mark_no
     }
 
     false
+}
+
+pub fn render_to_texture(this: *mut Il2CppObject) -> *mut Il2CppObject {
+    // Create a render texture
+    let width = Texture::GetDataWidth(this);
+    let height = Texture::GetDataHeight(this);
+    let render_texture = RenderTexture::GetTemporary(width, height);
+
+    // Blit this texture to the render texture
+    Graphics::Blit2(this, render_texture);
+
+    // Set the active render texture, backup the previous active texture
+    let prev_active = RenderTexture::GetActive();
+    RenderTexture::SetActive(render_texture);
+
+    // Create a new texture and read the data from the render texture
+    let output_texture = new(width, height, TextureFormat_RGBA32, false, false);
+    ReadPixels(
+        output_texture,
+        Rect_t { x: 0.0, y: 0.0, width: width as f32, height: height as f32 },
+        0, 0
+    );
+
+    // Revert active texture, release temp render texture
+    RenderTexture::SetActive(prev_active);
+    RenderTexture::ReleaseTemporary(render_texture);
+
+    output_texture
 }
 
 // hook::UnityEngine_AssetBundleModule::AssetBundle
@@ -87,8 +124,14 @@ pub fn on_LoadAsset(_bundle: *mut Il2CppObject, this: *mut Il2CppObject, name: &
         return;
     };
 
-    load_image_file(this, &replace_path, true);
+    replace_texture_with_diff(this, &replace_path, true);
 }
+
+static mut GETPIXELS32_ADDR: usize = 0;
+impl_addr_wrapper_fn!(GetPixels32, GETPIXELS32_ADDR, Array<Color32_t>, this: *mut Il2CppObject, mip_level: i32);
+
+static mut READPIXELS_ADDR: usize = 0;
+impl_addr_wrapper_fn!(ReadPixels, READPIXELS_ADDR, (), this: *mut Il2CppObject, source: Rect_t, dest_x: i32, dest_y: i32);
 
 pub fn init(UnityEngine_CoreModule: *const Il2CppImage) {
     get_class_or_return!(UnityEngine_CoreModule, UnityEngine, Texture2D);
@@ -96,5 +139,7 @@ pub fn init(UnityEngine_CoreModule: *const Il2CppImage) {
     unsafe {
         CLASS = Texture2D;
         CTOR_ADDR = get_method_addr(Texture2D, c".ctor", 5);
+        GETPIXELS32_ADDR = il2cpp_resolve_icall(c"UnityEngine.Texture2D::GetPixels32(System.Int32)".as_ptr());
+        READPIXELS_ADDR = get_method_addr(Texture2D, c"ReadPixels", 3);
     }
 }

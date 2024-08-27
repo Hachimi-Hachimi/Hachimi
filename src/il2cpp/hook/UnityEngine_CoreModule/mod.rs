@@ -6,6 +6,9 @@ pub mod Application;
 pub mod Material;
 mod AsyncOperation;
 pub mod GameObject;
+pub mod Texture;
+pub mod RenderTexture;
+pub mod Graphics;
 
 #[cfg(target_os = "windows")]
 pub mod QualitySettings;
@@ -30,6 +33,9 @@ pub fn init() {
     Material::init(image);
     AsyncOperation::init(image);
     GameObject::init(image);
+    Texture::init(image);
+    RenderTexture::init(image);
+    Graphics::init(image);
 
     #[cfg(target_os = "windows")]
     {

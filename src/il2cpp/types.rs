@@ -3336,6 +3336,23 @@ pub struct Color_t {
     pub a: f32,
 }
 #[repr(C)]
+#[derive(Debug)]
+pub struct Color32_t {
+    pub r: u8,
+    pub g: u8,
+    pub b: u8,
+    pub a: u8,
+}
+impl Color32_t {
+    pub fn as_slice(&self) -> &[u8] {
+        unsafe { std::slice::from_raw_parts(self as *const Color32_t as _, 4) }
+    }
+
+    pub fn as_mut_slice(&mut self) -> &[u8] {
+        unsafe { std::slice::from_raw_parts_mut(self as *mut Color32_t as _, 4) }
+    }
+}
+#[repr(C)]
 #[derive(Debug, Default)]
 pub struct Vector2_t {
     pub x: f32,

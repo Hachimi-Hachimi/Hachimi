@@ -8,9 +8,9 @@ use crate::{
     core::{ext::{StringExt, Utf16StringExt}, hachimi::AssetInfo, Hachimi},
     il2cpp::{
         api::{il2cpp_class_get_type, il2cpp_type_get_object},
-        hook::{UnityEngine_AssetBundleModule::AssetBundle, UnityEngine_CoreModule::{Object, Texture2D}},
+        hook::{UnityEngine_AssetBundleModule::AssetBundle, UnityEngine_CoreModule::Object},
         symbols::{get_field_from_name, get_field_object_value, IList},
-        types::*
+        types::*, utils::replace_texture_with_diff
     }
 };
 
@@ -101,7 +101,7 @@ pub fn patch_asset(this: *mut Il2CppObject, data_opt: Option<&AnRootData>) {
             let rel_path = texture_sets_path.join(texture_set_filename);
 
             if let Some(path) = localized_data.get_assets_path(&rel_path) {
-                Texture2D::load_image_file(texture, &path, true);
+                replace_texture_with_diff(texture, &path, true);
             }
         }
     }

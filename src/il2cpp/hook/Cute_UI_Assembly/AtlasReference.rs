@@ -5,9 +5,9 @@ use widestring::Utf16Str;
 use crate::{core::{ext::Utf16StringExt, Hachimi}, il2cpp::{
     hook::{
         UnityEngine_AssetBundleModule::AssetBundle,
-        UnityEngine_CoreModule::{Sprite, Texture2D}
+        UnityEngine_CoreModule::Sprite
     },
-    symbols::{get_field_from_name, get_field_object_value, IEnumerable}, types::*
+    symbols::{get_field_from_name, get_field_object_value, IEnumerable}, types::*, utils::replace_texture_with_diff
 }};
 
 static mut CLASS: *mut Il2CppClass = null_mut();
@@ -48,7 +48,7 @@ pub fn on_LoadAsset(bundle: *mut Il2CppObject, this: *mut Il2CppObject, name: &U
     };
     // All of the sprites in the atlas uses the same texture so we just need to replace one of them
     if let Some(sprite) = enumerable.enumerator.next() {
-        Texture2D::load_image_file(Sprite::get_texture(sprite), replace_path, true);
+        replace_texture_with_diff(Sprite::get_texture(sprite), replace_path, true);
     }
 }
 
