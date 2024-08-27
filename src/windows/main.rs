@@ -29,7 +29,7 @@ pub fn load_libraries() {
     }
 }
 
-pub static mut DLL_HMODULE: HMODULE = HMODULE(0);
+pub static mut DLL_HMODULE: HMODULE = HMODULE(0 as _);
 
 #[no_mangle]
 #[allow(non_snake_case)]

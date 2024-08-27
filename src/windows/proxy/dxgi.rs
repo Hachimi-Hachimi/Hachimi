@@ -78,7 +78,7 @@ pub fn get_swap_chain_vtable() -> *mut usize {
 
 static SWAP_CHAIN_HWND: AtomicIsize = AtomicIsize::new(0);
 pub fn get_swap_chain_hwnd() -> HWND {
-    HWND(SWAP_CHAIN_HWND.load(atomic::Ordering::Relaxed))
+    HWND(SWAP_CHAIN_HWND.load(atomic::Ordering::Relaxed) as _)
 }
 
 /*
@@ -117,7 +117,7 @@ extern "C" fn IDXGIFactory2_CreateSwapChainForHwnd(
         let p_swap_chain = unsafe { *pp_swap_chain };
         let vtable = Interceptor::get_vtable_from_instance(p_swap_chain as usize);
         SWAP_CHAIN_VTABLE.store(vtable as usize, atomic::Ordering::Relaxed);
-        SWAP_CHAIN_HWND.store(hwnd.0, atomic::Ordering::Relaxed);
+        SWAP_CHAIN_HWND.store(hwnd.0 as _, atomic::Ordering::Relaxed);
 
         info!("Got IDXGISwapChain vtable and HWND");
         Hachimi::instance().interceptor.unhook(IDXGIFactory2_CreateSwapChainForHwnd as usize);

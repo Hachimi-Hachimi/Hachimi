@@ -60,7 +60,7 @@ extern "system" fn wnd_proc(hwnd: HWND, umsg: c_uint, wparam: WPARAM, lparam: LP
     LRESULT(0)
 }
 
-static mut HCBTHOOK: HHOOK = HHOOK(0);
+static mut HCBTHOOK: HHOOK = HHOOK(0 as _);
 extern "system" fn cbt_proc(ncode: i32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
     if ncode == HCBT_MINMAX as i32 &&
         lparam.0 as i32 != SW_RESTORE.0 &&

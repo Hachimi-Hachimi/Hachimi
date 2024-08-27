@@ -61,7 +61,7 @@ impl Gui {
         }
 
         let context = egui::Context::default();
-        egui_minipng::install(&context);
+        egui_extras::install_image_loaders(&context);
 
         let mut style = egui::Style::default();
         style.spacing.button_padding = egui::Vec2::new(8.0, 6.0);

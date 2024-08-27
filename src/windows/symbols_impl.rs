@@ -5,5 +5,5 @@ use crate::windows::utils;
 
 pub unsafe fn dlsym(handle: *mut c_void, name: &str) -> usize {
     debug_assert!(!handle.is_null());
-    utils::get_proc_address(HMODULE(handle as isize), &CString::new(name).unwrap())
+    utils::get_proc_address(HMODULE(handle as _), &CString::new(name).unwrap())
 }
