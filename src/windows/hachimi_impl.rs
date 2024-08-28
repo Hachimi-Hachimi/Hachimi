@@ -13,7 +13,7 @@ use crate::{
     }
 };
 
-use super::{utils, wnd_hook};
+use super::{proxy::dxgi, utils, wnd_hook};
 
 pub fn is_il2cpp_lib(filename: &str) -> bool {
     filename == "GameAssembly.dll"
@@ -41,6 +41,11 @@ pub fn on_hooking_finished(hachimi: &Hachimi) {
     // Apply auto full screen
     Screen::apply_auto_full_screen(Screen::get_width(), Screen::get_height());
 
+    // Apply always on top
+    if hachimi.window_always_on_top.load(atomic::Ordering::Relaxed) {
+        unsafe { _ = utils::set_window_topmost(dxgi::get_swap_chain_hwnd(), true); }
+    }
+
     // Clean up the update installer
     _ = std::fs::remove_file(utils::get_tmp_installer_path());
 }
@@ -62,7 +67,9 @@ pub struct Config {
     #[serde(default)]
     pub resolution_scaling: ResolutionScaling,
     #[serde(default)]
-    pub block_minimize_in_full_screen: bool
+    pub block_minimize_in_full_screen: bool,
+    #[serde(default)]
+    pub window_always_on_top: bool
 }
 
 impl Config {

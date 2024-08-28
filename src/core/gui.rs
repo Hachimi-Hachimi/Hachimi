@@ -279,18 +279,35 @@ impl Gui {
                         }
                     });
                     #[cfg(target_os = "windows")]
-                    ui.horizontal(|ui| {
-                        ui.label("VSync");
-                        let prev_value = self.menu_vsync_value;
-                        Self::run_vsync_combo(ui, &mut self.menu_vsync_value);
+                    {
+                        use crate::windows::{utils::set_window_topmost, proxy::dxgi};
 
-                        if prev_value != self.menu_vsync_value {
-                            hachimi.vsync_count.store(self.menu_vsync_value, atomic::Ordering::Relaxed);
-                            Thread::main_thread().schedule(|| {
-                                QualitySettings::set_vSyncCount(1);
-                            });
-                        }
-                    });
+                        ui.horizontal(|ui| {
+                            let prev_value = self.menu_vsync_value;
+
+                            ui.label("VSync");
+                            Self::run_vsync_combo(ui, &mut self.menu_vsync_value);
+
+                            if prev_value != self.menu_vsync_value {
+                                hachimi.vsync_count.store(self.menu_vsync_value, atomic::Ordering::Relaxed);
+                                Thread::main_thread().schedule(|| {
+                                    QualitySettings::set_vSyncCount(1);
+                                });
+                            }
+                        });
+                        ui.horizontal(|ui| {
+                            let mut value = hachimi.window_always_on_top.load(atomic::Ordering::Relaxed);
+
+                            ui.label("Stay on top");
+                            if ui.checkbox(&mut value, "").changed() {
+                                hachimi.window_always_on_top.store(value, atomic::Ordering::Relaxed);
+                                Thread::main_thread().schedule(|| {
+                                    let topmost = Hachimi::instance().window_always_on_top.load(atomic::Ordering::Relaxed);
+                                    unsafe { _ = set_window_topmost(dxgi::get_swap_chain_hwnd(), topmost); }
+                                });
+                            }
+                        });
+                    }
                     ui.separator();
 
                     ui.heading("📖 Translation");
@@ -823,6 +840,10 @@ impl ConfigEditor {
                 (ResolutionScaling::ScaleToScreenSize, "Scale to screen size"),
                 (ResolutionScaling::ScaleToWindowSize, "Scale to window size")
             ]);
+            ui.end_row();
+
+            ui.label("Window always on top");
+            ui.checkbox(&mut config.windows.window_always_on_top, "");
             ui.end_row();
         }
     }

@@ -29,6 +29,9 @@ pub struct Hachimi {
     pub vsync_count: AtomicI32,
 
     #[cfg(target_os = "windows")]
+    pub window_always_on_top: AtomicBool,
+
+    #[cfg(target_os = "windows")]
     pub updater: Arc<crate::windows::updater::Updater>
 }
 
@@ -80,6 +83,9 @@ impl Hachimi {
 
             #[cfg(target_os = "windows")]
             vsync_count: AtomicI32::new(config.windows.vsync_count),
+
+            #[cfg(target_os = "windows")]
+            window_always_on_top: AtomicBool::new(config.windows.window_always_on_top),
 
             #[cfg(target_os = "windows")]
             updater: Arc::default(),
