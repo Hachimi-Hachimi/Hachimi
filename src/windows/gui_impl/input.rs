@@ -31,8 +31,9 @@ pub enum InputResult {
     MouseLeft,
     MouseRight,
     MouseMiddle,
-    MouseWheel,
     Character,
+    Scroll,
+    Zoom,
     Key,
 }
 
@@ -106,27 +107,25 @@ pub fn process(input: &mut RawInput, zoom_factor: f32, umsg: u32, wparam: usize,
         }
         WM_MOUSEWHEEL => {
             let delta = (wparam >> 16) as i16 as f32 * 10. / WHEEL_DELTA as f32;
-            input.events.push(Event::MouseWheel {
-                unit: egui::MouseWheelUnit::Point,
-                delta: Vec2::new(0., delta),
-                modifiers: Modifiers {
-                    ctrl: wparam & MK_CONTROL.0 as usize != 0,
-                    ..Default::default()
-                }
-            });
-            InputResult::MouseWheel
+
+            if wparam & MK_CONTROL.0 as usize != 0 {
+                input.events.push(Event::Zoom(if delta > 0. { 1.5 } else { 0.5 }));
+                InputResult::Zoom
+            } else {
+                input.events.push(Event::Scroll(Vec2::new(0., delta)));
+                InputResult::Scroll
+            }
         }
         WM_MOUSEHWHEEL => {
             let delta = (wparam >> 16) as i16 as f32 * 10. / WHEEL_DELTA as f32;
-            input.events.push(Event::MouseWheel {
-                unit: egui::MouseWheelUnit::Point,
-                delta: Vec2::new(delta, 0.),
-                modifiers: Modifiers {
-                    ctrl: wparam & MK_CONTROL.0 as usize != 0,
-                    ..Default::default()
-                }
-            });
-            InputResult::MouseWheel
+
+            if wparam & MK_CONTROL.0 as usize != 0 {
+                input.events.push(Event::Zoom(if delta > 0. { 1.5 } else { 0.5 }));
+                InputResult::Zoom
+            } else {
+                input.events.push(Event::Scroll(Vec2::new(delta, 0.)));
+                InputResult::Scroll
+            }
         }
         msg @ (WM_KEYDOWN | WM_SYSKEYDOWN) => {
             if let Some(key) = get_key(wparam) {
