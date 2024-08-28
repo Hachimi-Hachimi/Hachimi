@@ -204,25 +204,27 @@ fn custom_wrap_algorithm<'a, 'b>(words: &'b [Word<'a>], line_widths: &'b [usize]
 
 pub fn wrap_text(string: &str, base_line_width: i32) -> Option<Vec<Cow<'_, str>>> {
     let config = &Hachimi::instance().localized_data.load().config;
-    if !config.use_text_wrapper {
-        return None;
-    }
+    if !config.use_text_wrapper { return None; }
+    Some(wrap_text_internal(string, base_line_width, config.line_width_multiplier?))
+}
 
-    let line_width = (base_line_width as f32 * config.line_width_multiplier).round() as usize;
+fn wrap_text_internal(string: &str, base_line_width: i32, line_width_multiplier: f32) -> Vec<Cow<'_, str>> {
+    let line_width = (base_line_width as f32 * line_width_multiplier).round() as usize;
     let options = textwrap::Options::new(line_width)
         .word_separator(textwrap::WordSeparator::Custom(custom_word_separator))
         .wrap_algorithm(textwrap::WrapAlgorithm::Custom(custom_wrap_algorithm));
-    return Some(textwrap::wrap(string, &options));
+    return textwrap::wrap(string, &options);
 }
 
 pub fn wrap_text_il2cpp(string: *mut Il2CppString, base_line_width: i32) -> Option<*mut Il2CppString> {
-    if Hachimi::instance().localized_data.load().config.use_text_wrapper {
-        if let Some(result) = wrap_text(unsafe { &(*string).to_utf16str().to_string() }, base_line_width) {
-            return Some(result.join("\n").to_il2cpp_string());
-        }
-    }
-    
-    None
+    let config = &Hachimi::instance().localized_data.load().config;
+    if !config.use_text_wrapper { return None; }
+
+    Some(
+        wrap_text_internal(unsafe { &(*string).to_utf16str().to_string() }, base_line_width, config.line_width_multiplier?)
+            .join("\n")
+            .to_il2cpp_string()
+    )
 }
 
 pub fn add_size_tag(string: &str, size: i32) -> String {
@@ -237,8 +239,14 @@ pub fn add_size_tag(string: &str, size: i32) -> String {
 }
 
 pub fn fit_text(string: &str, base_line_width: i32, base_font_size: i32) -> Option<String> {
-    let mult = Hachimi::instance().localized_data.load().config.line_width_multiplier;
-    let line_width = base_line_width as f32 * mult;
+    let mult = Hachimi::instance().localized_data.load().config.line_width_multiplier?;
+    fit_text_internal(string, base_line_width, base_font_size, mult)
+}
+
+fn fit_text_internal(
+    string: &str, base_line_width: i32, base_font_size: i32, line_width_multiplier: f32
+) -> Option<String> {
+    let line_width = base_line_width as f32 * line_width_multiplier;
 
     let count = string.chars().count() as f32;
     if line_width < count {
@@ -250,8 +258,9 @@ pub fn fit_text(string: &str, base_line_width: i32, base_font_size: i32) -> Opti
 }
 
 pub fn fit_text_il2cpp(string: *mut Il2CppString, base_line_width: i32, base_font_size: i32) -> Option<*mut Il2CppString> {
-    if let Some(result) = fit_text(unsafe { &(*string).to_utf16str().to_string() },
-        base_line_width, base_font_size
+    let mult = Hachimi::instance().localized_data.load().config.line_width_multiplier?;
+    if let Some(result) = fit_text_internal(unsafe { &(*string).to_utf16str().to_string() },
+        base_line_width, base_font_size, mult
     ) {
         return Some(result.to_il2cpp_string());
     }
@@ -261,9 +270,11 @@ pub fn fit_text_il2cpp(string: *mut Il2CppString, base_line_width: i32, base_fon
 
 // WRAP IT TILL IT FITS GRAHHH BRUTE FORCE GRAHHH
 pub fn wrap_fit_text(string: &str, base_line_width: i32, mut max_line_count: i32, base_font_size: i32) -> Option<String> {
-    if !Hachimi::instance().localized_data.load().config.use_text_wrapper {
+    let config = &Hachimi::instance().localized_data.load().config;
+    if !config.use_text_wrapper {
         return None;
     }
+    let line_width_multiplier = config.line_width_multiplier?;
 
     // don't wanna mess with different sizes
     if string.contains("<size=") {
@@ -273,10 +284,7 @@ pub fn wrap_fit_text(string: &str, base_line_width: i32, mut max_line_count: i32
     let mut line_width = base_line_width as f32;
     let mut font_size = base_font_size as f32;
     loop {
-        let Some(wrapped) = wrap_text(string, line_width.round() as i32) else {
-            return None;
-        };
-
+        let wrapped = wrap_text_internal(string, line_width.round() as i32, line_width_multiplier);
         if wrapped.len() as i32 <= max_line_count {
             return Some(add_size_tag(&wrapped.join("\n"), font_size.round() as i32));
         }
