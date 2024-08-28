@@ -34,7 +34,7 @@ pub fn apply_auto_full_screen(mut width: i32, mut height: i32) -> bool {
         return false;
     }
 
-    let full_screen_mode = windows_config.full_screen_mode.value();
+    let full_screen_mode = windows_config.full_screen_mode as i32;
     let preferred_refresh_rate = preferred_res.refresh_rate;
     get_orig_fn!(SetResolution, SetResolutionFn)(width, height, full_screen_mode, preferred_refresh_rate);
 

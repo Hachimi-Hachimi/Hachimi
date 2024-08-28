@@ -71,9 +71,10 @@ impl Config {
 }
 
 #[derive(Deserialize, Serialize, Copy, Clone, Default, Eq, PartialEq)]
+#[repr(i32)]
 pub enum FullScreenMode {
-    #[default] ExclusiveFullScreen,
-    FullScreenWindow
+    #[default] ExclusiveFullScreen = FullScreenMode_ExclusiveFullScreen,
+    FullScreenWindow = FullScreenMode_FullScreenWindow
 }
 
 #[derive(Deserialize, Serialize, Copy, Clone, Default, Eq, PartialEq)]
@@ -85,13 +86,4 @@ pub enum ResolutionScaling {
 
 impl ResolutionScaling {
     pub fn is_not_default(&self) -> bool { *self != Self::Default }
-}
-
-impl FullScreenMode {
-    pub fn value(&self) -> i32 {
-        match self {
-            FullScreenMode::ExclusiveFullScreen => FullScreenMode_ExclusiveFullScreen,
-            FullScreenMode::FullScreenWindow => FullScreenMode_FullScreenWindow
-        }
-    }
 }
