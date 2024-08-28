@@ -71,6 +71,7 @@ features = [
 
 [build-dependencies]
 tauri-winres = "0.1"
+cc = "1.1"
 
 [package.metadata.tauri-winres]
 ProductName = "Hachimi"
@@ -78,3 +79,4 @@ FileDescription = "Game enhancement and translation mod"
 
 [patch.crates-io]
 dobby-sys = { git = "https://github.com/LeadRDRK/dobby-sys.git" }
+embed-resource = { git = "https://github.com/nabijaczleweli/rust-embed-resource.git", rev = "e98e9aa28d66b0c2ff43516b41847cac372310dd" }
