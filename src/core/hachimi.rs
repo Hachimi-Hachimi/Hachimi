@@ -217,6 +217,8 @@ pub struct Config {
     pub disable_translations: bool,
     #[serde(default = "Config::default_ui_scale")]
     pub ui_scale: f32,
+    #[serde(default)]
+    pub graphics_quality: crate::il2cpp::hook::umamusume::GraphicSettings::GraphicsQuality,
 
     #[cfg(target_os = "windows")]
     #[serde(flatten)]

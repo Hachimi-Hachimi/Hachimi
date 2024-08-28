@@ -4,7 +4,7 @@ use once_cell::sync::OnceCell;
 
 use crate::il2cpp::{
     hook::{
-        umamusume::{GameSystem, Localize},
+        umamusume::{GameSystem, GraphicSettings::GraphicsQuality, Localize},
         UnityEngine_CoreModule::Application
     },
     symbols::Thread
@@ -373,7 +373,6 @@ impl Gui {
         ]);
     }
 
-    #[cfg(target_os = "windows")]
     fn run_combo<T: PartialEq + Copy>(ui: &mut egui::Ui, id_child: impl std::hash::Hash, value: &mut T, choices: &[(T, &str)]) {
         let mut selected = "Unknown";
         for choice in choices.iter() {
@@ -782,6 +781,17 @@ impl ConfigEditor {
 
         ui.label("UI scale");
         ui.add(egui::Slider::new(&mut config.ui_scale, 0.1..=10.0).step_by(0.05));
+        ui.end_row();
+
+        ui.label("Graphics quality");
+        Gui::run_combo(ui, "graphics_quality", &mut config.graphics_quality, &[
+            (GraphicsQuality::Default, "Default"),
+            (GraphicsQuality::Toon1280, "Toon1280"),
+            (GraphicsQuality::Toon1280x2, "Toon1280x2"),
+            (GraphicsQuality::Toon1280x4, "Toon1280x4"),
+            (GraphicsQuality::ToonFull, "ToonFull"),
+            (GraphicsQuality::Max, "Max")
+        ]);
         ui.end_row();
 
         #[cfg(target_os = "windows")]
