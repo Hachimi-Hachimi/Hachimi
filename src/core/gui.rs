@@ -53,6 +53,7 @@ const TEXT_COLOR: egui::Color32 = egui::Color32::from_gray(170);
 
 static INSTANCE: OnceCell<Mutex<Gui>> = OnceCell::new();
 static IS_CONSUMING_INPUT: AtomicBool = AtomicBool::new(false);
+static mut GAME_UI_TOGGLE_STATE: bool = true;
 impl Gui {
     // Call this from the render thread!
     pub fn instance_or_init(open_key_str: &str) -> &Mutex<Gui> {
@@ -353,6 +354,30 @@ impl Gui {
                                 WebViewManager::quick_open("Browser", &Hachimi::instance().config.load().open_browser_url);
                             });
                         })));
+                    }
+                    if ui.button("👁 Toggle game UI").clicked() {
+                        Thread::main_thread().schedule(|| {
+                            use crate::il2cpp::hook::{
+                                UnityEngine_CoreModule::{Object, Behaviour, GameObject},
+                                UnityEngine_UIModule::Canvas,
+                                Plugins::AnimateToUnity::AnRoot
+                            };
+
+                            // SAFETY: only used in the main thread
+                            let enabled = unsafe { !GAME_UI_TOGGLE_STATE };
+                            unsafe { GAME_UI_TOGGLE_STATE = enabled };
+
+                            let canvas_array = Object::FindObjectsOfType(Canvas::type_object(), true);
+                            for canvas in unsafe { canvas_array.as_slice().iter() } {
+                                Behaviour::set_enabled(*canvas, enabled);
+                            }
+
+                            let an_root_array = Object::FindObjectsOfType(AnRoot::type_object(), true);
+                            for an_root in unsafe { an_root_array.as_slice().iter() } {
+                                let top_object = AnRoot::get__topObject(*an_root);
+                                GameObject::SetActive(top_object, enabled);
+                            }
+                        })
                     }
                 });
             });

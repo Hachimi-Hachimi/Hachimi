@@ -36,6 +36,11 @@ pub fn get__meshParameterGroup(this: *mut Il2CppObject) -> *mut Il2CppObject {
     get_field_object_value(this, unsafe { _MESHPARAMETERGROUP_FIELD })
 }
 
+static mut _TOPOBJECT_FIELD: *mut FieldInfo = 0 as _;
+pub fn get__topObject(this: *mut Il2CppObject) -> *mut Il2CppObject {
+    get_field_object_value(this, unsafe { _TOPOBJECT_FIELD })
+}
+
 #[derive(Deserialize)]
 pub struct AnRootData {
     #[serde(default)]
@@ -163,5 +168,6 @@ pub fn init(Plugins: *const Il2CppImage) {
         TYPE_OBJECT = il2cpp_type_get_object(il2cpp_class_get_type(AnRoot));
         _PARAMETER_FIELD = get_field_from_name(AnRoot, c"_parameter");
         _MESHPARAMETERGROUP_FIELD = get_field_from_name(AnRoot, c"_meshParameterGroup");
+        _TOPOBJECT_FIELD = get_field_from_name(AnRoot, c"_topObject");
     }
 }

@@ -9,6 +9,7 @@ pub mod GameObject;
 pub mod Texture;
 pub mod RenderTexture;
 pub mod Graphics;
+pub mod Behaviour;
 
 #[cfg(target_os = "windows")]
 pub mod QualitySettings;
@@ -36,6 +37,7 @@ pub fn init() {
     Texture::init(image);
     RenderTexture::init(image);
     Graphics::init(image);
+    Behaviour::init(image);
 
     #[cfg(target_os = "windows")]
     {
