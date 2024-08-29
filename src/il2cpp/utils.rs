@@ -10,7 +10,7 @@ pub fn print_stack_trace() {
     let environment_class = get_class(mscorlib, c"System", c"Environment").expect("System.Environment");
     let get_fn_addr = get_method_addr_cached(environment_class, c"get_StackTrace", 0);
     let get_fn: extern "C" fn() -> *mut Il2CppString = unsafe { std::mem::transmute(get_fn_addr) };
-    debug!("{}", unsafe { (*get_fn()).to_utf16str() });
+    debug!("{}", unsafe { (*get_fn()).as_utf16str() });
 }
 
 pub fn replace_texture_with_diff<P: AsRef<Path>>(texture: *mut Il2CppObject, path: P, mark_non_readable: bool) {

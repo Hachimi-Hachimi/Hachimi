@@ -221,7 +221,7 @@ pub fn wrap_text_il2cpp(string: *mut Il2CppString, base_line_width: i32) -> Opti
     if !config.use_text_wrapper { return None; }
 
     Some(
-        wrap_text_internal(unsafe { &(*string).to_utf16str().to_string() }, base_line_width, config.line_width_multiplier?)
+        wrap_text_internal(unsafe { &(*string).as_utf16str().to_string() }, base_line_width, config.line_width_multiplier?)
             .join("\n")
             .to_il2cpp_string()
     )
@@ -259,7 +259,7 @@ fn fit_text_internal(
 
 pub fn fit_text_il2cpp(string: *mut Il2CppString, base_line_width: i32, base_font_size: i32) -> Option<*mut Il2CppString> {
     let mult = Hachimi::instance().localized_data.load().config.line_width_multiplier?;
-    if let Some(result) = fit_text_internal(unsafe { &(*string).to_utf16str().to_string() },
+    if let Some(result) = fit_text_internal(unsafe { &(*string).as_utf16str().to_string() },
         base_line_width, base_font_size, mult
     ) {
         return Some(result.to_il2cpp_string());
@@ -300,7 +300,7 @@ pub fn wrap_fit_text(string: &str, base_line_width: i32, mut max_line_count: i32
 
 pub fn wrap_fit_text_il2cpp(string: *mut Il2CppString, base_line_width: i32, max_line_count: i32, base_font_size: i32) -> Option<*mut Il2CppString> {
     if Hachimi::instance().localized_data.load().config.use_text_wrapper {
-        if let Some(result) = wrap_fit_text(unsafe { &(*string).to_utf16str().to_string() },
+        if let Some(result) = wrap_fit_text(unsafe { &(*string).as_utf16str().to_string() },
             base_line_width, max_line_count, base_font_size
         ) {
             return Some(result.to_il2cpp_string());
@@ -321,7 +321,7 @@ pub fn write_json_file<T: Serialize, P: AsRef<Path>>(data: &T, path: P) -> Resul
 // Checks for both \n and \\n
 pub fn game_str_has_newline(string: *mut Il2CppString) -> bool {
     let mut got_backslash = false;
-    for c in unsafe { (*string).to_utf16str().as_slice().iter() } {
+    for c in unsafe { (*string).as_utf16str().as_slice().iter() } {
         if got_backslash {
             if *c == 0x6E { // n
                 return true;

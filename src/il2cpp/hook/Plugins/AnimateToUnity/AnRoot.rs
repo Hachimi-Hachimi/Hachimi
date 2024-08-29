@@ -93,13 +93,13 @@ pub fn patch_asset(this: *mut Il2CppObject, data_opt: Option<&AnRootData>) {
             return;
         };
 
-        let amp_name = unsafe { (*Object::get_name(param)).to_utf16str() };
+        let amp_name = unsafe { (*Object::get_name(param)).as_utf16str() };
         let texture_sets_path = Path::new("an_texture_sets").join(&amp_name.to_string());
 
         for group in group_list.iter() {
             let texture = AnMeshInfoParameterGroup::get__textureSetColor(group);
             let texture_set_name = AnMeshInfoParameterGroup::get_TextureSetName(group);
-            let texture_set_name_utf16 = unsafe { (*texture_set_name).to_utf16str() };
+            let texture_set_name_utf16 = unsafe { (*texture_set_name).as_utf16str() };
             
             // Try to load a replacement
             let texture_set_filename = texture_set_name_utf16.to_string() + ".png";

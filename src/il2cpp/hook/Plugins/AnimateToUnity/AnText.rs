@@ -25,7 +25,7 @@ extern "C" fn _UpdateText(this: *mut Il2CppObject) {
         return get_orig_fn!(_UpdateText, _UpdateTextFn)(this);
     }
 
-    let text = unsafe { (*text_ptr).to_utf16str() };
+    let text = unsafe { (*text_ptr).as_utf16str() };
 
     // doesn't run through TextGenerator, ignore its filters
     if text.as_slice().contains(&36) { // 36 = dollar sign ($)

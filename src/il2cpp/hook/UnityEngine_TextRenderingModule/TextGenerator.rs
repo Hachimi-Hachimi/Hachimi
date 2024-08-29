@@ -27,7 +27,7 @@ extern "C" fn PopulateWithErrors(
         orig_fn(this, text.to_il2cpp_string(), settings, context)
     }
     else {
-        let str = unsafe { (*str_).to_utf16str() };
+        let str = unsafe { (*str_).as_utf16str() };
 
         // Only try to evaluate a template if it looks like one
         let new_str = if str.as_slice().contains(&36) { // 36 = dollar sign ($)

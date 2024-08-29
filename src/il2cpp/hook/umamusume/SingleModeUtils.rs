@@ -15,14 +15,14 @@ extern "C" fn GetMonthTextByTurn(turn_set_id: i32, turn: i32) -> *mut Il2CppStri
                 match _name {
                     "month" => {
                         let text = GetMonthText(SingleModeTurn::get_Month(self.turn));
-                        Some(unsafe { (*text).to_utf16str().to_string() })
+                        Some(unsafe { (*text).as_utf16str().to_string() })
                     },
                     "half" => {
                         let half = SingleModeTurn::get_Half(self.turn);
                         let text = Localize::Get(TextId::from_name(
                             if half == 1 { "SingleMode0237" } else { "SingleMode0238" }
                         ));
-                        Some(unsafe { (*text).to_utf16str().to_string() })
+                        Some(unsafe { (*text).as_utf16str().to_string() })
                     },
                     _ => None
                 }

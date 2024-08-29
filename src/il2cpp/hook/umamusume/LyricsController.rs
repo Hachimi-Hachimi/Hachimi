@@ -10,7 +10,7 @@ use crate::{
 type LoadCSVFn = extern "C" fn(path: *mut Il2CppString) -> *mut Il2CppObject;
 extern "C" fn LoadCSV(path: *mut Il2CppString) -> *mut Il2CppObject {
     // Live/MusicScores/mXXXX/mXXXX_lyrics
-    let path_str = unsafe { (*path).to_utf16str() };
+    let path_str = unsafe { (*path).as_utf16str() };
 
     // ArrayList<ArrayList<String>>
     let array_list_obj = get_orig_fn!(LoadCSV, LoadCSVFn)(path);
@@ -33,7 +33,7 @@ extern "C" fn LoadCSV(path: *mut Il2CppString) -> *mut Il2CppObject {
         let Some(time) = row.get(0) else { continue };
         //let Some(lyrics) = row.get(1) else { continue };
         
-        let time_str = unsafe { (*time).to_utf16str().to_string() };
+        let time_str = unsafe { (*time).as_utf16str().to_string() };
         if let Some(new_lyrics) = dict.get(&time_str) {
             row.set(1, new_lyrics.to_il2cpp_string());
         }

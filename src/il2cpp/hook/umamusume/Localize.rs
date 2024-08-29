@@ -32,7 +32,7 @@ pub extern "C" fn Get(id: i32) -> *mut Il2CppString {
         Entry::Occupied(e) => &*e.into_mut(),
         Entry::Vacant(e) => {
             let name = TextId::get_name(id);
-            let name_str = unsafe { (*name).to_utf16str().to_string() };
+            let name_str = unsafe { (*name).as_utf16str().to_string() };
             e.insert(name_str)
         },
     };
@@ -44,7 +44,7 @@ pub extern "C" fn Get(id: i32) -> *mut Il2CppString {
         let str = get_orig_fn!(Get, GetFn)(id);
         if Hachimi::instance().config.load().translator_mode && id != 1109 && id != 1032 {
             // 1109 and 1032 seems to be debugging strings (they're annoying)
-            utils::print_json_entry(name, unsafe { &(*str).to_utf16str().to_string() });
+            utils::print_json_entry(name, unsafe { &(*str).as_utf16str().to_string() });
         }
         str
     }
@@ -56,11 +56,11 @@ pub fn dump_strings() -> BTreeMap<String, String> {
     for obj in TextId::get_values().enumerator {
         let value: i32 = unsafe { unbox(obj) };
         let name = TextId::get_name(value);
-        let name_str = unsafe { (*name).to_utf16str() };
+        let name_str = unsafe { (*name).as_utf16str() };
 
         let res = get_orig_fn!(Get, GetFn)(value);
         if !res.is_null() {
-            let res_str = unsafe { (*res).to_utf16str() };
+            let res_str = unsafe { (*res).as_utf16str() };
             map.insert(name_str.to_string(), res_str.to_string());
         }
     }

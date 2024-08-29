@@ -3,7 +3,7 @@ use crate::{core::{ext::StringExt, Hachimi}, il2cpp::{symbols::get_method_addr, 
 type GetCaptionTextFn = extern "C" fn(this: *mut Il2CppObject, info: *mut Il2CppObject) -> *mut Il2CppString;
 extern "C" fn GetCaptionText(this: *mut Il2CppObject, info: *mut Il2CppObject) -> *mut Il2CppString {
     let text = get_orig_fn!(GetCaptionText, GetCaptionTextFn)(this, info);
-    let text_utf16 = unsafe { (*text).to_utf16str() };
+    let text_utf16 = unsafe { (*text).as_utf16str() };
 
     // doesn't run through TextGenerator, remove filters
     if text_utf16.as_slice().contains(&36) { // 36 = dollar sign ($)

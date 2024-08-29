@@ -36,7 +36,7 @@ pub fn get_bundle_path(this: *mut Il2CppObject) -> Option<*mut Il2CppString> {
 pub fn check_asset_bundle_name(this: *mut Il2CppObject, metadata: &AssetMetadata) -> bool {
     if let Some(meta_bundle_name) = &metadata.bundle_name {
         if let Some(bundle_path) = get_bundle_path(this) {
-            let bundle_name = unsafe { (*bundle_path).to_utf16str().path_filename() };
+            let bundle_name = unsafe { (*bundle_path).as_utf16str().path_filename() };
             if !bundle_name.str_eq(&meta_bundle_name) {
                 warn!("Expected bundle {}, got {}", meta_bundle_name, bundle_name);
                 return false;
@@ -68,7 +68,7 @@ extern "C" fn LoadAssetAsync_Internal(this: *mut Il2CppObject, name: *mut Il2Cpp
 type OnLoadAssetFn = fn(bundle: *mut Il2CppObject, asset: *mut Il2CppObject, name: &Utf16Str);
 pub fn on_LoadAsset(bundle: *mut Il2CppObject, asset: *mut Il2CppObject, name: *mut Il2CppString) {
     let class = unsafe { (*asset).klass() };
-    //debug!("{} {}", unsafe { std::ffi::CStr::from_ptr((*class).name).to_str().unwrap() }, unsafe { (*name).to_utf16str() });
+    //debug!("{} {}", unsafe { std::ffi::CStr::from_ptr((*class).name).to_str().unwrap() }, unsafe { (*name).as_utf16str() });
 
     let handler: OnLoadAssetFn = if class == GameObject::class() {
         GameObject::on_LoadAsset
@@ -92,7 +92,7 @@ pub fn on_LoadAsset(bundle: *mut Il2CppObject, asset: *mut Il2CppObject, name: *
         return;
     };
 
-    handler(bundle, asset, unsafe { (*name).to_utf16str() });
+    handler(bundle, asset, unsafe { (*name).as_utf16str() });
 }
 
 type LoadFromFileInternalFn = extern "C" fn(path: *mut Il2CppString, crc: u32, offset: u64) -> *mut Il2CppObject;

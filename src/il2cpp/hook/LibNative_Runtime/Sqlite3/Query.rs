@@ -20,7 +20,7 @@ pub static SELECT_QUERIES: Lazy<Mutex<FnvHashMap<usize, Box<dyn sql::SelectQuery
 type _SetupFn = extern "C" fn(this: *mut Il2CppObject, conn: *mut c_void, sql: *const Il2CppString);
 extern "C" fn _Setup(this: *mut Il2CppObject, conn: *mut c_void, sql: *const Il2CppString) {
     let res = get_orig_fn!(_Setup, _SetupFn)(this, conn, sql);
-    let sql_str = unsafe { (*sql).to_utf16str() }.to_string();
+    let sql_str = unsafe { (*sql).as_utf16str() }.to_string();
 
     // quick escape!!!11
     if !sql_str.starts_with("SELECT") {

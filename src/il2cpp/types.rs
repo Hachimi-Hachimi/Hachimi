@@ -2491,7 +2491,7 @@ impl Il2CppString {
         &self.chars
     }
 
-    pub fn to_utf16str(&self) -> &Utf16Str {
+    pub fn as_utf16str(&self) -> &Utf16Str {
         unsafe { Utf16Str::from_slice_unchecked(std::slice::from_raw_parts(&self.chars, self.length as usize)) }
     }
 
