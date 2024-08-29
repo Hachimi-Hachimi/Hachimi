@@ -1,5 +1,6 @@
 use std::{ops::RangeInclusive, sync::{atomic::{self, AtomicBool}, Arc, Mutex}, thread, time::Instant};
 
+use fnv::FnvHashSet;
 use once_cell::sync::OnceCell;
 
 use crate::il2cpp::{
@@ -53,7 +54,9 @@ const TEXT_COLOR: egui::Color32 = egui::Color32::from_gray(170);
 
 static INSTANCE: OnceCell<Mutex<Gui>> = OnceCell::new();
 static IS_CONSUMING_INPUT: AtomicBool = AtomicBool::new(false);
-static mut GAME_UI_TOGGLE_STATE: bool = true;
+static mut DISABLED_GAME_UIS: once_cell::unsync::Lazy<FnvHashSet<*mut crate::il2cpp::types::Il2CppObject>> =
+    once_cell::unsync::Lazy::new(|| FnvHashSet::default());
+
 impl Gui {
     // Call this from the render thread!
     pub fn instance_or_init(open_key_str: &str) -> &Mutex<Gui> {
@@ -356,28 +359,7 @@ impl Gui {
                         })));
                     }
                     if ui.button("👁 Toggle game UI").clicked() {
-                        Thread::main_thread().schedule(|| {
-                            use crate::il2cpp::hook::{
-                                UnityEngine_CoreModule::{Object, Behaviour, GameObject},
-                                UnityEngine_UIModule::Canvas,
-                                Plugins::AnimateToUnity::AnRoot
-                            };
-
-                            // SAFETY: only used in the main thread
-                            let enabled = unsafe { !GAME_UI_TOGGLE_STATE };
-                            unsafe { GAME_UI_TOGGLE_STATE = enabled };
-
-                            let canvas_array = Object::FindObjectsOfType(Canvas::type_object(), true);
-                            for canvas in unsafe { canvas_array.as_slice().iter() } {
-                                Behaviour::set_enabled(*canvas, enabled);
-                            }
-
-                            let an_root_array = Object::FindObjectsOfType(AnRoot::type_object(), true);
-                            for an_root in unsafe { an_root_array.as_slice().iter() } {
-                                let top_object = AnRoot::get__topObject(*an_root);
-                                GameObject::SetActive(top_object, enabled);
-                            }
-                        })
+                        Thread::main_thread().schedule(Self::toggle_game_ui);
                     }
                 });
             });
@@ -400,6 +382,49 @@ impl Gui {
 
         if let Some(window) = show_window {
             self.show_window(window);
+        }
+    }
+
+    fn toggle_game_ui() {
+        use crate::il2cpp::hook::{
+            UnityEngine_CoreModule::{Object, Behaviour, GameObject},
+            UnityEngine_UIModule::Canvas,
+            Plugins::AnimateToUnity::AnRoot
+        };
+
+        let canvas_array = Object::FindObjectsOfType(Canvas::type_object(), true);
+        let an_root_array = Object::FindObjectsOfType(AnRoot::type_object(), true);
+        let canvas_iter = unsafe { canvas_array.as_slice().iter() };
+        let an_root_iter = unsafe { an_root_array.as_slice().iter() };
+
+        if unsafe { DISABLED_GAME_UIS.is_empty() } {
+            for canvas in canvas_iter {
+                if Behaviour::get_enabled(*canvas) {
+                    Behaviour::set_enabled(*canvas, false);
+                    unsafe { DISABLED_GAME_UIS.insert(*canvas); }
+                }
+            }
+            for an_root in an_root_iter {
+                let top_object = AnRoot::get__topObject(*an_root);
+                if GameObject::get_activeSelf(top_object) {
+                    GameObject::SetActive(top_object, false);
+                    unsafe { DISABLED_GAME_UIS.insert(top_object); }
+                }
+            }
+        }
+        else {
+            for canvas in canvas_iter {
+                if unsafe { DISABLED_GAME_UIS.contains(canvas) } {
+                    Behaviour::set_enabled(*canvas, true);
+                }
+            }
+            for an_root in an_root_iter {
+                let top_object = AnRoot::get__topObject(*an_root);
+                if unsafe { DISABLED_GAME_UIS.contains(&top_object) } {
+                    GameObject::SetActive(top_object, true);
+                }
+            }
+            unsafe { DISABLED_GAME_UIS.clear(); }
         }
     }
 
