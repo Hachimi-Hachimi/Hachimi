@@ -15,7 +15,7 @@ use windows::{
     }
 };
 
-use crate::{core::{utils::scale_to_aspect_ratio, Hachimi}, il2cpp::hook::UnityEngine_CoreModule::Screen};
+use crate::core::{utils::scale_to_aspect_ratio, Hachimi};
 
 use super::hachimi_impl::ResolutionScaling;
 
@@ -83,14 +83,24 @@ pub fn get_tmp_installer_path() -> PathBuf {
 }
 
 pub fn get_scaling_res() -> Option<(i32, i32)> {
+    use crate::il2cpp::hook::UnityEngine_CoreModule::Screen as UnityScreen;
+    use crate::il2cpp::hook::umamusume::Screen as GallopScreen;
+
     match Hachimi::instance().config.load().windows.resolution_scaling {
         ResolutionScaling::Default => None,
         ResolutionScaling::ScaleToScreenSize => {
-            let res = Screen::get_currentResolution();
-            let aspect_ratio = Screen::get_width() as f32 / Screen::get_height() as f32;
+            let res = UnityScreen::get_currentResolution(); // screen res, not game window res
+            let aspect_ratio = GallopScreen::get_Width() as f32 / GallopScreen::get_Height() as f32;
             Some(scale_to_aspect_ratio((res.width, res.height), aspect_ratio, true))
         },
-        ResolutionScaling::ScaleToWindowSize => Some((Screen::get_width(), Screen::get_height())),
+        ResolutionScaling::ScaleToWindowSize => {
+            let mut width = UnityScreen::get_width();
+            let mut height = UnityScreen::get_height();
+            if (GallopScreen::get_Width() > GallopScreen::get_Height()) != (width > height) {
+                std::mem::swap(&mut width, &mut height);
+            }
+            Some((width, height))
+        },
     }
 }
 
