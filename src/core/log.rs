@@ -1,8 +1,6 @@
 use crate::log_impl;
-use super::Hachimi;
 
-pub fn init(hachimi: &Hachimi) {
-    let debug_mode = hachimi.config.load().debug_mode;
+pub fn init(debug_mode: bool) {
     let filter_level = if debug_mode {
         log::LevelFilter::Debug
     }

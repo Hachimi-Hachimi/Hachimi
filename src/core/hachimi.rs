@@ -47,12 +47,13 @@ impl Hachimi {
             let instance = match Self::new() {
                 Ok(v) => v,
                 Err(e) => {
+                    super::log::init(false); // early init to log error
                     error!("Init failed: {}", e);
                     return false;
                 }
             };
 
-            super::log::init(&instance);
+            super::log::init(instance.config.load().debug_mode);
 
             info!("Hachimi {}", env!("HACHIMI_DISPLAY_VERSION"));
             INSTANCE.set(Arc::new(instance)).is_ok()
