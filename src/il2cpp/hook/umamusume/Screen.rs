@@ -56,7 +56,7 @@ extern "C" fn ChangeScreenOrientationPortraitAsync() -> *mut Il2CppObject {
 #[cfg(target_os = "windows")]
 type GetWidthFn = extern "C" fn() -> i32;
 #[cfg(target_os = "windows")]
-pub extern "C" fn get_Width() -> i32 {
+extern "C" fn get_Width() -> i32 {
     if let Some((width, _)) = crate::windows::utils::get_scaling_res() {
         return width;
     }
@@ -64,14 +64,22 @@ pub extern "C" fn get_Width() -> i32 {
     get_orig_fn!(get_Width, GetWidthFn)()
 }
 
+pub fn get_Width_orig() -> i32 {
+    get_orig_fn!(get_Width, GetWidthFn)()
+}
+
 #[cfg(target_os = "windows")]
 type GetHeightFn = extern "C" fn() -> i32;
 #[cfg(target_os = "windows")]
-pub extern "C" fn get_Height() -> i32 {
+extern "C" fn get_Height() -> i32 {
     if let Some((_, height)) = crate::windows::utils::get_scaling_res() {
         return height;
     }
 
+    get_orig_fn!(get_Height, GetHeightFn)()
+}
+
+pub fn get_Height_orig() -> i32 {
     get_orig_fn!(get_Height, GetHeightFn)()
 }
 
