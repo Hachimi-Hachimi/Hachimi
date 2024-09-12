@@ -56,6 +56,8 @@ impl Hachimi {
             super::log::init(instance.config.load().debug_mode);
 
             info!("Hachimi {}", env!("HACHIMI_DISPLAY_VERSION"));
+            instance.load_localized_data();
+
             INSTANCE.set(Arc::new(instance)).is_ok()
     }
 
@@ -74,7 +76,8 @@ impl Hachimi {
             interceptor: Interceptor::default(),
             hooking_finished: AtomicBool::new(false),
 
-            localized_data: ArcSwap::new(Arc::new(LocalizedData::new(&config, &game.data_dir)?)),
+            // Don't load localized data initially since it might fail, logging the error is not possible here
+            localized_data: ArcSwap::new(Arc::default()),
             tl_updater: Arc::default(),
 
             game,
@@ -126,15 +129,15 @@ impl Hachimi {
         Ok(())
     }
 
-    pub fn reload_localized_data(&self) {
+    pub fn load_localized_data(&self) {
         if self.tl_updater.progress().is_some() {
-            warn!("Update in progress, not reloading localized data");
+            warn!("Update in progress, not loading localized data");
             return;
         }
         let new_data = match LocalizedData::new(&self.config.load(), &self.game.data_dir) {
             Ok(v) => v,
             Err(e) => {
-                error!("Failed to reload localized data: {}", e);
+                error!("Failed to load localized data: {}", e);
                 return;
             }
         };

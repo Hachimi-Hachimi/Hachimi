@@ -276,7 +276,7 @@ impl Updater {
         self.progress.store(Arc::new(None));
 
         // Reload the localized data
-        hachimi.reload_localized_data();
+        hachimi.load_localized_data();
 
         // Save the repo cache (done last so if any of the previous fails, the entire update would be voided)
         let repo_cache = RepoCache {

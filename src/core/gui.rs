@@ -316,7 +316,7 @@ impl Gui {
 
                     ui.heading("📖 Translation");
                     if ui.button("⟳ Reload localized data").clicked() {
-                        hachimi.reload_localized_data();
+                        hachimi.load_localized_data();
                         show_notification = Some("Localized data reloaded.");
                     }
                     if ui.button("⮉ Check for updates").clicked() {
