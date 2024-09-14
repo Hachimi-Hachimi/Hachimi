@@ -24,15 +24,20 @@ pub fn get_texture_diff_path<P: AsRef<Path>>(path: P) -> PathBuf {
 }
 
 pub fn replace_texture_with_diff<P: AsRef<Path>>(texture: *mut Il2CppObject, path: P, mark_non_readable: bool) -> bool {
-    replace_texture_with_diff_ex(texture, &path, get_texture_diff_path(&path), mark_non_readable)
+    replace_texture_with_diff_ex(texture, &path, get_texture_diff_path(&path), mark_non_readable, true)
 }
 
 pub fn replace_texture_with_diff_ex<P1: AsRef<Path>, P2: AsRef<Path>>(
-    texture: *mut Il2CppObject, path: P1, diff_path: P2, mark_non_readable: bool
+    texture: *mut Il2CppObject, path: P1, diff_path: P2, mark_non_readable: bool, allow_fallback: bool
 ) -> bool {
     let Some(diff_mtime) = get_file_modified_time(&diff_path) else {
         // No diff, try to load image directly
-        return Texture2D::load_image_file(texture, &path, mark_non_readable);
+        return if allow_fallback {
+            Texture2D::load_image_file(texture, &path, mark_non_readable)
+        }
+        else {
+            false
+        }
     };
 
     if let Some(image_mtime) = get_file_modified_time(&path) {
