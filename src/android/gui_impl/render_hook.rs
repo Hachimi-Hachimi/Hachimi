@@ -38,7 +38,6 @@ static mut EGLSWAPBUFFERS_ADDR: usize = 0;
 type EGLSwapBuffersFn = extern "C" fn(display: EGLDisplay, surface: EGLSurface) -> EGLBoolean;
 extern "C" fn eglSwapBuffers(display: EGLDisplay, surface: EGLSurface) -> EGLBoolean {
     let orig_fn: EGLSwapBuffersFn = unsafe { std::mem::transmute(EGLSWAPBUFFERS_ADDR) };
-    // 1 in = 72 pt. Multiplying by 2 cuz mobile screens are way too dense
     let mut gui = Gui::instance_or_init("Vol Up + Vol Down").lock().unwrap();
     // Big fat state destroyer, initialize it as soon as possible
     let painter = match init_painter() {
@@ -69,23 +68,41 @@ extern "C" fn eglSwapBuffers(display: EGLDisplay, surface: EGLSurface) -> EGLBoo
     let clipped_primitives = gui.context.tessellate(output.shapes, output.pixels_per_point);
     let dimensions: [u32; 2] = [width as u32, height as u32];
 
-    // Save VBO and VAO since Unity doesn't rebind them unless it needs to
-    // (might be slow...? could always hook the bind functions directly if its noticeably slow)
+    // Backup state
     let gl = painter.gl().clone();
     let prev_vbo = get_binding_parameter(&gl, glow::ARRAY_BUFFER_BINDING, glow::NativeBuffer);
     let prev_vao = get_binding_parameter(&gl, glow::VERTEX_ARRAY_BINDING, glow::NativeVertexArray);
+    let prev_enable_scissor_test = unsafe { gl.is_enabled(glow::SCISSOR_TEST) };
+    let prev_enable_cull_face = unsafe { gl.is_enabled(glow::CULL_FACE) };
+    let prev_enable_depth_test = unsafe { gl.is_enabled(glow::DEPTH_TEST) };
+    let prev_enable_blend = unsafe { gl.is_enabled(glow::BLEND) };
+    let prev_blend_equation_rgb = unsafe { gl.get_parameter_i32(glow::BLEND_EQUATION_RGB) as _ };
+    let prev_blend_equation_alpha = unsafe { gl.get_parameter_i32(glow::BLEND_EQUATION_ALPHA) as _ };
+    let prev_blend_src_rgb = unsafe { gl.get_parameter_i32(glow::BLEND_SRC_RGB) as _ };
+    let prev_blend_dst_rgb = unsafe { gl.get_parameter_i32(glow::BLEND_DST_RGB) as _ };
+    let prev_blend_src_alpha = unsafe { gl.get_parameter_i32(glow::BLEND_SRC_ALPHA) as _ };
+    let prev_blend_dst_alpha = unsafe { gl.get_parameter_i32(glow::BLEND_DST_ALPHA) as _ };
+    let prev_program = get_binding_parameter(&gl, glow::CURRENT_PROGRAM, glow::NativeProgram);
+    let prev_texture = get_binding_parameter(&gl, glow::TEXTURE_BINDING_2D, glow::NativeTexture);
+    let prev_active_texture = unsafe { gl.get_parameter_i32(glow::ACTIVE_TEXTURE) as _ };
 
     painter.paint_and_update_textures(dimensions, output.pixels_per_point, &clipped_primitives, &output.textures_delta);
 
     // Restore state
     unsafe {
-        gl.enable(glow::DEPTH_TEST);
-        if prev_vbo.is_some() {
-            gl.bind_buffer(glow::ARRAY_BUFFER, prev_vbo);
+        gl.bind_buffer(glow::ARRAY_BUFFER, prev_vbo);
+        gl.bind_vertex_array(prev_vao);
+        if prev_enable_scissor_test { gl.enable(glow::SCISSOR_TEST) } else { gl.disable(glow::SCISSOR_TEST) }
+        if prev_enable_cull_face    { gl.enable(glow::CULL_FACE) }    else { gl.disable(glow::CULL_FACE) }
+        if prev_enable_depth_test   { gl.enable(glow::DEPTH_TEST) }   else { gl.disable(glow::DEPTH_TEST) }
+        if prev_enable_blend        { gl.enable(glow::BLEND) }        else { gl.disable(glow::BLEND) }
+        gl.blend_equation_separate(prev_blend_equation_rgb, prev_blend_equation_alpha);
+        gl.blend_func_separate(prev_blend_src_rgb, prev_blend_dst_rgb, prev_blend_src_alpha, prev_blend_dst_alpha);
+        if prev_program.is_none() || gl.is_program(prev_program.unwrap()) {
+            gl.use_program(prev_program);
         }
-        if prev_vao.is_some() {
-            gl.bind_vertex_array(prev_vao);
-        }
+        gl.bind_texture(glow::TEXTURE_2D, prev_texture);
+        gl.active_texture(prev_active_texture);
     }
 
     orig_fn(display, surface)
