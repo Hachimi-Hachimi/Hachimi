@@ -7,7 +7,8 @@ use crate::{core::{ext::Utf16StringExt, Hachimi}, il2cpp::{
         UnityEngine_AssetBundleModule::AssetBundle,
         UnityEngine_CoreModule::Sprite
     },
-    symbols::{get_field_from_name, get_field_object_value, IEnumerable}, types::*, utils::replace_texture_with_diff
+    symbols::{get_field_from_name, get_field_object_value, Array},
+    types::*, utils::replace_texture_with_diff
 }};
 
 static mut CLASS: *mut Il2CppClass = null_mut();
@@ -16,8 +17,8 @@ pub fn class() -> *mut Il2CppClass {
 }
 
 static mut SPRITES_FIELD: *mut FieldInfo = null_mut();
-fn get_sprites(this: *mut Il2CppObject) -> *mut Il2CppObject {
-    get_field_object_value(this, unsafe { SPRITES_FIELD })
+fn get_sprites(this: *mut Il2CppObject) -> Array {
+    Array::from(get_field_object_value(this, unsafe { SPRITES_FIELD }))
 }
 
 // hook::UnityEngine_AssetBundleModule::AssetBundle
@@ -43,12 +44,10 @@ pub fn on_LoadAsset(bundle: *mut Il2CppObject, this: *mut Il2CppObject, name: &U
         return;
     }
 
-    let Some(mut enumerable) = <IEnumerable>::new(get_sprites(this)) else {
-        return;
-    };
     // All of the sprites in the atlas uses the same texture so we just need to replace one of them
-    if let Some(sprite) = enumerable.enumerator.next() {
-        replace_texture_with_diff(Sprite::get_texture(sprite), replace_path, true);
+    let sprites = get_sprites(this);
+    if let Some(sprite) = unsafe { sprites.as_slice().get(0) } {
+        replace_texture_with_diff(Sprite::get_texture(*sprite), replace_path, true);
     }
 }
 

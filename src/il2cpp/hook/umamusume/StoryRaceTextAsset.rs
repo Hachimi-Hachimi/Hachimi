@@ -6,7 +6,7 @@ use crate::{
     core::{ext::{StringExt, Utf16StringExt}, Hachimi},
     il2cpp::{
         hook::UnityEngine_AssetBundleModule::AssetBundle::ASSET_PATH_PREFIX,
-        symbols::{get_field_from_name, get_field_object_value, set_field_object_value, IEnumerable},
+        symbols::{get_field_from_name, get_field_object_value, set_field_object_value, Array},
         types::*
     }
 };
@@ -17,8 +17,8 @@ pub fn class() -> *mut Il2CppClass {
 }
 
 static mut TEXT_DATA_FIELD: *mut FieldInfo = null_mut();
-fn get_textData(this: *mut Il2CppObject) -> *mut Il2CppObject {
-    get_field_object_value(this, unsafe { TEXT_DATA_FIELD })
+fn get_textData(this: *mut Il2CppObject) -> Array {
+    Array::from(get_field_object_value(this, unsafe { TEXT_DATA_FIELD }))
 }
 
 // I'd move this out to its own module, but there's only a single function we need rn sooooo...
@@ -47,14 +47,10 @@ pub fn on_LoadAsset(_bundle: *mut Il2CppObject, this: *mut Il2CppObject, name: &
         return;
     };
 
-    let Some(enumerable) = IEnumerable::new(get_textData(this)) else {
-        return;
-    };
-
-    // enumer... lol
-    for (i, key) in enumerable.enumerator.enumerate() {
+    let text_data = get_textData(this);
+    for (i, key) in unsafe { text_data.as_slice().iter().enumerate() } {
         let Some(text) = dict.get(i) else { continue };
-        Key_set_text(key, text.to_il2cpp_string());
+        Key_set_text(*key, text.to_il2cpp_string());
     }
 }
 

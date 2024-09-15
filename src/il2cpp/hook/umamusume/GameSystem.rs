@@ -29,17 +29,16 @@ extern "C" fn InitializeGame_MoveNext(enumerator: *mut Il2CppObject) -> bool {
     moved
 }
 
-type InitializeGameFn = extern "C" fn(this: *mut Il2CppObject) -> *mut Il2CppObject;
-extern "C" fn InitializeGame(this: *mut Il2CppObject) -> *mut Il2CppObject {
-    let res = get_orig_fn!(InitializeGame, InitializeGameFn)(this);
-    if Hachimi::instance().config.load().ui_scale == 1.0 { return res; }
+type InitializeGameFn = extern "C" fn(this: *mut Il2CppObject) -> IEnumerator;
+extern "C" fn InitializeGame(this: *mut Il2CppObject) -> IEnumerator {
+    let enumerator = get_orig_fn!(InitializeGame, InitializeGameFn)(this);
+    if Hachimi::instance().config.load().ui_scale == 1.0 { return enumerator; }
 
-    if let Some(enumerator) = <IEnumerator>::new(res) {
-        if let Err(e) = enumerator.hook_move_next(InitializeGame_MoveNext) {
-            error!("Failed to hook InitializeGame enumerator: {}", e);
-        }
+    if let Err(e) = enumerator.hook_move_next(InitializeGame_MoveNext) {
+        error!("Failed to hook InitializeGame enumerator: {}", e);
     }
-    res
+
+    enumerator
 }
 
 pub fn init(umamusume: *const Il2CppImage) {

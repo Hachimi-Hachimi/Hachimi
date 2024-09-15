@@ -228,20 +228,19 @@ pub unsafe fn unbox<T: Copy>(obj: *mut Il2CppObject) -> T {
     *(il2cpp_object_unbox(obj) as *mut T)
 }
 
-// IEnumerable wrapper
-// (for use with arrays only)
+#[repr(transparent)]
 pub struct IEnumerable<T = *mut Il2CppObject> {
     pub this: *mut Il2CppObject,
-    pub enumerator: IEnumerator<T>
+    _phantom: PhantomData<T>
 }
 
 impl<T> IEnumerable<T> {
-    pub fn new(this: *mut Il2CppObject) -> Option<IEnumerable<T>> {
-        if this.is_null() {
+    pub fn enumerator(&self) -> Option<IEnumerator> {
+        if self.this.is_null() {
             return None;
         }
 
-        let class = unsafe { (*this).klass() };
+        let class = unsafe { (*self.this).klass() };
         let get_enumerator_addr = get_method_addr_cached(class, c"GetEnumerator", 0);
         if get_enumerator_addr == 0 {
             return None;
@@ -250,34 +249,36 @@ impl<T> IEnumerable<T> {
         let get_enumerator: extern "C" fn(*mut Il2CppObject) -> *mut Il2CppObject = unsafe {
             std::mem::transmute(get_enumerator_addr)
         };
-        let Some(enumerator) = IEnumerator::new(get_enumerator(this)) else {
-            return None;
-        };
 
-        Some(IEnumerable {
-            this,
-            enumerator
-        })
+        Some(IEnumerator::from(get_enumerator(self.this)))
     }
 }
 
-// IEnumerator wrapper
-#[allow(non_snake_case)]
+impl<T> From<*mut Il2CppObject> for IEnumerable<T> {
+    fn from(value: *mut Il2CppObject) -> Self {
+        IEnumerable {
+            this: value,
+            _phantom: PhantomData
+        }
+    }
+}
+
+#[repr(transparent)]
 pub struct IEnumerator<T = *mut Il2CppObject> {
     pub this: *mut Il2CppObject,
-    get_Current: Option<extern "C" fn(*mut Il2CppObject) -> T>,
-    MoveNext: MoveNextFn
+    _phantom: PhantomData<T>
 }
 
 pub type MoveNextFn = extern "C" fn(*mut Il2CppObject) -> bool;
 
 impl<T> IEnumerator<T> {
-    pub fn new(this: *mut Il2CppObject) -> Option<IEnumerator<T>> {
-        if this.is_null() {
+    pub fn iter(&self) -> Option<IEnumeratorIterator<T>> {
+        if self.this.is_null() {
             return None;
         }
 
-        let class = unsafe { (*this).klass() };
+        let class = unsafe { (*self.this).klass() };
+        // Get addr manually to avoid nullptr warning
         let get_current_method = get_method_cached(class, c"get_Current", 0);
         let get_current_addr = get_current_method.map(|m| unsafe { (*m).methodPointer }).unwrap_or(0);
         let move_next_addr = get_method_addr_cached(class, c"MoveNext", 0);
@@ -286,22 +287,46 @@ impl<T> IEnumerator<T> {
             return None;
         }
 
-        Some(IEnumerator {
-            this,
+        Some(IEnumeratorIterator {
+            this: self.this,
             get_Current: unsafe { std::mem::transmute(get_current_addr) },
             MoveNext: unsafe { std::mem::transmute(move_next_addr) }
         })
     }
 
-    pub fn hook_move_next(&self, hook_fn: extern "C" fn(*mut Il2CppObject) -> bool) -> Result<usize, Error> {
-        Hachimi::instance().interceptor.hook(self.MoveNext as usize, hook_fn as usize)
+    pub fn hook_move_next(&self, hook_fn: MoveNextFn) -> Result<usize, Error> {
+        let class = unsafe { (*self.this).klass() };
+        let move_next_addr = get_method_addr_cached(class, c"MoveNext", 0);
+
+        if move_next_addr == 0 {
+            return Err(Error::MethodNotFound("MoveNext".to_owned()));
+        }
+
+        Hachimi::instance().interceptor.hook(move_next_addr, hook_fn as usize)
     }
 }
 
-impl<T> Iterator for IEnumerator<T> {
+impl<T> From<*mut Il2CppObject> for IEnumerator<T> {
+    fn from(value: *mut Il2CppObject) -> Self {
+        IEnumerator {
+            this: value,
+            _phantom: PhantomData
+        }
+    }
+}
+
+#[allow(non_snake_case)]
+pub struct IEnumeratorIterator<T> {
+    this: *mut Il2CppObject,
+    get_Current: Option<extern "C" fn(*mut Il2CppObject) -> T>,
+    MoveNext: MoveNextFn
+}
+
+impl<T> Iterator for IEnumeratorIterator<T> {
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
+        // TODO: properly handle enumerators that returns nothing
         let Some(get_current) = self.get_Current else {
             return None;
         };
@@ -315,8 +340,6 @@ impl<T> Iterator for IEnumerator<T> {
     }
 }
 
-// IList wrapper
-// (because using IEnumerator on List`1[T] causes UB for some reason)
 #[allow(non_snake_case)]
 pub struct IList<T = *mut Il2CppObject> {
     pub this: *mut Il2CppObject,
@@ -579,7 +602,7 @@ impl Drop for GCHandle {
 
 // Il2CppArray wrapper
 #[repr(transparent)]
-pub struct Array<T> {
+pub struct Array<T = *mut Il2CppObject> {
     pub this: *mut Il2CppArray,
     _phantom: PhantomData<T>
 }
@@ -608,5 +631,14 @@ impl<T> Array<T> {
 impl<T> Into<*mut Il2CppArray> for Array<T> {
     fn into(self) -> *mut Il2CppArray {
         self.this
+    }
+}
+
+impl<T> From<*mut Il2CppArray> for Array<T> {
+    fn from(value: *mut Il2CppArray) -> Self {
+        Self {
+            this: value,
+            _phantom: PhantomData
+        }
     }
 }

@@ -1,4 +1,11 @@
-use crate::{core::{ext::StringExt, Hachimi}, il2cpp::{hook::UnityEngine_UI::CanvasScaler, symbols::{get_method_addr, get_method_overload_addr, IEnumerable, MonoSingleton}, types::*}};
+use crate::{
+    core::{ext::StringExt, Hachimi},
+    il2cpp::{
+        hook::UnityEngine_UI::CanvasScaler,
+        symbols::{get_method_addr, get_method_overload_addr, Array, MonoSingleton},
+        types::*
+    }
+};
 
 static mut CLASS: *mut Il2CppClass = 0 as _;
 pub fn class() -> *mut Il2CppClass {
@@ -13,7 +20,7 @@ pub fn instance() -> *mut Il2CppObject {
 }
 
 static mut GETCANVASSCALERLIST_ADDR: usize = 0;
-impl_addr_wrapper_fn!(GetCanvasScalerList, GETCANVASSCALERLIST_ADDR, *mut Il2CppObject, this: *mut Il2CppObject);
+impl_addr_wrapper_fn!(GetCanvasScalerList, GETCANVASSCALERLIST_ADDR, Array, this: *mut Il2CppObject);
 
 pub fn apply_ui_scale() {
     let config = Hachimi::instance().config.load();
@@ -34,13 +41,11 @@ pub fn apply_ui_scale() {
     }
 
     let ui_manager = instance();
-    let Some(canvas_scaler_list) = IEnumerable::new(GetCanvasScalerList(ui_manager)) else {
-        return
-    };
-    for scaler in canvas_scaler_list.enumerator {
+    let canvas_scaler_list = GetCanvasScalerList(ui_manager);
+    for scaler in unsafe { canvas_scaler_list.as_slice().iter() } {
         #[cfg(target_os = "android")]
         {
-            let res = CanvasScaler::get_m_ReferenceResolution(scaler);
+            let res = CanvasScaler::get_m_ReferenceResolution(*scaler);
             unsafe {
                 (*res).x /= scale;
                 (*res).y /= scale;
@@ -48,7 +53,7 @@ pub fn apply_ui_scale() {
         }
         
         #[cfg(target_os = "windows")]
-        CanvasScaler::set_scaleFactor(scaler, scale);
+        CanvasScaler::set_scaleFactor(*scaler, scale);
     }
 }
 
@@ -96,18 +101,17 @@ extern "C" fn WaitBootSetup_MoveNext(enumerator: *mut Il2CppObject) -> bool {
 }
 
 #[cfg(target_os = "android")]
-type WaitBootSetupFn = extern "C" fn(this: *mut Il2CppObject) -> *mut Il2CppObject;
+type WaitBootSetupFn = extern "C" fn(this: *mut Il2CppObject) -> crate::il2cpp::symbols::IEnumerator;
 #[cfg(target_os = "android")]
-extern "C" fn WaitBootSetup(this: *mut Il2CppObject) -> *mut Il2CppObject {
-    let res = get_orig_fn!(WaitBootSetup, WaitBootSetupFn)(this);
-    if Hachimi::instance().config.load().ui_scale == 1.0 { return res; }
+extern "C" fn WaitBootSetup(this: *mut Il2CppObject) -> crate::il2cpp::symbols::IEnumerator {
+    let enumerator = get_orig_fn!(WaitBootSetup, WaitBootSetupFn)(this);
+    if Hachimi::instance().config.load().ui_scale == 1.0 { return enumerator; }
 
-    if let Some(enumerator) = <crate::il2cpp::symbols::IEnumerator>::new(res) {
-        if let Err(e) = enumerator.hook_move_next(WaitBootSetup_MoveNext) {
-            error!("Failed to hook enumerator: {}", e);
-        }
+    if let Err(e) = enumerator.hook_move_next(WaitBootSetup_MoveNext) {
+        error!("Failed to hook enumerator: {}", e);
     }
-    res
+
+    enumerator
 }
 
 #[cfg(target_os = "windows")]

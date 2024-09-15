@@ -53,7 +53,7 @@ pub extern "C" fn Get(id: i32) -> *mut Il2CppString {
 pub fn dump_strings() -> BTreeMap<String, String> {
     let mut map = BTreeMap::new();
 
-    for obj in TextId::get_values().enumerator {
+    for obj in TextId::get_values().enumerator().map(|e| e.iter()).unwrap_or_default().expect("enum values enumerator") {
         let value: i32 = unsafe { unbox(obj) };
         let name = TextId::get_name(value);
         let name_str = unsafe { (*name).as_utf16str() };
