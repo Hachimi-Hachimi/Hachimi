@@ -116,6 +116,7 @@ impl DownloadJob {
             self.hasher.update(bytes);
             add_bytes(bytes.len());
         })?;
+        file.sync_data()?;
 
         // Hash the file
         let hash = self.hasher.finalize().to_hex().to_string();
@@ -145,9 +146,14 @@ impl Updater {
         };
 
         let hachimi = Hachimi::instance();
-        let Some(index_url) = &hachimi.config.load().translation_repo_index else {
+        let config = hachimi.config.load();
+        let Some(index_url) = &config.translation_repo_index else {
             return Ok(());
         };
+        let Some(ld_dir) = &config.localized_data_dir else {
+            return Ok(());
+        };
+        let ld_dir_path = hachimi.get_data_path(ld_dir);
 
         if let Some(mutex) = Gui::instance() {
             mutex.lock().unwrap().show_notification("Checking for translation updates...");
@@ -173,7 +179,13 @@ impl Updater {
             }
 
             let updated = if let Some(hash) = repo_cache.files.get(&file.path) {
-                hash != &file.hash
+                if hash == &file.hash {
+                    // download if the file doesn't actually exist on disk
+                    !ld_dir_path.join(&file.path).is_file()
+                }
+                else {
+                    true
+                }
             }
             else {
                 // file doesnt exist yet, download it
@@ -356,6 +368,7 @@ impl Updater {
         let mut cached_files = cached_files.lock().unwrap();
         let mut error_count = 0;
         let zip_path = localized_data_dir.join(".tmp.zip");
+        let sync_pool = ThreadPool::new(NUM_THREADS);
 
         { // block that drops the file objects so we can delete the temp file later
             let mut zip_file = fs::File::options()
@@ -383,6 +396,7 @@ impl Updater {
                 };
                 self.progress.store(Arc::new(Some(progress)));
             })?;
+            zip_file.sync_data()?;
 
             let mut zip_archive = zip::ZipArchive::new(zip_file)?;
             let mut hasher = blake3::Hasher::new();
@@ -434,6 +448,11 @@ impl Updater {
                         return Err(Error::OutOfDiskSpace);
                     }
                 }
+                sync_pool.execute(move || {
+                    if let Err(e) = file.sync_data() {
+                        error!("Failed to sync file: {}", e)
+                    }
+                });
 
                 // Hash the file
                 let hash = hasher.finalize().to_hex().to_string();
@@ -445,6 +464,9 @@ impl Updater {
                 hasher.reset();
             }
         }
+
+        // Wait for the sync pool to finish
+        sync_pool.join();
 
         if let Err(e) = fs::remove_file(&zip_path) {
             error!("Failed to remove '{}': {}", zip_path.display(), e);
