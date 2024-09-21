@@ -150,10 +150,7 @@ impl Updater {
         let Some(index_url) = &config.translation_repo_index else {
             return Ok(());
         };
-        let Some(ld_dir) = &config.localized_data_dir else {
-            return Ok(());
-        };
-        let ld_dir_path = hachimi.get_data_path(ld_dir);
+        let ld_dir_path = config.localized_data_dir.as_ref().map(|p| hachimi.get_data_path(p));
 
         if let Some(mutex) = Gui::instance() {
             mutex.lock().unwrap().show_notification("Checking for translation updates...");
@@ -181,7 +178,7 @@ impl Updater {
             let updated = if let Some(hash) = repo_cache.files.get(&file.path) {
                 if hash == &file.hash {
                     // download if the file doesn't actually exist on disk
-                    !ld_dir_path.join(&file.path).is_file()
+                    ld_dir_path.as_ref().map(|p| !p.join(&file.path).is_file()).unwrap_or(true)
                 }
                 else {
                     true
