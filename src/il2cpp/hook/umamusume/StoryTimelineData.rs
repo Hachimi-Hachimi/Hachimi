@@ -47,10 +47,13 @@ fn get_BlockList(this: *mut Il2CppObject) -> *mut Il2CppObject {
 struct StoryTimelineDataDict {
     #[serde(alias = "Title")]
     title: Option<String>,
-    
+
     #[serde(alias = "TextBlockList")]
     #[serde(default)]
-    text_block_list: Vec<TextBlockDict>
+    text_block_list: Vec<TextBlockDict>,
+
+    #[serde(default)]
+    no_wrap: bool
 }
 
 #[derive(Deserialize)]
@@ -158,30 +161,35 @@ pub fn on_LoadAsset(_bundle: *mut Il2CppObject, this: *mut Il2CppObject, name: &
             }
             if let Some(text) = &text_block_dict.text {
                 let text_str: *mut Il2CppString;
-                if is_story_view {
-                    // Sizing tags are not used at all in main stories, simply wrap it
-                    // Add an extra space to each line because the vertical log screen ignores newlines
-                    text_str = if let Some(wrapped) = utils::wrap_text(text, story_view_line_width) {
-                        wrapped.join(" \n").to_il2cpp_string()
-                    }
-                    else {
-                        text.to_il2cpp_string()
-                    }
+                if dict.no_wrap {
+                    text_str = text.to_il2cpp_string();
                 }
                 else {
-                    let size = StoryTimelineTextClipData::get_Size(this);
-                    text_str = if size == StoryTimelineTextClipData::FontSize_Default {
-                        if let Some(fitted) = utils::wrap_fit_text(text, line_width, line_count, font_size) {
-                            fitted.to_il2cpp_string()
+                    if is_story_view {
+                        // Sizing tags are not used at all in main stories, simply wrap it
+                        // Add an extra space to each line because the vertical log screen ignores newlines
+                        text_str = if let Some(wrapped) = utils::wrap_text(text, story_view_line_width) {
+                            wrapped.join(" \n").to_il2cpp_string()
                         }
                         else {
                             text.to_il2cpp_string()
                         }
                     }
                     else {
-                        // not doing anything with text of other sizes for now...
-                        text.to_il2cpp_string()
-                    };
+                        let size = StoryTimelineTextClipData::get_Size(this);
+                        text_str = if size == StoryTimelineTextClipData::FontSize_Default {
+                            if let Some(fitted) = utils::wrap_fit_text(text, line_width, line_count, font_size) {
+                                fitted.to_il2cpp_string()
+                            }
+                            else {
+                                text.to_il2cpp_string()
+                            }
+                        }
+                        else {
+                            // not doing anything with text of other sizes for now...
+                            text.to_il2cpp_string()
+                        };
+                    }
                 }
                 StoryTimelineTextClipData::set_Text(clip_data, text_str);
             }
