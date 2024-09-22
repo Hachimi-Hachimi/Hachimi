@@ -273,6 +273,11 @@ impl LocalizedData {
         let path: Option<PathBuf>;
         let config: LocalizedDataConfig = if let Some(ld_dir) = &config.localized_data_dir {
             let ld_path = Path::new(data_dir).join(ld_dir);
+
+            // Create .nomedia
+            #[cfg(target_os = "android")]
+            { _ = fs::OpenOptions::new().create_new(true).write(true).open(ld_path.join(".nomedia")); }
+
             let ld_config_path = ld_path.join("config.json");
             path = Some(ld_path);
 
