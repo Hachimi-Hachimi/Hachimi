@@ -371,12 +371,11 @@ impl LocalizedData {
     }
 
     pub fn get_assets_path<P: AsRef<Path>>(&self, rel_path: P) -> Option<PathBuf> {
-        if let Some(assets_path) = &self.assets_path {
-            Some(assets_path.join(rel_path))
-        }
-        else {
-            None
-        }
+        self.assets_path.as_ref().map(|p| p.join(rel_path))
+    }
+
+    pub fn get_data_path<P: AsRef<Path>>(&self, rel_path: P) -> Option<PathBuf> {
+        self.path.as_ref().map(|p| p.join(rel_path))
     }
 
     pub fn load_asset_metadata<P: AsRef<Path>>(&self, rel_path: P) -> AssetMetadata {
@@ -401,6 +400,7 @@ pub struct LocalizedDataConfig {
     pub race_jikkyo_comment_dict: Option<String>,
     pub race_jikkyo_message_dict: Option<String>,
     pub assets_dir: Option<String>,
+    pub extra_asset_bundle: Option<String>,
 
     pub plural_form: Option<String>,
     pub ordinal_form: Option<String>,
