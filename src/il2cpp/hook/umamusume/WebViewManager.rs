@@ -1,6 +1,6 @@
 use std::ptr::null_mut;
 
-use crate::{core::{ext::StringExt, Hachimi}, il2cpp::{symbols::{get_method_addr, MonoSingleton}, types::*}};
+use crate::{core::Hachimi, il2cpp::{symbols::{get_method_addr, MonoSingleton}, ext::StringExt, types::*}};
 
 use super::{DialogCommon, TextId, WebViewDefine};
 

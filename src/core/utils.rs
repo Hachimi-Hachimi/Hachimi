@@ -3,9 +3,9 @@ use std::{borrow::Cow, fs::File, io::Write, path::Path, time::SystemTime};
 use serde::Serialize;
 use textwrap::{core::Word, wrap_algorithms, WordSeparator::UnicodeBreakProperties};
 
-use crate::il2cpp::types::Il2CppString;
+use crate::il2cpp::{ext::StringExt, types::Il2CppString};
 
-use super::{ext::StringExt, Error, Hachimi};
+use super::{Error, Hachimi};
 
 pub fn concat_unix_path(left: &str, right: &str) -> String {
     let mut str = String::with_capacity(left.len() + 1 + right.len());

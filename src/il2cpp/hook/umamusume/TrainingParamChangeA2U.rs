@@ -1,4 +1,4 @@
-use crate::{core::{ext::StringExt, Hachimi}, il2cpp::{symbols::get_method_addr, types::*}};
+use crate::{core::Hachimi, il2cpp::{symbols::get_method_addr, ext::StringExt, types::*}};
 
 type GetCaptionTextFn = extern "C" fn(this: *mut Il2CppObject, info: *mut Il2CppObject) -> *mut Il2CppString;
 extern "C" fn GetCaptionText(this: *mut Il2CppObject, info: *mut Il2CppObject) -> *mut Il2CppString {

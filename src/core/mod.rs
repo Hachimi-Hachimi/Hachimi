@@ -14,7 +14,6 @@ pub use gui::Gui;
 pub mod plurals;
 mod template_filters;
 
-pub mod sql;
 #[macro_use] pub mod interceptor;
 pub use interceptor::Interceptor;
 

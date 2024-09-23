@@ -4,8 +4,8 @@ use fnv::FnvHashMap;
 use once_cell::unsync::Lazy;
 
 use crate::{
-    core::{ext::StringExt, utils, Hachimi},
-    il2cpp::{symbols::{get_method_overload_addr, unbox}, types::*}
+    core::{utils, Hachimi},
+    il2cpp::{symbols::{get_method_overload_addr, unbox}, ext::StringExt, types::*}
 };
 
 use super::TextId;

@@ -1,4 +1,4 @@
-use crate::{core::sql::TextDataQuery, il2cpp::{symbols::get_method_addr, types::*}};
+use crate::il2cpp::{symbols::get_method_addr, sql::TextDataQuery, types::*};
 
 type UpdateCurrentFn = extern "C" fn(this: *mut Il2CppObject);
 extern "C" fn UpdateCurrent(this: *mut Il2CppObject) {

@@ -104,6 +104,10 @@ extern "C" fn LoadFromFile_Internal(path: *mut Il2CppString, crc: u32, offset: u
     bundle
 }
 
+pub fn LoadFromFile_Internal_orig(path: *mut Il2CppString, crc: u32, offset: u64) -> *mut Il2CppObject {
+    get_orig_fn!(LoadFromFile_Internal, LoadFromFileInternalFn)(path, crc, offset)
+}
+
 type UnloadFn = extern "C" fn(this: *mut Il2CppObject, unload_all_loaded_objects: bool);
 extern "C" fn Unload(this: *mut Il2CppObject, unload_all_loaded_objects: bool) {
     BUNDLE_PATHS.lock().unwrap().remove(&(this as usize));

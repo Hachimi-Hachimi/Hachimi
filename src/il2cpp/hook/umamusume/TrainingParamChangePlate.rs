@@ -1,8 +1,9 @@
 use crate::{
-    core::{ext::StringExt, Hachimi},
+    core::Hachimi,
     il2cpp::{
         hook::UnityEngine_TextRenderingModule::TextGenerator::IgnoreTGFiltersContext,
         symbols::get_method_addr,
+        ext::StringExt,
         types::*
     }
 };

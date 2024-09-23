@@ -3,10 +3,11 @@ use std::ptr::null_mut;
 use widestring::Utf16Str;
 
 use crate::{
-    core::{ext::{StringExt, Utf16StringExt}, Hachimi},
+    core::{ext::Utf16StringExt, Hachimi},
     il2cpp::{
         hook::UnityEngine_AssetBundleModule::AssetBundle::ASSET_PATH_PREFIX,
         symbols::{get_field_from_name, get_field_object_value, set_field_object_value, Array},
+        ext::StringExt,
         types::*
     }
 };

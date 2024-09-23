@@ -3,8 +3,8 @@ use std::path::Path;
 use fnv::FnvHashMap;
 
 use crate::{
-    core::{ext::{StringExt, Utf16StringExt}, Hachimi},
-    il2cpp::{symbols::{get_method_addr, IList}, types::*}
+    core::{ext::Utf16StringExt, Hachimi},
+    il2cpp::{symbols::{get_method_addr, IList}, ext::StringExt, types::*}
 };
 
 type LoadCSVFn = extern "C" fn(path: *mut Il2CppString) -> *mut Il2CppObject;

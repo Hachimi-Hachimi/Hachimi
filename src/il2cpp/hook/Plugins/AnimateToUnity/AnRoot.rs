@@ -5,11 +5,12 @@ use serde::Deserialize;
 use widestring::Utf16Str;
 
 use crate::{
-    core::{ext::{StringExt, Utf16StringExt}, hachimi::AssetInfo, Hachimi},
+    core::{ext::Utf16StringExt, hachimi::AssetInfo, Hachimi},
     il2cpp::{
         api::{il2cpp_class_get_type, il2cpp_type_get_object},
         hook::{UnityEngine_AssetBundleModule::AssetBundle, UnityEngine_CoreModule::Object},
         symbols::{get_field_from_name, get_field_object_value, IList},
+        ext::StringExt,
         types::*, utils::replace_texture_with_diff
     }
 };

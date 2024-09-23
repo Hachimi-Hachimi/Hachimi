@@ -1,8 +1,9 @@
 use crate::{
-    core::{ext::StringExt, Hachimi},
+    core::Hachimi,
     il2cpp::{
         hook::UnityEngine_UI::CanvasScaler,
         symbols::{get_method_addr, get_method_overload_addr, Array, MonoSingleton},
+        ext::StringExt,
         types::*
     }
 };

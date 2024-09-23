@@ -2,9 +2,10 @@ use std::sync::atomic::{self, AtomicBool};
 
 use sqlparser::ast;
 
-use crate::il2cpp::{hook::LibNative_Runtime, types::{Il2CppObject, Il2CppString}};
-
-use super::{ext::StringExt, utils, Hachimi};
+use crate::{
+    core::{utils, Hachimi},
+    il2cpp::{ext::StringExt, hook::LibNative_Runtime, types::{Il2CppObject, Il2CppString}}
+};
 
 // All of this add column/param stuff could be simplified to two hash maps, but that's overkill.
 pub trait SelectQueryState {

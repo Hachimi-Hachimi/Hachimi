@@ -2,7 +2,7 @@ use std::{path::Path, ptr::null_mut};
 
 use widestring::Utf16Str;
 
-use crate::{core::{ext::{StringExt, Utf16StringExt}, Hachimi}, il2cpp::{
+use crate::{core::{ext::Utf16StringExt, Hachimi}, il2cpp::{
     api::{il2cpp_object_new, il2cpp_resolve_icall},
     hook::{
         mscorlib,
@@ -10,6 +10,7 @@ use crate::{core::{ext::{StringExt, Utf16StringExt}, Hachimi}, il2cpp::{
         UnityEngine_ImageConversionModule::ImageConversion
     },
     symbols::{get_method_addr, Array},
+    ext::StringExt,
     types::*, utils
 }};
 
