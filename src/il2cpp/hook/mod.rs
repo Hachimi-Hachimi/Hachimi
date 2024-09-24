@@ -69,6 +69,7 @@ pub mod UnityEngine_TextRenderingModule;
 pub mod UnityEngine_ImageConversionModule;
 pub mod UnityEngine_UI;
 pub mod UnityEngine_UIModule;
+pub mod Unity_TextMeshPro;
 
 pub mod LibNative_Runtime;
 pub mod umamusume;
@@ -92,6 +93,7 @@ pub fn init() {
     UnityEngine_ImageConversionModule::init();
     UnityEngine_UI::init();
     UnityEngine_UIModule::init();
+    Unity_TextMeshPro::init();
 
     // Umamusume
     LibNative_Runtime::init();

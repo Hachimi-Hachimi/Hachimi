@@ -47,15 +47,19 @@ pub fn check_asset_bundle_name(this: *mut Il2CppObject, metadata: &AssetMetadata
     true
 }
 
-type LoadAssetFn = extern "C" fn(this: *mut Il2CppObject, name: *mut Il2CppString, type_: *mut Il2CppReflectionType) -> *mut Il2CppObject;
-extern "C" fn LoadAsset_Internal(this: *mut Il2CppObject, name: *mut Il2CppString, type_: *mut Il2CppReflectionType) -> *mut Il2CppObject {
+type LoadAssetFn = extern "C" fn(this: *mut Il2CppObject, name: *mut Il2CppString, type_: *mut Il2CppObject) -> *mut Il2CppObject;
+extern "C" fn LoadAsset_Internal(this: *mut Il2CppObject, name: *mut Il2CppString, type_: *mut Il2CppObject) -> *mut Il2CppObject {
     let asset = get_orig_fn!(LoadAsset_Internal, LoadAssetFn)(this, name, type_);
     on_LoadAsset(this, asset, name);
     asset
 }
 
-type LoadAssetAsyncFn = extern "C" fn(this: *mut Il2CppObject, name: *mut Il2CppString, type_: *mut Il2CppReflectionType) -> *mut Il2CppObject;
-extern "C" fn LoadAssetAsync_Internal(this: *mut Il2CppObject, name: *mut Il2CppString, type_: *mut Il2CppReflectionType) -> *mut Il2CppObject {
+pub fn LoadAsset_Internal_orig(this: *mut Il2CppObject, name: *mut Il2CppString, type_: *mut Il2CppObject) -> *mut Il2CppObject {
+    get_orig_fn!(LoadAsset_Internal, LoadAssetFn)(this, name, type_)
+}
+
+type LoadAssetAsyncFn = extern "C" fn(this: *mut Il2CppObject, name: *mut Il2CppString, type_: *mut Il2CppObject) -> *mut Il2CppObject;
+extern "C" fn LoadAssetAsync_Internal(this: *mut Il2CppObject, name: *mut Il2CppString, type_: *mut Il2CppObject) -> *mut Il2CppObject {
     let request = get_orig_fn!(LoadAssetAsync_Internal, LoadAssetAsyncFn)(this, name, type_);
     let info = RequestInfo {
         name_handle: GCHandle::new(name as _, false), // is name even guaranteed to survive in memory..?

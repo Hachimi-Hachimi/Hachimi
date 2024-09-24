@@ -10,6 +10,7 @@ mod AnMotionParameterGroup;
 mod AnMotionParameter;
 mod AnTextParameter;
 mod AnObjectParameterBase;
+mod AnGlobalData;
 
 pub fn init(image: *const Il2CppImage) {
     AnText::init(image);
@@ -22,4 +23,5 @@ pub fn init(image: *const Il2CppImage) {
     AnMotionParameter::init(image);
     AnTextParameter::init(image);
     AnObjectParameterBase::init(image);
+    AnGlobalData::init(image);
 }

@@ -12,6 +12,9 @@ impl_addr_wrapper_fn!(get_fontSize, GET_FONTSIZE_ADDR, i32, this: *mut Il2CppObj
 static mut SET_FONTSIZE_ADDR: usize = 0;
 impl_addr_wrapper_fn!(set_fontSize, SET_FONTSIZE_ADDR, (), this: *mut Il2CppObject, value: i32);
 
+static mut SET_FONT_ADDR: usize = 0;
+impl_addr_wrapper_fn!(set_font, SET_FONT_ADDR, (), this: *mut Il2CppObject, value: *mut Il2CppObject);
+
 pub fn init(UnityEngine_UI: *const Il2CppImage) {
     get_class_or_return!(UnityEngine_UI, "UnityEngine.UI", Text);
     
@@ -20,5 +23,6 @@ pub fn init(UnityEngine_UI: *const Il2CppImage) {
         SET_LINESPACING_ADDR = get_method_addr(Text, c"set_lineSpacing", 1);
         GET_FONTSIZE_ADDR = get_method_addr(Text, c"get_fontSize", 0);
         SET_FONTSIZE_ADDR = get_method_addr(Text, c"set_fontSize", 1);
+        SET_FONT_ADDR = get_method_addr(Text, c"set_font", 1);
     }
 }

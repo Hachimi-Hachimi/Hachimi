@@ -247,6 +247,25 @@ impl Default for Config {
     }
 }
 
+#[derive(Deserialize, Default, Clone)]
+pub struct OsOption<T> {
+    #[cfg(target_os = "android")]
+    android: Option<T>,
+
+    #[cfg(target_os = "windows")]
+    windows: Option<T>
+}
+
+impl<T> OsOption<T> {
+    pub fn as_ref(&self) -> Option<&T> {
+        #[cfg(target_os = "android")]
+        return self.android.as_ref();
+
+        #[cfg(target_os = "windows")]
+        return self.windows.as_ref();
+    }
+}
+
 #[derive(Default)]
 pub struct LocalizedData {
     pub config: LocalizedDataConfig,
@@ -400,7 +419,9 @@ pub struct LocalizedDataConfig {
     pub race_jikkyo_comment_dict: Option<String>,
     pub race_jikkyo_message_dict: Option<String>,
     pub assets_dir: Option<String>,
-    pub extra_asset_bundle: Option<String>,
+    #[serde(default)]
+    pub extra_asset_bundle: OsOption<String>,
+    pub replacement_font_name: Option<String>,
 
     pub plural_form: Option<String>,
     pub ordinal_form: Option<String>,

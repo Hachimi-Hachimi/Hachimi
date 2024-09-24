@@ -29,6 +29,10 @@ pub mod Screen;
 mod TrainingParamChangePlate;
 mod SingleModeUtils;
 mod MasterSingleModeTurn;
+mod TextFontManager;
+mod TextFormat;
+mod TextCommon;
+mod TextMeshProUguiCommon;
 
 pub fn init() {
     get_assembly_image_or_return!(image, "umamusume.dll");
@@ -63,4 +67,8 @@ pub fn init() {
     TrainingParamChangePlate::init(image);
     SingleModeUtils::init(image);
     MasterSingleModeTurn::init(image);
+    TextFontManager::init(image);
+    TextFormat::init(image);
+    TextCommon::init(image);
+    TextMeshProUguiCommon::init(image);
 }
