@@ -59,7 +59,6 @@ impl LocalizedDataExt for LocalizedData {
             return 0 as _;
         };
 
-        info!("{}", path_str);
         let bundle = AssetBundle::LoadFromFile_Internal_orig(path_str.to_il2cpp_string(), 0, 0);
         if bundle.is_null() {
             error!("Failed to load extra asset bundle");
