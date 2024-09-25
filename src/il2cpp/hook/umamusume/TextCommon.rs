@@ -4,9 +4,16 @@ type AwakeFn = extern "C" fn(this: *mut Il2CppObject);
 extern "C" fn Awake(this: *mut Il2CppObject) {
     get_orig_fn!(Awake, AwakeFn)(this);
 
-    let font = Hachimi::instance().localized_data.load().load_replacement_font();
+    let localized_data = Hachimi::instance().localized_data.load();
+
+    let font = localized_data.load_replacement_font();
     if !font.is_null() {
         Text::set_font(this, font);
+    }
+
+    if localized_data.config.text_common_allow_overflow {
+        Text::set_horizontalOverflow(this, 1);
+        Text::set_verticalOverflow(this, 1);
     }
 }
 

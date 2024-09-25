@@ -15,6 +15,12 @@ impl_addr_wrapper_fn!(set_fontSize, SET_FONTSIZE_ADDR, (), this: *mut Il2CppObje
 static mut SET_FONT_ADDR: usize = 0;
 impl_addr_wrapper_fn!(set_font, SET_FONT_ADDR, (), this: *mut Il2CppObject, value: *mut Il2CppObject);
 
+static mut SET_HORIZONTALOVERFLOW_ADDR: usize = 0;
+impl_addr_wrapper_fn!(set_horizontalOverflow, SET_HORIZONTALOVERFLOW_ADDR, (), this: *mut Il2CppObject, value: i32);
+
+static mut SET_VERTICALOVERFLOW_ADDR: usize = 0;
+impl_addr_wrapper_fn!(set_verticalOverflow, SET_VERTICALOVERFLOW_ADDR, (), this: *mut Il2CppObject, value: i32);
+
 pub fn init(UnityEngine_UI: *const Il2CppImage) {
     get_class_or_return!(UnityEngine_UI, "UnityEngine.UI", Text);
     
@@ -24,5 +30,7 @@ pub fn init(UnityEngine_UI: *const Il2CppImage) {
         GET_FONTSIZE_ADDR = get_method_addr(Text, c"get_fontSize", 0);
         SET_FONTSIZE_ADDR = get_method_addr(Text, c"set_fontSize", 1);
         SET_FONT_ADDR = get_method_addr(Text, c"set_font", 1);
+        SET_HORIZONTALOVERFLOW_ADDR = get_method_addr(Text, c"set_horizontalOverflow", 1);
+        SET_VERTICALOVERFLOW_ADDR = get_method_addr(Text, c"set_verticalOverflow", 1);
     }
 }
