@@ -33,6 +33,8 @@ mod TextFontManager;
 mod TextFormat;
 mod TextCommon;
 mod TextMeshProUguiCommon;
+mod StoryChoiceController;
+mod StoryViewController;
 
 pub fn init() {
     get_assembly_image_or_return!(image, "umamusume.dll");
@@ -71,4 +73,6 @@ pub fn init() {
     TextFormat::init(image);
     TextCommon::init(image);
     TextMeshProUguiCommon::init(image);
+    StoryChoiceController::init(image);
+    StoryViewController::init(image);
 }

@@ -861,6 +861,10 @@ impl ConfigEditor {
         ]);
         ui.end_row();
 
+        ui.label("Story choice auto\nselect delay");
+        ui.add(egui::Slider::new(&mut config.story_choice_auto_select_delay, 0.1..=10.0).step_by(0.05));
+        ui.end_row();
+
         #[cfg(target_os = "windows")]
         {
             use crate::windows::hachimi_impl::{FullScreenMode, ResolutionScaling};
