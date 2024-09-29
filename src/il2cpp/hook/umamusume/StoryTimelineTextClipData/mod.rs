@@ -41,6 +41,16 @@ pub fn get_ColorTextInfoList(this: *mut Il2CppObject) -> *mut Il2CppObject {
     get_field_object_value(this, unsafe { COLORTEXTINFOLIST_FIELD })
 }
 
+static mut WAITFRAME_FIELD: *mut FieldInfo = null_mut();
+pub fn get_WaitFrame(this: *mut Il2CppObject) -> i32 {
+    get_field_value(this, unsafe { WAITFRAME_FIELD })
+}
+
+static mut VOICELENGTH_FIELD: *mut FieldInfo = null_mut();
+pub fn get_VoiceLength(this: *mut Il2CppObject) -> i32 {
+    get_field_value(this, unsafe { VOICELENGTH_FIELD })
+}
+
 pub fn init(umamusume: *const Il2CppImage) {
     get_class_or_return!(umamusume, Gallop, StoryTimelineTextClipData);
 
@@ -51,6 +61,8 @@ pub fn init(umamusume: *const Il2CppImage) {
         SIZE_FIELD = get_field_from_name(StoryTimelineTextClipData, c"Size");
         CHOICEDDATALIST_FIELD = get_field_from_name(StoryTimelineTextClipData, c"ChoiceDataList");
         COLORTEXTINFOLIST_FIELD = get_field_from_name(StoryTimelineTextClipData, c"ColorTextInfoList");
+        WAITFRAME_FIELD = get_field_from_name(StoryTimelineTextClipData, c"WaitFrame");
+        VOICELENGTH_FIELD = get_field_from_name(StoryTimelineTextClipData, c"VoiceLength");
     }
 
     ChoiceData::init(StoryTimelineTextClipData);

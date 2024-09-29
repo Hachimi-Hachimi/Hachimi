@@ -642,3 +642,29 @@ impl<T> From<*mut Il2CppArray> for Array<T> {
         }
     }
 }
+
+pub struct FieldsIter {
+    class: *mut Il2CppClass,
+    iter: *mut c_void
+}
+
+impl FieldsIter {
+    pub fn new(class: *mut Il2CppClass) -> Self {
+        Self {
+            class,
+            iter: null_mut()
+        }
+    }
+}
+
+impl Iterator for FieldsIter {
+    type Item = *mut FieldInfo;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let field = il2cpp_class_get_fields(self.class, &mut self.iter);
+        if field.is_null() {
+            return None;
+        }
+        Some(field)
+    }
+}

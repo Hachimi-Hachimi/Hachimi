@@ -440,6 +440,8 @@ pub struct LocalizedDataConfig {
     // 1 cjk char = 2 columns, so setting this value to 2 replicates the default behaviour.
     pub line_width_multiplier: Option<f32>,
 
+    #[serde(default)]
+    pub auto_adjust_story_clip_length: bool,
     pub story_line_count_offset: Option<i32>,
     pub text_frame_line_spacing_multiplier: Option<f32>,
     pub text_frame_font_size_multiplier: Option<f32>,
@@ -452,19 +454,9 @@ pub struct LocalizedDataConfig {
 
     pub news_url: Option<String>,
 
-    // UNIMPLEMENTED
-    #[serde(default)]
-    pub story_adjust_length: bool,
-    #[serde(default = "LocalizedDataConfig::default_story_cps")]
-    pub story_cps: i32,
-
     // RESERVED
     #[serde(default)]
     pub _debug: i32
-}
-
-impl LocalizedDataConfig {
-    fn default_story_cps() -> i32 { 28 }
 }
 
 impl Default for LocalizedDataConfig {

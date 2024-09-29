@@ -35,6 +35,8 @@ mod TextCommon;
 mod TextMeshProUguiCommon;
 mod StoryChoiceController;
 mod StoryViewController;
+mod StoryTimelineClipData;
+mod StoryTimelineCharaTrackData;
 
 pub fn init() {
     get_assembly_image_or_return!(image, "umamusume.dll");
@@ -75,4 +77,6 @@ pub fn init() {
     TextMeshProUguiCommon::init(image);
     StoryChoiceController::init(image);
     StoryViewController::init(image);
+    StoryTimelineClipData::init(image);
+    StoryTimelineCharaTrackData::init(image);
 }
