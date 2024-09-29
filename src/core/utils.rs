@@ -19,37 +19,51 @@ pub fn print_json_entry(key: &str, value: &str) {
     info!("{}: {},", serde_json::to_string(key).unwrap(), serde_json::to_string(value).unwrap());
 }
 
-fn custom_word_separator(line: &str) -> Box<dyn Iterator<Item = Word<'_>> + '_> {
-    // Split into sections of tags and other text (e.g. ['test', '<size=16>', 'hello world', '</size>'])
-    // Iter returns str slice and whether to separate words in the section
-    // We're only breaking the string on ascii chars, so it's safe to use the bytes
-    // iterator and split them based on the index.
-    let mut line_iter = line.bytes();
-    let mut i = 0;
-    let mut current_byte = line_iter.next();
-    let mut split_iter = std::iter::from_fn(move || {
-        if current_byte.is_none() {
+pub struct IsolateTags<'a> {
+    s: &'a str,
+    bytes: std::str::Bytes<'a>,
+    i: usize,
+    current_byte: Option<u8>
+}
+
+impl<'a> IsolateTags<'a> {
+    pub fn new(s: &'a str) -> Self {
+        let mut bytes = s.bytes();
+        Self {
+            current_byte: bytes.next(),
+            s,
+            bytes,
+            i: 0
+        }
+    }
+}
+
+impl<'a> Iterator for IsolateTags<'a> {
+    type Item = (&'a str, bool);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.current_byte.is_none() {
             return None;
         }
 
-        let start = i;
+        let start = self.i;
         let mut tag_start = 0;
         let mut in_tag = false;
         let mut in_closing_tag = false;
         let mut expecting_tag_name = false;
-        while let Some(c) = current_byte {
+        while let Some(c) = self.current_byte {
             if in_tag {
                 match c {
                     b'>' | b'=' | b' ' => 'tag_name_end: {
                         if expecting_tag_name {
                             if !in_closing_tag {
                                 // Check for a matching closing tag after
-                                let tag_name = &line[tag_start+1..i];
+                                let tag_name = &self.s[tag_start+1..self.i];
                                 let mut closing_tag = String::with_capacity(3 + tag_name.len());
                                 closing_tag += "</";
                                 closing_tag += tag_name;
                                 closing_tag += ">";
-                                if !line[i..].contains(&closing_tag) {
+                                if !self.s[self.i..].contains(&closing_tag) {
                                     in_tag = false;
                                     break 'tag_name_end;
                                 }
@@ -60,9 +74,9 @@ fn custom_word_separator(line: &str) -> Box<dyn Iterator<Item = Word<'_>> + '_> 
                         if c == b'>' {
                             // in_tag = false;
                             loop {
-                                i += 1;
-                                current_byte = line_iter.next();
-                                if let Some(c) = current_byte {
+                                self.i += 1;
+                                self.current_byte = self.bytes.next();
+                                if let Some(c) = self.current_byte {
                                     // Capture any whitespace that comes right after it
                                     if char::from(c).is_whitespace() {
                                         continue;
@@ -70,7 +84,7 @@ fn custom_word_separator(line: &str) -> Box<dyn Iterator<Item = Word<'_>> + '_> 
                                 }
                                 break;
                             }
-                            return Some((&line[start..i], false));
+                            return Some((&self.s[start..self.i], false));
                         }
                         else if in_closing_tag {
                             // Invalid character
@@ -78,7 +92,7 @@ fn custom_word_separator(line: &str) -> Box<dyn Iterator<Item = Word<'_>> + '_> 
                         }
                     }
                     b'/' => {
-                        if i == tag_start + 1 {
+                        if self.i == tag_start + 1 {
                             in_closing_tag = true;
                         }
                         else if expecting_tag_name {
@@ -93,22 +107,30 @@ fn custom_word_separator(line: &str) -> Box<dyn Iterator<Item = Word<'_>> + '_> 
                 }
             }
             else if c == b'<' {
-                if start == i {
+                if start == self.i {
                     in_tag = true;
                     expecting_tag_name = true;
-                    tag_start = i;
+                    tag_start = self.i;
                 }
                 else {
                     break;
                 }
             }
 
-            i += 1;
-            current_byte = line_iter.next();
+            self.i += 1;
+            self.current_byte = self.bytes.next();
         }
 
-        Some((&line[start..i], true))
-    });
+        Some((&self.s[start..self.i], true))
+    }
+}
+
+fn custom_word_separator(line: &str) -> Box<dyn Iterator<Item = Word<'_>> + '_> {
+    // Isolate tags and other text (e.g. ['test', '<size=16>', 'hello world', '</size>'])
+    // Iter returns str slice and whether to separate words in the section
+    // We're only breaking the string on ascii chars, so it's safe to use the bytes
+    // iterator and split them based on the index.
+    let mut isolate_iter = IsolateTags::new(line);
 
     let mut unicode_break_iter: Box<dyn Iterator<Item = Word<'_>> + '_> = Box::new(std::iter::empty());
     Box::new(std::iter::from_fn(move || {
@@ -120,7 +142,7 @@ fn custom_word_separator(line: &str) -> Box<dyn Iterator<Item = Word<'_>> + '_> 
 
         // Advance to next (non-empty) split
         loop {
-            if let Some((next_section, needs_break)) = split_iter.next() {
+            if let Some((next_section, needs_break)) = isolate_iter.next() {
                 if needs_break {
                     let mut iter = UnicodeBreakProperties.find_words(next_section);
                     let break_res = iter.next();
