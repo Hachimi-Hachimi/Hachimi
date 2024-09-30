@@ -197,7 +197,7 @@ pub fn on_LoadAsset(_bundle: *mut Il2CppObject, this: *mut Il2CppObject, name: &
             if localized_data.config.auto_adjust_story_clip_length || text_block_dict.new_clip_length.is_some() {
                 let new_clip_len = text_block_dict.new_clip_length.unwrap_or_else(|| {
                     let text_len = IsolateTags::new(new_text).fold(0, |total_len, (s, is_not_tag)| 
-                        if is_not_tag { total_len + s.len() } else { total_len }
+                        if is_not_tag { total_len + s.chars().count() } else { total_len }
                     );
                     // Everything else down here is in the unit of frames at 30fps
                     let typewrite_len = (text_len as f32 / tcps * 30.0).round() as i32; // len / cps * fps
