@@ -196,7 +196,10 @@ pub fn on_LoadAsset(_bundle: *mut Il2CppObject, this: *mut Il2CppObject, name: &
             StoryTimelineTextClipData::set_Text(clip_data, new_text.to_il2cpp_string());
 
             // Adjust clip length
-            if localized_data.config.auto_adjust_story_clip_length || text_block_dict.new_clip_length.is_some() {
+            if localized_data.config.auto_adjust_story_clip_length ||
+                text_block_dict.new_clip_length.is_some() ||
+                tcps_mult < 1.0
+            {
                 let new_clip_len = text_block_dict.new_clip_length.unwrap_or_else(|| {
                     let text_len = IsolateTags::new(new_text).fold(0, |total_len, (s, is_not_tag)| 
                         if is_not_tag { total_len + s.chars().count() } else { total_len }
