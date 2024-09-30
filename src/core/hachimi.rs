@@ -231,6 +231,8 @@ pub struct Config {
     pub graphics_quality: crate::il2cpp::hook::umamusume::GraphicSettings::GraphicsQuality,
     #[serde(default = "Config::default_story_choice_auto_select_delay")]
     pub story_choice_auto_select_delay: f32,
+    #[serde(default = "Config::default_story_tcps_multiplier")]
+    pub story_tcps_multiplier: f32,
 
     #[cfg(target_os = "windows")]
     #[serde(flatten)]
@@ -242,6 +244,7 @@ impl Config {
     fn default_virtual_res_mult() -> f32 { 1.0 }
     fn default_ui_scale() -> f32 { 1.0 }
     fn default_story_choice_auto_select_delay() -> f32 { 0.75 }
+    fn default_story_tcps_multiplier() -> f32 { 1.0 }
 }
 
 impl Default for Config {

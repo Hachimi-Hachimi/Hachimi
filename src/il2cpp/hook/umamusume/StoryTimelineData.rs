@@ -45,6 +45,10 @@ fn get_TypewriteCountPerSecond(this: *mut Il2CppObject) -> i32 {
     get_field_value(this, unsafe { TYPEWRITECOUNTPERSECOND_FIELD })
 }
 
+fn set_TypewriteCountPerSecond(this: *mut Il2CppObject, value: i32) {
+    set_field_value(this, unsafe { TYPEWRITECOUNTPERSECOND_FIELD }, &value);
+}
+
 static mut LENGTH_FIELD: *mut FieldInfo = null_mut();
 fn set_Length(this: *mut Il2CppObject, value: i32) {
     set_field_value(this, unsafe { LENGTH_FIELD }, &value);
@@ -94,11 +98,24 @@ pub fn on_LoadAsset(_bundle: *mut Il2CppObject, this: *mut Il2CppObject, name: &
         return;
     }
 
+    let hachimi = Hachimi::instance();
+    let mut tcps = get_TypewriteCountPerSecond(this) as f32;
+    let tcps_mult = hachimi.config.load().story_tcps_multiplier;
+    if tcps_mult != 1.0 {
+        tcps = (tcps * tcps_mult).round();
+        set_TypewriteCountPerSecond(this, tcps as i32);
+    }
+
     let base_path = name[ASSET_PATH_PREFIX.len()..].path_basename();
     let dict_path = base_path.to_string() + ".json";
 
-    let localized_data = Hachimi::instance().localized_data.load();
+    let localized_data = hachimi.localized_data.load();
     let Some(dict): Option<StoryTimelineDataDict> = localized_data.load_assets_dict(Some(&dict_path)) else {
+        // Clip length adjustment independent of story patching
+        // No need to adjust length if speed is faster
+        if tcps_mult < 1.0 {
+            adjust_clips_length_with_tcps(this, tcps);
+        }
         return;
     };
     debug!("{}", dict_path);
@@ -116,7 +133,6 @@ pub fn on_LoadAsset(_bundle: *mut Il2CppObject, this: *mut Il2CppObject, name: &
     let Some(block_list) = IList::new(get_BlockList(this)) else {
         return;
     };
-    let tcps = get_TypewriteCountPerSecond(this) as f32;
 
     // Init wrapping parameters
     let mut line_count = CLIP_TEXT_LINE_COUNT;
@@ -148,23 +164,9 @@ pub fn on_LoadAsset(_bundle: *mut Il2CppObject, this: *mut Il2CppObject, name: &
             break;
         };
 
-        let text_track = StoryTimelineBlockData::get_TextTrack(block_data);
-        if text_track.is_null() {
-            continue;
-        }
-
-        let Some(clip_list) = <IList>::new(StoryTimelineTrackData::get_ClipList(text_track)) else {
+        let Some(clip_data) = StoryTimelineBlockData::get_text_clip(block_data) else {
             continue;
         };
-        // There should be a single text clip per track
-        let Some(clip_data) = clip_list.get(0) else {
-            continue;
-        };
-
-        let class = unsafe { (*clip_data).klass() };
-        if class != StoryTimelineTextClipData::class() {
-            continue;
-        }
 
         if let Some(name) = &text_block_dict.name {
             StoryTimelineTextClipData::set_Name(clip_data, name.to_il2cpp_string());
@@ -200,62 +202,20 @@ pub fn on_LoadAsset(_bundle: *mut Il2CppObject, this: *mut Il2CppObject, name: &
                         if is_not_tag { total_len + s.chars().count() } else { total_len }
                     );
                     // Everything else down here is in the unit of frames at 30fps
-                    let typewrite_len = (text_len as f32 / tcps * 30.0).round() as i32; // len / cps * fps
+                    let typewrite_len = get_typewrite_length(text_len, tcps);
                     return StoryTimelineTextClipData::get_WaitFrame(clip_data) +
                         typewrite_len.max(StoryTimelineTextClipData::get_VoiceLength(clip_data));
                 });
 
                 let orig_clip_len = StoryTimelineClipData::get_ClipLength(clip_data);
                 if new_clip_len > orig_clip_len {
-                    StoryTimelineClipData::set_ClipLength(clip_data, new_clip_len);
-                    let new_block_len = StoryTimelineClipData::get_StartFrame(clip_data) + new_clip_len + 1;
-                    StoryTimelineBlockData::set_BlockLength(block_data, new_block_len);
-
+                    let new_block_len = apply_clip_length(
+                        clip_data, orig_clip_len, new_clip_len,
+                        block_data, orig_block_len
+                    );
                     let block_len_diff = new_block_len - orig_block_len;
                     total_len += block_len_diff;
                     total_len_changed = true;
-
-                    let clip_len_diff = new_clip_len - orig_clip_len;
-
-                    // Adjust anim lengths
-                    if let Some(chara_track_list) = <IList>::new(StoryTimelineBlockData::get_CharacterTrackList(block_data)) {
-                        for chara_track_data in chara_track_list.iter() {
-                            for motion_track_data in StoryTimelineCharaTrackData::motion_track_data_values(chara_track_data) {
-                                let Some(clip_list) = <IList>::new(StoryTimelineTrackData::get_ClipList(motion_track_data)) else {
-                                    continue;
-                                };
-                                let Some(clip_data) = clip_list.get(clip_list.count() - 1) else {
-                                    continue;
-                                };
-
-                                let orig_motion_clip_len = StoryTimelineClipData::get_ClipLength(clip_data);
-                                let new_motion_clip_len = orig_motion_clip_len + clip_len_diff;
-                                StoryTimelineClipData::set_ClipLength(clip_data, new_motion_clip_len);
-                            }
-                        }
-                    }
-
-                    // Adjust screen effect lengths
-                    if let Some(se_track_list) = <IList>::new(StoryTimelineBlockData::get_ScreenEffectTrackList(block_data)) {
-                        for se_track_data in se_track_list.iter() {
-                            let Some(clip_list) = <IList>::new(StoryTimelineTrackData::get_ClipList(se_track_data)) else {
-                                continue;
-                            };
-                            let Some(clip_data) = clip_list.get(clip_list.count() - 1) else {
-                                continue;
-                            };
-
-                            let start_frame = StoryTimelineClipData::get_StartFrame(clip_data);
-                            let orig_se_clip_len = StoryTimelineClipData::get_ClipLength(clip_data);
-                            // if it extends to the end of the block
-                            if start_frame + orig_se_clip_len < orig_block_len {
-                                continue;
-                            }
-
-                            let new_se_clip_len = orig_se_clip_len + clip_len_diff;
-                            StoryTimelineClipData::set_ClipLength(clip_data, new_se_clip_len);
-                        }
-                    }
                 }
             }
         }
@@ -293,6 +253,103 @@ pub fn on_LoadAsset(_bundle: *mut Il2CppObject, this: *mut Il2CppObject, name: &
     if total_len_changed {
         set_Length(this, total_len);
     }
+}
+
+fn get_typewrite_length(text_len: usize, tcps: f32) -> i32 {
+    (text_len as f32 / tcps * 30.0).round() as i32 // len / cps * fps
+}
+
+fn adjust_clips_length_with_tcps(this: *mut Il2CppObject, tcps: f32) {
+    let Some(block_list) = IList::new(get_BlockList(this)) else {
+        return;
+    };
+    let mut block_list_iter = block_list.iter();
+
+    // First block is always empty, no need to adjust length
+    let Some(first_block_data) = block_list_iter.next() else {
+        return;
+    };
+    let mut total_len = StoryTimelineBlockData::get_BlockLength(first_block_data);
+
+    for block_data in block_list_iter {
+        let orig_block_len = StoryTimelineBlockData::get_BlockLength(block_data);
+        let Some(clip_data) = StoryTimelineBlockData::get_text_clip(block_data) else {
+            total_len += orig_block_len;
+            continue;
+        };
+        let text = StoryTimelineTextClipData::get_Text(clip_data);
+
+        total_len += if text.is_null() {
+            orig_block_len
+        }
+        else {
+            let orig_clip_len = StoryTimelineClipData::get_ClipLength(clip_data);
+            let new_clip_len = get_typewrite_length(unsafe { (*text).as_utf16str().chars().count() }, tcps);
+
+            if new_clip_len > orig_clip_len {
+                apply_clip_length(clip_data, orig_clip_len, new_clip_len, block_data, orig_block_len)
+            }
+            else {
+                orig_block_len
+            }
+        }
+    }
+
+    set_Length(this, total_len);
+}
+
+/// Returns new block length
+fn apply_clip_length(
+    clip_data: *mut Il2CppObject, orig_clip_len: i32, new_clip_len: i32,
+    block_data: *mut Il2CppObject, orig_block_len: i32
+) -> i32 {
+    StoryTimelineClipData::set_ClipLength(clip_data, new_clip_len);
+    let new_block_len = StoryTimelineClipData::get_StartFrame(clip_data) + new_clip_len + 1;
+    StoryTimelineBlockData::set_BlockLength(block_data, new_block_len);
+
+    let clip_len_diff = new_clip_len - orig_clip_len;
+
+    // Adjust anim lengths
+    if let Some(chara_track_list) = <IList>::new(StoryTimelineBlockData::get_CharacterTrackList(block_data)) {
+        for chara_track_data in chara_track_list.iter() {
+            for motion_track_data in StoryTimelineCharaTrackData::motion_track_data_values(chara_track_data) {
+                let Some(clip_list) = <IList>::new(StoryTimelineTrackData::get_ClipList(motion_track_data)) else {
+                    continue;
+                };
+                let Some(clip_data) = clip_list.get(clip_list.count() - 1) else {
+                    continue;
+                };
+
+                let orig_motion_clip_len = StoryTimelineClipData::get_ClipLength(clip_data);
+                let new_motion_clip_len = orig_motion_clip_len + clip_len_diff;
+                StoryTimelineClipData::set_ClipLength(clip_data, new_motion_clip_len);
+            }
+        }
+    }
+
+    // Adjust screen effect lengths
+    if let Some(se_track_list) = <IList>::new(StoryTimelineBlockData::get_ScreenEffectTrackList(block_data)) {
+        for se_track_data in se_track_list.iter() {
+            let Some(clip_list) = <IList>::new(StoryTimelineTrackData::get_ClipList(se_track_data)) else {
+                continue;
+            };
+            let Some(clip_data) = clip_list.get(clip_list.count() - 1) else {
+                continue;
+            };
+
+            let start_frame = StoryTimelineClipData::get_StartFrame(clip_data);
+            let orig_se_clip_len = StoryTimelineClipData::get_ClipLength(clip_data);
+            // if it extends to the end of the block
+            if start_frame + orig_se_clip_len < orig_block_len {
+                continue;
+            }
+
+            let new_se_clip_len = orig_se_clip_len + clip_len_diff;
+            StoryTimelineClipData::set_ClipLength(clip_data, new_se_clip_len);
+        }
+    }
+
+    new_block_len
 }
 
 pub fn init(umamusume: *const Il2CppImage) {
