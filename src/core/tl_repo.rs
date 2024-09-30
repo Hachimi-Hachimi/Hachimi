@@ -51,7 +51,7 @@ struct UpdateInfo {
     zip_url: String,
     zip_dir: String,
     files: Vec<RepoFile>, // only contains files needed for update
-    new_repo: bool,
+    is_new_repo: bool,
     cached_files: FnvHashMap<String, String>, // from repo cache
     size: usize
 }
@@ -167,15 +167,21 @@ impl Updater {
             RepoCache::default()
         };
 
+        let is_new_repo = index.base_url != repo_cache.base_url;
         let mut update_files: Vec<RepoFile> = Vec::new();
         let mut update_size: usize = 0;
+        let mut total_size: usize = 0;
         for file in index.files.iter() {
             if file.path.contains("..") || Path::new(&file.path).has_root() {
                 warn!("File path '{}' sanitized", file.path);
                 continue;
             }
 
-            let updated = if let Some(hash) = repo_cache.files.get(&file.path) {
+            let updated = if is_new_repo {
+                // redownload every single file because the directory will be deleted
+                true
+            }
+            else if let Some(hash) = repo_cache.files.get(&file.path) {
                 if hash == &file.hash {
                     // download if the file doesn't actually exist on disk
                     ld_dir_path.as_ref().map(|p| !p.join(&file.path).is_file()).unwrap_or(true)
@@ -193,17 +199,19 @@ impl Updater {
                 update_files.push(file.clone());
                 update_size += file.size;
             }
+            total_size += file.size;
         }
 
+        let is_zip_download = update_files.len() > INCREMENTAL_UPDATE_LIMIT;
         if !update_files.is_empty() {
             self.new_update.store(Arc::new(Some(UpdateInfo {
-                new_repo: index.base_url != repo_cache.base_url,
+                is_new_repo,
                 base_url: index.base_url,
                 zip_url: index.zip_url,
                 zip_dir: index.zip_dir,
                 files: update_files,
                 cached_files: repo_cache.files,
-                size: update_size
+                size: if is_zip_download { total_size } else { update_size }
             })));
             if let Some(mutex) = Gui::instance() {
                 mutex.lock().unwrap().show_window(Box::new(SimpleYesNoDialog::new(
@@ -252,7 +260,7 @@ impl Updater {
 
         // Clear the localized data if downloading from a new repo
         let localized_data_dir = hachimi.get_data_path(LOCALIZED_DATA_DIR);
-        if update_info.new_repo {
+        if update_info.is_new_repo {
             // rm -rf
             if let Ok(meta) = fs::metadata(&localized_data_dir) {
                 if meta.is_dir() {
