@@ -37,6 +37,10 @@ mod StoryChoiceController;
 mod StoryViewController;
 mod StoryTimelineClipData;
 mod StoryTimelineCharaTrackData;
+mod CharacterNoteTopView;
+mod CharacterNoteTopViewController;
+mod ViewControllerBase;
+mod ButtonCommon;
 
 pub fn init() {
     get_assembly_image_or_return!(image, "umamusume.dll");
@@ -79,4 +83,8 @@ pub fn init() {
     StoryViewController::init(image);
     StoryTimelineClipData::init(image);
     StoryTimelineCharaTrackData::init(image);
+    CharacterNoteTopView::init(image);
+    CharacterNoteTopViewController::init(image);
+    ViewControllerBase::init(image);
+    ButtonCommon::init(image);
 }

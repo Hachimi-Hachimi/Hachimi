@@ -454,12 +454,21 @@ pub struct LocalizedDataConfig {
 
     #[serde(default)]
     pub remove_ruby: bool,
+    pub character_note_top_gallery_button: Option<UITextConfig>,
+    pub character_note_top_talk_gallery_button: Option<UITextConfig>,
 
     pub news_url: Option<String>,
 
     // RESERVED
     #[serde(default)]
     pub _debug: i32
+}
+
+#[derive(Deserialize, Clone)]
+pub struct UITextConfig {
+    pub text: Option<String>,
+    pub font_size: Option<i32>,
+    pub line_spacing: Option<f32>
 }
 
 impl Default for LocalizedDataConfig {

@@ -1,4 +1,9 @@
-use crate::{core::Hachimi, il2cpp::{ext::LocalizedDataExt, hook::UnityEngine_UI::Text, symbols::get_method_addr, types::*}};
+use crate::{core::Hachimi, il2cpp::{api::{il2cpp_class_get_type, il2cpp_type_get_object}, ext::LocalizedDataExt, hook::UnityEngine_UI::Text, symbols::get_method_addr, types::*}};
+
+static mut TYPE_OBJECT: *mut Il2CppObject = 0 as _;
+pub fn type_object() -> *mut Il2CppObject {
+    unsafe { TYPE_OBJECT }
+}
 
 type AwakeFn = extern "C" fn(this: *mut Il2CppObject);
 extern "C" fn Awake(this: *mut Il2CppObject) {
@@ -23,4 +28,8 @@ pub fn init(umamusume: *const Il2CppImage) {
     let Awake_addr = get_method_addr(TextCommon, c"Awake", 0);
 
     new_hook!(Awake_addr, Awake);
+
+    unsafe {
+        TYPE_OBJECT = il2cpp_type_get_object(il2cpp_class_get_type(TextCommon));
+    }
 }
