@@ -537,6 +537,7 @@ dependencies = [
  "tauri-winres",
  "textwrap",
  "threadpool",
+ "unicode-width",
  "ureq",
  "widestring",
  "windebug_logger",

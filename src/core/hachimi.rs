@@ -451,6 +451,8 @@ pub struct LocalizedDataConfig {
     pub skill_list_item_desc_font_size_multiplier: Option<f32>,
     #[serde(default)]
     pub text_common_allow_overflow: bool,
+    #[serde(default)]
+    pub now_loading_comic_title_ellipsis: bool,
 
     #[serde(default)]
     pub remove_ruby: bool,

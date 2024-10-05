@@ -2,6 +2,7 @@ use std::{borrow::Cow, fs::File, io::Write, path::Path, time::SystemTime};
 
 use serde::Serialize;
 use textwrap::{core::Word, wrap_algorithms, WordSeparator::UnicodeBreakProperties};
+use unicode_width::UnicodeWidthChar;
 
 use crate::il2cpp::{ext::StringExt, types::Il2CppString};
 
@@ -330,6 +331,87 @@ pub fn wrap_fit_text_il2cpp(string: *mut Il2CppString, base_line_width: i32, max
     }
     
     None
+}
+
+fn truncate_chars_internal(
+    mut chars: impl Iterator<Item = char>, mut width: usize, ellipsis: bool, line_width_multiplier: f32
+) -> Option<Vec<char>> {
+    width = (width as f32 * line_width_multiplier).round() as usize;
+
+    let reserved_width = if ellipsis { width.saturating_sub(1) } else { width };
+    let mut v = Vec::with_capacity(width); // it's not the actual max size but it's a good starting point
+    let mut total_width = 0;
+    let mut dropped_char = None;
+    while let Some(c) = chars.next() {
+        let char_width = c.width().unwrap_or(0);
+        if char_width == 0 {
+            v.push(c);
+            continue;
+        };
+
+        let next_total_width = total_width + char_width;
+        if next_total_width > reserved_width {
+            dropped_char = Some(c);
+            break;
+        }
+
+        v.push(c);
+
+        total_width = next_total_width;
+        if total_width == reserved_width {
+            break;
+        }
+    }
+
+    if ellipsis {
+        // Don't truncate if adding the last dropped or next char would result in the expected width
+        let has_next_char = if let Some(c) = dropped_char {
+            if total_width + c.width().unwrap_or(0) <= width && chars.next().is_none() {
+                return None;
+            }
+            true
+        }
+        // doesn't handle control characters correctly but whatever they are never used here
+        else if let Some(c) = chars.next() {
+            if c.width().unwrap_or(0) <= 1 && chars.next().is_none() {
+                return None;
+            }
+            true
+        }
+        else {
+            false
+        };
+
+        // Add ellipsis
+        return if has_next_char {
+            v.push('…');
+            Some(v)
+        }
+        else {
+            None
+        }
+    }
+
+    if dropped_char.is_some() || chars.next().is_some() {
+        Some(v)
+    }
+    else {
+        None
+    }
+}
+
+pub fn truncate_chars(chars: impl Iterator<Item = char>, width: usize, ellipsis: bool) -> Option<Vec<char>> {
+    let line_width_multiplier = Hachimi::instance().localized_data.load().config.line_width_multiplier?;
+    truncate_chars_internal(chars, width, ellipsis, line_width_multiplier)
+}
+
+pub fn truncate_text_il2cpp(string: *mut Il2CppString, width: usize, ellipsis: bool) -> Option<*mut Il2CppString> {
+    let line_width_multiplier = Hachimi::instance().localized_data.load().config.line_width_multiplier?;
+    truncate_chars_internal(unsafe { (*string).as_utf16str().chars() }, width, ellipsis, line_width_multiplier).map(|chars|
+        chars.iter()
+            .collect::<String>()
+            .to_il2cpp_string()
+    )
 }
 
 pub fn write_json_file<T: Serialize, P: AsRef<Path>>(data: &T, path: P) -> Result<(), Error> {

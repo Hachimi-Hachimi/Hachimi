@@ -41,6 +41,7 @@ mod CharacterNoteTopView;
 mod CharacterNoteTopViewController;
 mod ViewControllerBase;
 mod ButtonCommon;
+mod NowLoading;
 
 pub fn init() {
     get_assembly_image_or_return!(image, "umamusume.dll");
@@ -87,4 +88,5 @@ pub fn init() {
     CharacterNoteTopViewController::init(image);
     ViewControllerBase::init(image);
     ButtonCommon::init(image);
+    NowLoading::init(image);
 }
