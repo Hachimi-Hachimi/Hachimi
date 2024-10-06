@@ -6,7 +6,7 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 use crate::{gui_impl, hachimi_impl, il2cpp::{self, hook::umamusume::GameSystem}};
 
-use super::{game::Game, plurals, template, template_filters, tl_repo, utils, Error, Interceptor};
+use super::{game::Game, ipc, plurals, template, template_filters, tl_repo, utils, Error, Interceptor};
 
 pub struct Hachimi {
     // Hooking stuff
@@ -171,9 +171,15 @@ impl Hachimi {
         // By the time it finished hooking the game will have already finished initializing
         GameSystem::on_game_initialized();
 
-        if !self.config.load().disable_gui {
+        let config = self.config.load();
+        if !config.disable_gui {
             gui_impl::init();
         }
+
+        if config.enable_ipc {
+            ipc::start_http(config.ipc_listen_all);
+        }
+
         hachimi_impl::on_hooking_finished(self);
     }
 
@@ -233,6 +239,10 @@ pub struct Config {
     pub story_choice_auto_select_delay: f32,
     #[serde(default = "Config::default_story_tcps_multiplier")]
     pub story_tcps_multiplier: f32,
+    #[serde(default)]
+    pub enable_ipc: bool,
+    #[serde(default)]
+    pub ipc_listen_all: bool,
 
     #[cfg(target_os = "windows")]
     #[serde(flatten)]

@@ -833,6 +833,14 @@ impl ConfigEditor {
         ui.checkbox(&mut config.disable_translations, "");
         ui.end_row();
 
+        ui.label("Enable IPC");
+        ui.checkbox(&mut config.enable_ipc, "");
+        ui.end_row();
+
+        ui.label("IPC listen all");
+        ui.checkbox(&mut config.ipc_listen_all, "");
+        ui.end_row();
+
         ui.label(egui::RichText::new("| Graphics").heading());
         ui.end_row();
 
@@ -859,6 +867,9 @@ impl ConfigEditor {
             (GraphicsQuality::ToonFull, "ToonFull"),
             (GraphicsQuality::Max, "Max")
         ]);
+        ui.end_row();
+
+        ui.label(egui::RichText::new("| Gameplay").heading());
         ui.end_row();
 
         ui.label("Story choice auto\nselect delay");

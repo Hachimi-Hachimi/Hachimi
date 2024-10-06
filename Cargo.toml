@@ -36,6 +36,7 @@ size = "0.4"
 threadpool = "1.8"
 zip = { version = "0.6", default-features = false, features = ["deflate"] }
 unicode-width = "0.1"
+tiny_http = "0.12"
 
 [target.'cfg(target_os = "android")'.dependencies]
 libc = "0.2"

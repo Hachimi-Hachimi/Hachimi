@@ -36,7 +36,7 @@ fn set_Title(this: *mut Il2CppObject, value: *mut Il2CppString) {
 
 // List<StoryTimelineBlockData>
 static mut BLOCKLIST_FIELD: *mut FieldInfo = null_mut();
-fn get_BlockList(this: *mut Il2CppObject) -> *mut Il2CppObject {
+pub fn get_BlockList(this: *mut Il2CppObject) -> *mut Il2CppObject {
     get_field_object_value(this, unsafe { BLOCKLIST_FIELD })
 }
 
