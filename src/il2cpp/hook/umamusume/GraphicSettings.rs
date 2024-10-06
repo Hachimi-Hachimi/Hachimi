@@ -13,7 +13,7 @@ pub fn class() -> *mut Il2CppClass {
 
 #[cfg(target_os = "windows")]
 pub fn instance() -> *mut Il2CppObject {
-    let Some(singleton) = crate::il2cpp::symbols::MonoSingleton::new(class()) else {
+    let Some(singleton) = crate::il2cpp::symbols::SingletonLike::new(class()) else {
         return 0 as _;
     };
     singleton.instance()

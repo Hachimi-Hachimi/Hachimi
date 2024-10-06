@@ -2,7 +2,7 @@ use crate::{
     core::Hachimi,
     il2cpp::{
         hook::UnityEngine_UI::CanvasScaler,
-        symbols::{get_method_addr, get_method_overload_addr, Array, MonoSingleton},
+        symbols::{get_method_addr, get_method_overload_addr, Array, SingletonLike},
         ext::StringExt,
         types::*
     }
@@ -14,7 +14,7 @@ pub fn class() -> *mut Il2CppClass {
 }
 
 pub fn instance() -> *mut Il2CppObject {
-    let Some(singleton) = MonoSingleton::new(class()) else {
+    let Some(singleton) = SingletonLike::new(class()) else {
         return 0 as _;
     };
     singleton.instance()

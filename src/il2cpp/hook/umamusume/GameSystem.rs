@@ -1,4 +1,4 @@
-use crate::{core::Hachimi, il2cpp::{symbols::{get_method_addr, IEnumerator, MonoSingleton, MoveNextFn}, types::*}};
+use crate::{core::Hachimi, il2cpp::{symbols::{get_method_addr, IEnumerator, SingletonLike, MoveNextFn}, types::*}};
 
 static mut CLASS: *mut Il2CppClass = 0 as _;
 pub fn class() -> *mut Il2CppClass {
@@ -6,7 +6,7 @@ pub fn class() -> *mut Il2CppClass {
 }
 
 pub fn instance() -> *mut Il2CppObject {
-    let Some(singleton) = MonoSingleton::new(class()) else {
+    let Some(singleton) = SingletonLike::new(class()) else {
         return 0 as _;
     };
     singleton.instance()

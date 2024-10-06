@@ -554,19 +554,19 @@ pub fn create_delegate(delegate_class: *mut Il2CppClass, args_count: i32, method
     Some(delegate)
 }
 
-// MonoSingleton wrapper
-pub struct MonoSingleton {
+// Singleton-like class wrapper
+pub struct SingletonLike {
     instance_field: *mut FieldInfo,
 }
 
-impl MonoSingleton {
-    pub fn new(class: *mut Il2CppClass) -> Option<MonoSingleton> {
+impl SingletonLike {
+    pub fn new(class: *mut Il2CppClass) -> Option<SingletonLike> {
         let instance_field = get_field_from_name(class, c"_instance");
         if instance_field.is_null() {
             return None;
         }
 
-        Some(MonoSingleton {
+        Some(SingletonLike {
             instance_field
         })
     }

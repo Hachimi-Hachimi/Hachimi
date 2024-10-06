@@ -1,6 +1,6 @@
 use std::ptr::null_mut;
 
-use crate::{core::Hachimi, il2cpp::{symbols::{get_method_addr, MonoSingleton}, ext::StringExt, types::*}};
+use crate::{core::Hachimi, il2cpp::{symbols::{get_method_addr, SingletonLike}, ext::StringExt, types::*}};
 
 use super::{DialogCommon, TextId, WebViewDefine};
 
@@ -10,7 +10,7 @@ pub fn class() -> *mut Il2CppClass {
 }
 
 pub fn instance() -> *mut Il2CppObject {
-    let Some(singleton) = MonoSingleton::new(class()) else {
+    let Some(singleton) = SingletonLike::new(class()) else {
         return null_mut();
     };
     singleton.instance()
