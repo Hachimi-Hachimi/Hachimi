@@ -778,14 +778,31 @@ impl Window for SimpleYesNoDialog {
 
 struct ConfigEditor {
     config: hachimi::Config,
-    id: egui::Id
+    id: egui::Id,
+    current_tab: ConfigEditorTab
+}
+
+#[derive(Eq, PartialEq, Clone, Copy)]
+enum ConfigEditorTab {
+    General,
+    Graphics,
+    Gameplay
+}
+
+impl ConfigEditorTab {
+    const DISPLAY: &[(ConfigEditorTab, &'static str)] = &[
+        (ConfigEditorTab::General, "⛭ General"),
+        (ConfigEditorTab::Graphics, "🖼 Graphics"),
+        (ConfigEditorTab::Gameplay, "🎮 Gameplay")
+    ];
 }
 
 impl ConfigEditor {
     pub fn new() -> ConfigEditor {
         ConfigEditor {
             config: (**Hachimi::instance().config.load()).clone(),
-            id: random_id()
+            id: random_id(),
+            current_tab: ConfigEditorTab::General
         }
     }
 
@@ -809,112 +826,116 @@ impl ConfigEditor {
         }
     }
 
-    fn run_options_grid(config: &mut hachimi::Config, ui: &mut egui::Ui) {
-        ui.label(egui::RichText::new("| General").heading());
-        ui.end_row();
+    fn run_options_grid(config: &mut hachimi::Config, ui: &mut egui::Ui, tab: ConfigEditorTab) {
+        match tab {
+            ConfigEditorTab::General => {
+                ui.label("Debug mode");
+                ui.checkbox(&mut config.debug_mode, "");
+                ui.end_row();
 
-        ui.label("Debug mode");
-        ui.checkbox(&mut config.debug_mode, "");
-        ui.end_row();
+                ui.label("Translator mode");
+                ui.checkbox(&mut config.translator_mode, "");
+                ui.end_row();
 
-        ui.label("Translator mode");
-        ui.checkbox(&mut config.translator_mode, "");
-        ui.end_row();
+                ui.label("Skip first time setup");
+                ui.checkbox(&mut config.skip_first_time_setup, "");
+                ui.end_row();
 
-        ui.label("Skip first time setup");
-        ui.checkbox(&mut config.skip_first_time_setup, "");
-        ui.end_row();
+                ui.label("Disable auto update\ncheck");
+                ui.checkbox(&mut config.disable_auto_update_check, "");
+                ui.end_row();
 
-        ui.label("Disable auto update\ncheck");
-        ui.checkbox(&mut config.disable_auto_update_check, "");
-        ui.end_row();
+                ui.label("Disable translations");
+                ui.checkbox(&mut config.disable_translations, "");
+                ui.end_row();
 
-        ui.label("Disable translations");
-        ui.checkbox(&mut config.disable_translations, "");
-        ui.end_row();
+                ui.label("Enable IPC");
+                ui.checkbox(&mut config.enable_ipc, "");
+                ui.end_row();
 
-        ui.label("Enable IPC");
-        ui.checkbox(&mut config.enable_ipc, "");
-        ui.end_row();
+                ui.label("IPC listen all");
+                ui.checkbox(&mut config.ipc_listen_all, "");
+                ui.end_row();
+            },
 
-        ui.label("IPC listen all");
-        ui.checkbox(&mut config.ipc_listen_all, "");
-        ui.end_row();
+            ConfigEditorTab::Graphics => {
+                ui.label("Disable GUI");
+                ui.checkbox(&mut config.disable_gui, "");
+                ui.end_row();
 
-        ui.label(egui::RichText::new("| Graphics").heading());
-        ui.end_row();
+                Self::option_slider(ui, "Target FPS", &mut config.target_fps, 30..=240);
 
-        ui.label("Disable GUI");
-        ui.checkbox(&mut config.disable_gui, "");
-        ui.end_row();
+                ui.label("Virtual resolution\nmultiplier");
+                ui.add(egui::Slider::new(&mut config.virtual_res_mult, 1.0..=4.0).step_by(0.1));
+                ui.end_row();
 
-        Self::option_slider(ui, "Target FPS", &mut config.target_fps, 30..=240);
+                ui.label("UI scale");
+                ui.add(egui::Slider::new(&mut config.ui_scale, 0.1..=10.0).step_by(0.05));
+                ui.end_row();
 
-        ui.label("Virtual resolution\nmultiplier");
-        ui.add(egui::Slider::new(&mut config.virtual_res_mult, 1.0..=4.0).step_by(0.1));
-        ui.end_row();
+                ui.label("Graphics quality");
+                Gui::run_combo(ui, "graphics_quality", &mut config.graphics_quality, &[
+                    (GraphicsQuality::Default, "Default"),
+                    (GraphicsQuality::Toon1280, "Toon1280"),
+                    (GraphicsQuality::Toon1280x2, "Toon1280x2"),
+                    (GraphicsQuality::Toon1280x4, "Toon1280x4"),
+                    (GraphicsQuality::ToonFull, "ToonFull"),
+                    (GraphicsQuality::Max, "Max")
+                ]);
+                ui.end_row();
 
-        ui.label("UI scale");
-        ui.add(egui::Slider::new(&mut config.ui_scale, 0.1..=10.0).step_by(0.05));
-        ui.end_row();
+                #[cfg(target_os = "windows")]
+                {
+                    use crate::windows::hachimi_impl::{FullScreenMode, ResolutionScaling};
 
-        ui.label("Graphics quality");
-        Gui::run_combo(ui, "graphics_quality", &mut config.graphics_quality, &[
-            (GraphicsQuality::Default, "Default"),
-            (GraphicsQuality::Toon1280, "Toon1280"),
-            (GraphicsQuality::Toon1280x2, "Toon1280x2"),
-            (GraphicsQuality::Toon1280x4, "Toon1280x4"),
-            (GraphicsQuality::ToonFull, "ToonFull"),
-            (GraphicsQuality::Max, "Max")
-        ]);
-        ui.end_row();
+                    ui.label("VSync");
+                    Gui::run_vsync_combo(ui, &mut config.windows.vsync_count);
+                    ui.end_row();
 
-        ui.label(egui::RichText::new("| Gameplay").heading());
-        ui.end_row();
+                    ui.label("Auto full screen");
+                    ui.checkbox(&mut config.windows.auto_full_screen, "");
+                    ui.end_row();
 
-        ui.label("Story choice auto\nselect delay");
-        ui.add(egui::Slider::new(&mut config.story_choice_auto_select_delay, 0.1..=10.0).step_by(0.05));
-        ui.end_row();
+                    ui.label("Full screen mode");
+                    Gui::run_combo(ui, "full_screen_mode", &mut config.windows.full_screen_mode, &[
+                        (FullScreenMode::ExclusiveFullScreen, "Exclusive"),
+                        (FullScreenMode::FullScreenWindow, "Borderless")
+                    ]);
+                    ui.end_row();
 
-        ui.label("Story text speed\nmultiplier");
-        ui.add(egui::Slider::new(&mut config.story_tcps_multiplier, 0.1..=10.0).step_by(0.1));
-        ui.end_row();
+                    ui.label("Block minimize in\nfull screen");
+                    ui.checkbox(&mut config.windows.block_minimize_in_full_screen, "");
+                    ui.end_row();
 
-        #[cfg(target_os = "windows")]
-        {
-            use crate::windows::hachimi_impl::{FullScreenMode, ResolutionScaling};
+                    ui.label("Resolution scaling");
+                    Gui::run_combo(ui, "resolution_scaling", &mut config.windows.resolution_scaling, &[
+                        (ResolutionScaling::Default, "Default (1080p)"),
+                        (ResolutionScaling::ScaleToScreenSize, "Scale to screen size"),
+                        (ResolutionScaling::ScaleToWindowSize, "Scale to window size")
+                    ]);
+                    ui.end_row();
 
-            ui.label("VSync");
-            Gui::run_vsync_combo(ui, &mut config.windows.vsync_count);
-            ui.end_row();
+                    ui.label("Window always on top");
+                    ui.checkbox(&mut config.windows.window_always_on_top, "");
+                    ui.end_row();
+                }
+            },
 
-            ui.label("Auto full screen");
-            ui.checkbox(&mut config.windows.auto_full_screen, "");
-            ui.end_row();
+            ConfigEditorTab::Gameplay => {
+                ui.label("Story choice auto\nselect delay");
+                ui.add(egui::Slider::new(&mut config.story_choice_auto_select_delay, 0.1..=10.0).step_by(0.05));
+                ui.end_row();
 
-            ui.label("Full screen mode");
-            Gui::run_combo(ui, "full_screen_mode", &mut config.windows.full_screen_mode, &[
-                (FullScreenMode::ExclusiveFullScreen, "Exclusive"),
-                (FullScreenMode::FullScreenWindow, "Borderless")
-            ]);
-            ui.end_row();
-
-            ui.label("Block minimize in\nfull screen");
-            ui.checkbox(&mut config.windows.block_minimize_in_full_screen, "");
-            ui.end_row();
-
-            ui.label("Resolution scaling");
-            Gui::run_combo(ui, "resolution_scaling", &mut config.windows.resolution_scaling, &[
-                (ResolutionScaling::Default, "Default (1080p)"),
-                (ResolutionScaling::ScaleToScreenSize, "Scale to screen size"),
-                (ResolutionScaling::ScaleToWindowSize, "Scale to window size")
-            ]);
-            ui.end_row();
-
-            ui.label("Window always on top");
-            ui.checkbox(&mut config.windows.window_always_on_top, "");
-            ui.end_row();
+                ui.label("Story text speed\nmultiplier");
+                ui.add(egui::Slider::new(&mut config.story_tcps_multiplier, 0.1..=10.0).step_by(0.1));
+                ui.end_row();
+            }
         }
+
+        // Column widths workaround
+        ui.horizontal(|ui| ui.add_space(100.0));
+        ui.horizontal(|ui| ui.add_space(150.0));
+        ui.end_row();
     }
 }
 
@@ -930,7 +951,30 @@ impl Window for ConfigEditor {
         .show(ctx, |ui| {
             simple_window_layout(ui, self.id,
                 |ui| {
+                    egui::ScrollArea::horizontal()
+                    .id_source("tabs_scroll")
+                    .show(ui, |ui| {
+                        ui.horizontal(|ui| {
+                            let style = ui.style_mut();
+                            style.spacing.button_padding = egui::vec2(8.0, 5.0);
+                            style.spacing.item_spacing = egui::Vec2::ZERO;
+                            let widgets = &mut style.visuals.widgets;
+                            widgets.inactive.rounding = egui::Rounding::ZERO;
+                            widgets.hovered.rounding = egui::Rounding::ZERO;
+                            widgets.active.rounding = egui::Rounding::ZERO;
+
+                            for (tab, label) in ConfigEditorTab::DISPLAY {
+                                if ui.selectable_label(self.current_tab == *tab, *label).clicked() {
+                                    self.current_tab = *tab;
+                                }
+                            }
+                        });
+                    });
+
+                    ui.add_space(4.0);
+
                     egui::ScrollArea::vertical()
+                    .id_source("body_scroll")
                     .show(ui, |ui| {
                         egui::Frame::none()
                         .inner_margin(egui::Margin::symmetric(8.0, 0.0))
@@ -940,7 +984,7 @@ impl Window for ConfigEditor {
                             .num_columns(2)
                             .spacing([40.0, 4.0])
                             .show(ui, |ui| {
-                                Self::run_options_grid(&mut config, ui);
+                                Self::run_options_grid(&mut config, ui, self.current_tab);
                             });
                         });
                     });
