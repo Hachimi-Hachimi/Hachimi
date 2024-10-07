@@ -4,7 +4,7 @@ use serde::Serialize;
 use textwrap::{core::Word, wrap_algorithms, WordSeparator::UnicodeBreakProperties};
 use unicode_width::UnicodeWidthChar;
 
-use crate::il2cpp::{ext::StringExt, types::Il2CppString};
+use crate::{core::Gui, il2cpp::{ext::StringExt, types::Il2CppString}};
 
 use super::{Error, Hachimi};
 
@@ -487,4 +487,12 @@ pub fn load_rgba_png<R: std::io::Read>(r: R) -> Option<(Vec<u8>, png::OutputInfo
 
 pub fn load_rgba_png_file<P: AsRef<Path>>(path: P) -> Option<(Vec<u8>, png::OutputInfo)> {
     load_rgba_png(File::open(path).ok()?)
+}
+
+pub fn notify_error(message: impl AsRef<str>) {
+    let s = message.as_ref();
+    error!("{}", s);
+    if let Some(mutex) = Gui::instance() {
+        mutex.lock().unwrap().show_notification(s);
+    }
 }

@@ -245,6 +245,8 @@ pub struct Config {
     pub ipc_listen_all: bool,
     #[serde(default)]
     pub force_allow_dynamic_camera: bool,
+    #[serde(default)]
+    pub live_theater_allow_same_chara: bool,
 
     #[cfg(target_os = "windows")]
     #[serde(flatten)]

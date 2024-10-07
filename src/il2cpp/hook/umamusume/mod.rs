@@ -48,6 +48,8 @@ mod RaceInfo;
 mod RaceUtil;
 mod SaveDataManager;
 mod ApplicationSettingSaveLoader;
+mod LiveTheaterCharaSelect;
+mod LiveTheaterViewController;
 
 pub fn init() {
     get_assembly_image_or_return!(image, "umamusume.dll");
@@ -101,4 +103,6 @@ pub fn init() {
     RaceUtil::init(image);
     SaveDataManager::init(image);
     ApplicationSettingSaveLoader::init(image);
+    LiveTheaterCharaSelect::init(image);
+    LiveTheaterViewController::init(image);
 }

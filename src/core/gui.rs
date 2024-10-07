@@ -933,6 +933,10 @@ impl ConfigEditor {
                 ui.label("Force allow\ndynamic camera");
                 ui.checkbox(&mut config.force_allow_dynamic_camera, "");
                 ui.end_row();
+
+                ui.label("Live theater\nallow same chara");
+                ui.checkbox(&mut config.live_theater_allow_same_chara, "");
+                ui.end_row();
             }
         }
 
