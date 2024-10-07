@@ -43,6 +43,11 @@ mod ViewControllerBase;
 mod ButtonCommon;
 mod NowLoading;
 pub mod StoryTimelineController;
+mod DialogRaceOrientation;
+mod RaceInfo;
+mod RaceUtil;
+mod SaveDataManager;
+mod ApplicationSettingSaveLoader;
 
 pub fn init() {
     get_assembly_image_or_return!(image, "umamusume.dll");
@@ -91,4 +96,9 @@ pub fn init() {
     ButtonCommon::init(image);
     NowLoading::init(image);
     StoryTimelineController::init(image);
+    DialogRaceOrientation::init(image);
+    RaceInfo::init(image);
+    RaceUtil::init(image);
+    SaveDataManager::init(image);
+    ApplicationSettingSaveLoader::init(image);
 }

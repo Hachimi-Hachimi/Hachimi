@@ -929,6 +929,10 @@ impl ConfigEditor {
                 ui.label("Story text speed\nmultiplier");
                 ui.add(egui::Slider::new(&mut config.story_tcps_multiplier, 0.1..=10.0).step_by(0.1));
                 ui.end_row();
+
+                ui.label("Force allow\ndynamic camera");
+                ui.checkbox(&mut config.force_allow_dynamic_camera, "");
+                ui.end_row();
             }
         }
 
