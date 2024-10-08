@@ -3,7 +3,7 @@ use std::sync::{Condvar, Mutex};
 use serde::{Deserialize, Serialize};
 use tiny_http::{Header, Method, Request, Response, Server};
 
-use crate::il2cpp::{hook::umamusume::{StoryTimelineController, StoryTimelineData}, symbols::{IList, Thread}};
+use crate::{core::utils::notify_error, il2cpp::{hook::umamusume::{StoryTimelineController, StoryTimelineData}, symbols::{IList, Thread}}};
 
 use super::{Error, Gui, Hachimi};
 
@@ -59,7 +59,7 @@ fn http_thread(listen_all: bool) {
     }
 }
 
-static STORY_GOTO_BLOCK_ID: Mutex<i32> = Mutex::new(0);
+static STORY_GOTO_BLOCK_PARAMS: Mutex<(i32, bool)> = Mutex::new((0, false));
 static STORY_GOTO_BLOCK_CVAR: Condvar = Condvar::new();
 
 fn on_http_request(request: &mut Request) -> Result<CommandResponse, Error> {
@@ -78,34 +78,32 @@ fn on_http_request(request: &mut Request) -> Result<CommandResponse, Error> {
 
     let command: Command = serde_json::from_reader(request.as_reader())?;
     match command {
-        Command::StoryGotoBlock { block_id } => {
+        Command::StoryGotoBlock { block_id, incremental } => {
             if block_id < -1 {
                 return Ok(CommandResponse::error("Block ID cannot be smaller than -1".to_owned()));
             }
 
-            let mut current_block_id = STORY_GOTO_BLOCK_ID.lock().unwrap();
-            *current_block_id = block_id;
+            let mut params = STORY_GOTO_BLOCK_PARAMS.lock().unwrap();
+            *params = (block_id, incremental);
 
             Thread::main_thread().schedule(|| {
-                let mut block_id = STORY_GOTO_BLOCK_ID.lock().unwrap();
+                let (ref mut block_id, incremental) = *STORY_GOTO_BLOCK_PARAMS.lock().unwrap();
 
-                fn exec(block_id: i32) -> i32 {
+                fn exec(block_id: i32, incremental: bool) -> i32 {
                     let mut handle_guard = StoryTimelineController::CURRENT.lock().unwrap();
-                    let Some(handle) = &*handle_guard else {
-                        error!("No current StoryTimelineController");
+                    let Some(controller) = (*handle_guard).as_ref()
+                        .map(|h| h.target())
+                        .filter(|c| !c.is_null() && !StoryTimelineController::get_IsFinished(*c))
+                    else {
+                        *handle_guard = None;
+                        notify_error("No current StoryTimelineController");
                         return -3;
                     };
-
-                    let controller = handle.target();
-                    if controller.is_null() || StoryTimelineController::get_IsFinished(controller) {
-                        *handle_guard = None;
-                        error!("No current StoryTimelineController");
-                        return -3;
-                    }
+                    drop(handle_guard);
 
                     let timeline_data = StoryTimelineController::get_TimelineData(controller);
                     if timeline_data.is_null() {
-                        error!("TimelineData is NULL");
+                        notify_error("TimelineData is NULL");
                         return -3;
                     }
 
@@ -115,25 +113,37 @@ fn on_http_request(request: &mut Request) -> Result<CommandResponse, Error> {
 
                     let count = block_list.count();
                     if block_id >= count {
-                        error!("Block ID out of range (max: {})", count - 1);
+                        notify_error(format!("Block ID out of range (max: {})", count - 1));
                         return -3;
                     }
 
-                    StoryTimelineController::GotoBlock_orig(controller, block_id, false, false, false);
+                    if incremental && block_id != -1 {
+                        let last_block_id = StoryTimelineController::last_block_id();
+                        if last_block_id > block_id {
+                            notify_error("Requested block has already passed, cannot go backwards");
+                            return -3;
+                        }
+                        for i in last_block_id+1..=block_id {
+                            StoryTimelineController::GotoBlock(controller, i, false, false, false);
+                        }
+                    }
+                    else {
+                        StoryTimelineController::GotoBlock(controller, block_id, false, false, false);
+                    }
                     -2
                 }
 
                 // Notify that it has finished
-                *block_id = exec(*block_id);
+                *block_id = exec(*block_id, incremental);
                 STORY_GOTO_BLOCK_CVAR.notify_one();
             });
 
             // Block until thread finishes
-            while *current_block_id > -2 {
-                current_block_id = STORY_GOTO_BLOCK_CVAR.wait(current_block_id).unwrap();
+            while (*params).0 > -2 {
+                params = STORY_GOTO_BLOCK_CVAR.wait(params).unwrap();
             }
 
-            if *current_block_id == -3 {
+            if (*params).0 == -3 {
                 return Ok(CommandResponse::error(None));
             }
         },
@@ -169,7 +179,9 @@ impl<'a> Headers<'a> {
 #[serde(tag = "type")]
 enum Command {
     StoryGotoBlock {
-        block_id: i32
+        block_id: i32,
+        #[serde(default)]
+        incremental: bool
     },
 
     ReloadLocalizedData
