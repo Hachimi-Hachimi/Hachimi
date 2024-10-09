@@ -119,11 +119,8 @@ fn on_http_request(request: &mut Request) -> Result<CommandResponse, Error> {
 
                     if incremental && block_id != -1 {
                         let last_block_id = StoryTimelineController::last_block_id();
-                        if last_block_id > block_id {
-                            notify_error("Requested block has already passed, cannot go backwards");
-                            return -3;
-                        }
-                        for i in last_block_id+1..=block_id {
+                        let start = if last_block_id > block_id { 0 } else { last_block_id + 1 };
+                        for i in start..=block_id {
                             StoryTimelineController::GotoBlock(controller, i, false, false, false);
                         }
                     }
