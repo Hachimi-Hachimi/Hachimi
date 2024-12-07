@@ -776,6 +776,57 @@ impl Window for SimpleYesNoDialog {
     }
 }
 
+pub struct SimpleOkDialog {
+    title: String,
+    content: String,
+    callback: fn(),
+    id: egui::Id
+}
+
+impl SimpleOkDialog {
+    pub fn new(title: &str, content: &str, callback: fn()) -> SimpleOkDialog {
+        SimpleOkDialog {
+            title: title.to_owned(),
+            content: content.to_owned(),
+            callback,
+            id: random_id()
+        }
+    }
+}
+
+impl Window for SimpleOkDialog {
+    fn run(&mut self, ctx: &egui::Context) -> bool {
+        let mut open = true;
+        let mut open2 = true;
+
+        new_window(ctx, &self.title)
+        .id(self.id)
+        .open(&mut open)
+        .show(ctx, |ui| {
+            simple_window_layout(ui, self.id,
+                |ui| {
+                    ui.centered_and_justified(|ui| {
+                        ui.label(&self.content);
+                    });
+                },
+                |ui| {
+                    if ui.button("OK").clicked() {
+                        open2 = false;
+                    }
+                }
+            );
+        });
+
+        if open && open2 {
+            true
+        }
+        else {
+            (self.callback)();
+            false
+        }
+    }
+}
+
 struct ConfigEditor {
     config: hachimi::Config,
     id: egui::Id,
@@ -829,6 +880,24 @@ impl ConfigEditor {
     fn run_options_grid(config: &mut hachimi::Config, ui: &mut egui::Ui, tab: ConfigEditorTab) {
         match tab {
             ConfigEditorTab::General => {
+                ui.label("Disable overlay (GUI)");
+                if ui.checkbox(&mut config.disable_gui, "").clicked() {
+                    if config.disable_gui {
+                        thread::spawn(|| {
+                            Gui::instance().unwrap()
+                            .lock().unwrap()
+                            .show_window(Box::new(SimpleOkDialog::new(
+                                "Warning",
+                                "This option will disable the Hachimi overlay after you restart the game, \
+                                which means that you will NOT be able to access the Config Editor after this. \
+                                If this was not intentional, close this dialog and DISABLE the option.",
+                                || {}
+                            )));
+                        });
+                    }
+                }
+                ui.end_row();
+
                 ui.label("Debug mode");
                 ui.checkbox(&mut config.debug_mode, "");
                 ui.end_row();
@@ -859,10 +928,6 @@ impl ConfigEditor {
             },
 
             ConfigEditorTab::Graphics => {
-                ui.label("Disable GUI");
-                ui.checkbox(&mut config.disable_gui, "");
-                ui.end_row();
-
                 Self::option_slider(ui, "Target FPS", &mut config.target_fps, 30..=240);
 
                 ui.label("Virtual resolution\nmultiplier");
