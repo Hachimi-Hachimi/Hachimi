@@ -116,11 +116,17 @@ pub fn on_LoadAsset(_bundle: *mut Il2CppObject, this: *mut Il2CppObject, name: &
     let localized_data = hachimi.localized_data.load();
     let Some(dict): Option<StoryTimelineDataDict> = localized_data.load_assets_dict(Some(&dict_path)).or_else(|| {
         if hachimi.config.load().auto_translate_stories {
+            let Some(full_dict_path) = localized_data.get_assets_path(&dict_path) else {
+                return None;
+            };
+
+            // check if file exists
+            if std::fs::metadata(&full_dict_path).is_ok() {
+                return None;
+            }
+
             match generate_auto_tl_dict(this) {
                 Ok(dict) => {
-                    let Some(full_dict_path) = localized_data.get_assets_path(&dict_path) else {
-                        return Some(dict);
-                    };
                     if let Some(p) = full_dict_path.parent() {
                         if let Err(e) = std::fs::create_dir_all(p) {
                             error!("Failed to create story TL directory: {}", e);
