@@ -31,6 +31,14 @@ impl SugoiClient {
             .into_json()?
         )
     }
+
+    pub fn translate_one(&self, content: String) -> Result<String, Error> {
+        let mut res = self.translate(&[content])?;
+        if res.len() != 1 {
+            return Err(Error::RuntimeError("Server returned invalid amount of translated content".to_owned()));
+        }
+        Ok(res.pop().unwrap())
+    }
 }
 
 #[derive(Serialize)]

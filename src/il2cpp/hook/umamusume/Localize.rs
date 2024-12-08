@@ -4,8 +4,8 @@ use fnv::FnvHashMap;
 use once_cell::unsync::Lazy;
 
 use crate::{
-    core::{utils, Hachimi},
-    il2cpp::{symbols::{get_method_overload_addr, unbox}, ext::StringExt, types::*}
+    core::{utils, Hachimi, SugoiClient},
+    il2cpp::{ext::StringExt, symbols::{get_method_overload_addr, unbox}, types::*}
 };
 
 use super::TextId;
@@ -23,7 +23,8 @@ static mut TEXTID_NAME_CACHE: Lazy<FnvHashMap<i32, String>> = Lazy::new(|| FnvHa
  */
 type GetFn = extern "C" fn(id: i32) -> *mut Il2CppString;
 pub extern "C" fn Get(id: i32) -> *mut Il2CppString {
-    let localized_data = Hachimi::instance().localized_data.load();
+    let hachimi = Hachimi::instance();
+    let localized_data = hachimi.localized_data.load();
     if localized_data.localize_dict.is_empty() {
         return get_orig_fn!(Get, GetFn)(id);
     }
@@ -45,6 +46,12 @@ pub extern "C" fn Get(id: i32) -> *mut Il2CppString {
         if Hachimi::instance().config.load().translator_mode && id != 1109 && id != 1032 {
             // 1109 and 1032 seems to be debugging strings (they're annoying)
             utils::print_json_entry(name, unsafe { &(*str).as_utf16str().to_string() });
+        }
+        if hachimi.config.load().auto_translate_localize && !str.is_null() && unsafe { (*str).length > 0 } {
+            let s = unsafe { (*str).as_utf16str().to_string() };
+            if let Ok(res) = SugoiClient::instance().translate_one(s) {
+                return res.to_il2cpp_string();
+            }
         }
         str
     }

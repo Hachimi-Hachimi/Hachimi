@@ -250,6 +250,8 @@ pub struct Config {
     pub sugoi_url: Option<String>,
     #[serde(default)]
     pub auto_translate_stories: bool,
+    #[serde(default)]
+    pub auto_translate_localize: bool,
 
     #[cfg(target_os = "windows")]
     #[serde(flatten)]

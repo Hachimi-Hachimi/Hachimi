@@ -929,6 +929,10 @@ impl ConfigEditor {
                 ui.label("Auto translate\nstories");
                 ui.checkbox(&mut config.auto_translate_stories, "");
                 ui.end_row();
+
+                ui.label("Auto translate UI\n(MIGHT BREAK UIs)");
+                ui.checkbox(&mut config.auto_translate_localize, "");
+                ui.end_row();
             },
 
             ConfigEditorTab::Graphics => {
