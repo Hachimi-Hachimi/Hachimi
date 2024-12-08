@@ -20,6 +20,10 @@ pub fn set_Name(this: *mut Il2CppObject, value: *mut Il2CppString) {
     set_field_object_value(this, unsafe { NAME_FIELD }, value);
 }
 
+pub fn get_Name(this: *mut Il2CppObject) -> *mut Il2CppString {
+    get_field_object_value(this, unsafe { NAME_FIELD })
+}
+
 static mut TEXT_FIELD: *mut FieldInfo = null_mut();
 pub fn get_Text(this: *mut Il2CppObject) -> *mut Il2CppString {
     get_field_object_value(this, unsafe { TEXT_FIELD })

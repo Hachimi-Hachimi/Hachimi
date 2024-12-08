@@ -925,6 +925,10 @@ impl ConfigEditor {
                 ui.label("IPC listen all");
                 ui.checkbox(&mut config.ipc_listen_all, "");
                 ui.end_row();
+
+                ui.label("Auto translate\nstories");
+                ui.checkbox(&mut config.auto_translate_stories, "");
+                ui.end_row();
             },
 
             ConfigEditorTab::Graphics => {

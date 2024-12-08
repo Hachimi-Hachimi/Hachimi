@@ -39,26 +39,26 @@ static INSTANCE: OnceCell<Arc<Hachimi>> = OnceCell::new();
 
 impl Hachimi {
     pub fn init() -> bool {
-            if INSTANCE.get().is_some() {
-                warn!("Hachimi should be initialized only once");
-                return true;
+        if INSTANCE.get().is_some() {
+            warn!("Hachimi should be initialized only once");
+            return true;
+        }
+
+        let instance = match Self::new() {
+            Ok(v) => v,
+            Err(e) => {
+                super::log::init(false); // early init to log error
+                error!("Init failed: {}", e);
+                return false;
             }
+        };
 
-            let instance = match Self::new() {
-                Ok(v) => v,
-                Err(e) => {
-                    super::log::init(false); // early init to log error
-                    error!("Init failed: {}", e);
-                    return false;
-                }
-            };
+        super::log::init(instance.config.load().debug_mode);
 
-            super::log::init(instance.config.load().debug_mode);
+        info!("Hachimi {}", env!("HACHIMI_DISPLAY_VERSION"));
+        instance.load_localized_data();
 
-            info!("Hachimi {}", env!("HACHIMI_DISPLAY_VERSION"));
-            instance.load_localized_data();
-
-            INSTANCE.set(Arc::new(instance)).is_ok()
+        INSTANCE.set(Arc::new(instance)).is_ok()
     }
 
     pub fn instance() -> Arc<Hachimi> {
@@ -247,6 +247,9 @@ pub struct Config {
     pub force_allow_dynamic_camera: bool,
     #[serde(default)]
     pub live_theater_allow_same_chara: bool,
+    pub sugoi_url: Option<String>,
+    #[serde(default)]
+    pub auto_translate_stories: bool,
 
     #[cfg(target_os = "windows")]
     #[serde(flatten)]

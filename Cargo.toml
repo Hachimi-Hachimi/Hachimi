@@ -31,7 +31,7 @@ sqlparser = "0.43"
 textwrap = "0.16"
 atomic_float = "0.1"
 blake3 = "1.5"
-ureq = "2.9"
+ureq = { version = "2.10", features = ["json"] }
 size = "0.4"
 threadpool = "1.8"
 zip = { version = "0.6", default-features = false, features = ["deflate"] }
