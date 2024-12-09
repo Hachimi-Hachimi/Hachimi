@@ -21,6 +21,7 @@ pub mod TextFrame;
 mod PartsSingleModeSkillListItem;
 pub mod FlashActionPlayer;
 pub mod TextRubyData;
+pub mod TextDotData;
 pub mod GameSystem;
 mod StoryViewTextControllerLandscape;
 mod StoryViewTextControllerSingleMode;
@@ -76,6 +77,7 @@ pub fn init() {
     PartsSingleModeSkillListItem::init(image);
     FlashActionPlayer::init(image);
     TextRubyData::init(image);
+    TextDotData::init(image);
     GameSystem::init(image);
     StoryViewTextControllerLandscape::init(image);
     StoryViewTextControllerSingleMode::init(image);
