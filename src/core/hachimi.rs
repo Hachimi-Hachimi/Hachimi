@@ -154,11 +154,6 @@ impl Hachimi {
             false
         }
         else if hachimi_impl::is_criware_lib(filename) {
-            self.hooking_finished.store(true, atomic::Ordering::Relaxed);
-
-            info!("GameAssembly finished loading");
-            il2cpp::symbols::init();
-            il2cpp::hook::init();
             self.on_hooking_finished();
             true
         }
@@ -167,7 +162,13 @@ impl Hachimi {
         }
     }
 
-    fn on_hooking_finished(&self) {
+    pub fn on_hooking_finished(&self) {
+        self.hooking_finished.store(true, atomic::Ordering::Relaxed);
+
+        info!("GameAssembly finished loading");
+        il2cpp::symbols::init();
+        il2cpp::hook::init();
+
         // By the time it finished hooking the game will have already finished initializing
         GameSystem::on_game_initialized();
 

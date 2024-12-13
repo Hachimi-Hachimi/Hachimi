@@ -13,7 +13,7 @@ use windows::{
 
 use crate::core::{gui::{PersistentMessageWindow, SimpleYesNoDialog}, http, Error, Gui, Hachimi};
 
-use super::{main::DLL_HMODULE, proxy::dxgi, utils};
+use super::{gui_impl::render_hook, main::DLL_HMODULE, utils};
 
 const REPO_PATH: &str = "Hachimi-Hachimi/Hachimi";
 
@@ -128,7 +128,7 @@ impl Updater {
             );
 
             // Close the game
-            _ = PostMessageW(dxgi::get_swap_chain_hwnd(), WM_CLOSE, None, None);
+            _ = PostMessageW(render_hook::get_swap_chain_hwnd(), WM_CLOSE, None, None);
         }
 
         Ok(())

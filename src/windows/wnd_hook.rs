@@ -1,4 +1,4 @@
-use std::os::raw::c_uint;
+use std::{os::raw::c_uint, sync::atomic};
 
 use windows::Win32::{
     Foundation::{HWND, LPARAM, LRESULT, WPARAM},
@@ -9,7 +9,7 @@ use windows::Win32::{
     }
 };
 
-use crate::{core::{Gui, Hachimi}, il2cpp::hook::UnityEngine_CoreModule, windows::proxy::dxgi};
+use crate::{core::{Gui, Hachimi}, il2cpp::hook::UnityEngine_CoreModule, windows::utils};
 
 use super::gui_impl::input;
 
@@ -73,8 +73,7 @@ extern "system" fn cbt_proc(ncode: i32, wparam: WPARAM, lparam: LPARAM) -> LRESU
     unsafe { CallNextHookEx(HCBTHOOK, ncode, wparam, lparam) }
 }
 
-pub fn init() {
-    let hwnd = dxgi::get_swap_chain_hwnd();
+pub fn init(hwnd: HWND) {
     unsafe {
         info!("Replacing WndProc");
         WNDPROC_ORIG = SetWindowLongPtrW(hwnd, GWLP_WNDPROC, wnd_proc as isize);
@@ -82,6 +81,11 @@ pub fn init() {
         info!("Adding CBT hook");
         if let Ok(hhook) = SetWindowsHookExW(WH_CBT, Some(cbt_proc), None, GetCurrentThreadId()) {
             HCBTHOOK = hhook;
+        }
+
+        // Apply always on top
+        if Hachimi::instance().window_always_on_top.load(atomic::Ordering::Relaxed) {
+            _ = utils::set_window_topmost(hwnd, true);
         }
     }
 }

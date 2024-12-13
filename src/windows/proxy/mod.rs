@@ -10,7 +10,4 @@ macro_rules! proxy_proc {
     }
 }
 
-pub mod dxgi;
-pub mod version;
-pub mod winhttp;
-pub mod opengl32;
+pub mod cri_mana_vpx;

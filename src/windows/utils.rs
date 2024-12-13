@@ -19,7 +19,7 @@ use crate::core::{utils::scale_to_aspect_ratio, Hachimi};
 
 use super::hachimi_impl::ResolutionScaling;
 
-pub fn get_system_directory() -> Utf16String {
+pub fn _get_system_directory() -> Utf16String {
     let mut buffer = [0u16; MAX_PATH as usize];
     let length = unsafe { GetSystemDirectoryW(Some(&mut buffer)) };
     unsafe { Utf16String::from_vec_unchecked(buffer[..length as usize].to_vec()) }
@@ -45,6 +45,7 @@ pub fn get_game_dir() -> Option<PathBuf> {
     Some(parent.to_owned())
 }
 
+/*
 pub fn get_game_dir_str() -> Option<String> {
     let mut slice = [0u16; MAX_PATH as usize];
     let length = unsafe { GetModuleFileNameW(HMODULE::default(), &mut slice) } as usize;
@@ -54,6 +55,7 @@ pub fn get_game_dir_str() -> Option<String> {
 
     Some(parent.display().to_string())
 }
+*/
 
 pub unsafe fn kill_process_by_name(target_name: &CStr) -> Result<(), windows::core::Error> {
     let snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPALL, 0)?;

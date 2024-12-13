@@ -13,7 +13,7 @@ use crate::{
     }
 };
 
-use super::{proxy::dxgi, utils, wnd_hook};
+use super::utils;
 
 pub fn is_il2cpp_lib(filename: &str) -> bool {
     filename == "GameAssembly.dll"
@@ -24,8 +24,6 @@ pub fn is_criware_lib(filename: &str) -> bool {
 }
 
 pub fn on_hooking_finished(hachimi: &Hachimi) {
-    wnd_hook::init();
-
     // Kill unity crash handler (just to be safe)
     unsafe {
         if let Err(e) = utils::kill_process_by_name(c"UnityCrashHandler64.exe") {
@@ -40,11 +38,6 @@ pub fn on_hooking_finished(hachimi: &Hachimi) {
 
     // Apply auto full screen
     Screen::apply_auto_full_screen(Screen::get_width(), Screen::get_height());
-
-    // Apply always on top
-    if hachimi.window_always_on_top.load(atomic::Ordering::Relaxed) {
-        unsafe { _ = utils::set_window_topmost(dxgi::get_swap_chain_hwnd(), true); }
-    }
 
     // Clean up the update installer
     _ = std::fs::remove_file(utils::get_tmp_installer_path());
