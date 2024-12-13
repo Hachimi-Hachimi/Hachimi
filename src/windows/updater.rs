@@ -114,14 +114,15 @@ impl Updater {
         let mut slice = [0u16; MAX_PATH as usize];
         let length = unsafe { GetModuleFileNameW(DLL_HMODULE, &mut slice) } as usize;
         let hachimi_path_str = unsafe { Utf16Str::from_slice_unchecked(&slice[..length]) };
+        let game_dir = utils::get_game_dir().unwrap();
         unsafe {
             ShellExecuteW(
                 None,
                 None,
                 &HSTRING::from(installer_path.into_os_string()),
                 &HSTRING::from(format!(
-                    "install --target \"{}\" --sleep 1000 --prompt-for-game-exit --launch-game -- {}",
-                    hachimi_path_str, std::env::args().skip(1).collect::<Vec<String>>().join(" ")
+                    "install --install-dir \"{}\" --target \"{}\" --sleep 1000 --prompt-for-game-exit --launch-game -- {}",
+                    game_dir.display(), hachimi_path_str, std::env::args().skip(1).collect::<Vec<String>>().join(" ")
                 )),
                 PCWSTR::from_raw(slice.as_ptr()),
                 SW_NORMAL
