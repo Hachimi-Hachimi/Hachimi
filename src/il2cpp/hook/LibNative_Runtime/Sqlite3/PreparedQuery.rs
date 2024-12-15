@@ -1,6 +1,6 @@
 use crate::il2cpp::{symbols::get_method_addr, types::*};
 
-use super::Query::SELECT_QUERIES;
+use super::Connection::SELECT_QUERIES;
 
 /**
  * LibNative.Sqlite3::PreparedQuery::BindInt
