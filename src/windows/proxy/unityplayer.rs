@@ -1,23 +1,26 @@
 #![allow(non_snake_case, non_upper_case_globals)]
 
-use windows::{core::w, Win32::System::LibraryLoader::LoadLibraryW};
+use widestring::U16CString;
+use windows::{core::PCWSTR, Win32::System::LibraryLoader::LoadLibraryW};
 
-use crate::windows::utils;
+use crate::{core::Hachimi, windows::utils};
 
 proxy_proc!(UnityMain, UnityMain_orig);
 
 pub fn init() {
     unsafe {
-        let Some(handle) = LoadLibraryW(w!("UnityPlayer.orig.dll")).ok().or_else(|| {
+        let dll_path = Hachimi::instance().get_data_path("UnityPlayer_orig.dll");
+        let dll_path_cstr = U16CString::from_str(dll_path.to_str().unwrap()).unwrap();
+        let dll_path_cstr_ptr = PCWSTR(dll_path_cstr.as_ptr());
+        let Some(handle) = LoadLibraryW(dll_path_cstr_ptr).ok().or_else(|| {
             // Try copying it
             let game_dir = utils::get_game_dir().unwrap();
-            std::fs::copy(
-                game_dir.join("UnityPlayer.dll"),
-                game_dir.join("umamusume.exe.local\\UnityPlayer.orig.dll")
-            ).ok()?;
-            LoadLibraryW(w!("UnityPlayer.orig.dll")).ok()
+            std::fs::copy(game_dir.join("UnityPlayer.dll"), dll_path)
+                .inspect_err(|e| error!("{}", e))
+                .ok()?;
+            LoadLibraryW(dll_path_cstr_ptr).ok()
         }) else {
-            error!("Failed to load UnityPlayer.orig.dll");
+            error!("Failed to load UnityPlayer_orig.dll");
             std::process::exit(1);
         };
 
