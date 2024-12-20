@@ -15,9 +15,21 @@ pub fn init() {
         let Some(handle) = LoadLibraryW(dll_path_cstr_ptr).ok().or_else(|| {
             // Try copying it
             let game_dir = utils::get_game_dir().unwrap();
-            std::fs::copy(game_dir.join("UnityPlayer.dll"), dll_path)
-                .inspect_err(|e| error!("{}", e))
-                .ok()?;
+            match std::fs::create_dir(dll_path.parent().unwrap()) {
+                Ok(()) => Ok(()),
+                Err(e) => {
+                    if e.kind() == std::io::ErrorKind::AlreadyExists {
+                        Ok(())
+                    }
+                    else {
+                        Err(e)
+                    }
+                },
+            }
+            .and_then(|_| std::fs::copy(game_dir.join("UnityPlayer.dll"), dll_path))
+            .inspect_err(|e| error!("{}", e))
+            .ok()?;
+
             LoadLibraryW(dll_path_cstr_ptr).ok()
         }) else {
             error!("Failed to load UnityPlayer_orig.dll");
