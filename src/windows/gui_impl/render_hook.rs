@@ -1,8 +1,7 @@
 #![allow(non_snake_case)]
-use std::{os::raw::{c_uint, c_void}, sync::{atomic::{self, AtomicIsize}, Mutex}};
+use std::{os::raw::{c_uint, c_void}, sync::Mutex};
 
 use once_cell::sync::OnceCell;
-use widestring::{U16CStr, Utf16String};
 use windows::{
     core::{w, Interface, HRESULT},
     Win32::{
@@ -17,7 +16,7 @@ use windows::{
         },
         System::LibraryLoader::GetModuleHandleW,
         UI::WindowsAndMessaging::{
-            CreateWindowExW, DefWindowProcW, DestroyWindow, GetClientRect, GetWindowTextW, IsIconic,
+            CreateWindowExW, DefWindowProcW, DestroyWindow, GetClientRect, IsIconic,
             RegisterClassExW, UnregisterClassW, WINDOW_EX_STYLE, WNDCLASSEXW, WS_DISABLED
         }
     }
@@ -27,17 +26,7 @@ use crate::{core::{Error, Gui, Hachimi, Interceptor}, windows::wnd_hook};
 
 use super::d3d11_painter::D3D11Painter;
 
-static SWAP_CHAIN_HWND: AtomicIsize = AtomicIsize::new(0);
-pub fn get_swap_chain_hwnd() -> HWND {
-    HWND(SWAP_CHAIN_HWND.load(atomic::Ordering::Relaxed))
-}
-
 fn check_hwnd(this: *mut c_void) -> HWND {
-    let cached_hwnd = get_swap_chain_hwnd();
-    if cached_hwnd.0 != 0 {
-        return cached_hwnd;
-    }
-
     let swap_chain = unsafe { IDXGISwapChain::from_raw(this) };
     let mut desc = DXGI_SWAP_CHAIN_DESC::default();
     unsafe {
@@ -46,16 +35,9 @@ fn check_hwnd(this: *mut c_void) -> HWND {
         }
     }
 
-    let hwnd = desc.OutputWindow;
-    let mut str_buf = [0u16; 10];
-    if unsafe { GetWindowTextW(hwnd, &mut str_buf) } != 9 {
-        return HWND(0);
-    }
-
-    if U16CStr::from_slice(&str_buf).map(|s| *s == Utf16String::from_str("umamusume")).unwrap_or(false) {
-        SWAP_CHAIN_HWND.store(hwnd.0, atomic::Ordering::Relaxed);
-        wnd_hook::init(hwnd);
-        hwnd
+    let target = wnd_hook::get_target_hwnd();
+    if desc.OutputWindow == target {
+        target
     }
     else {
         HWND(0)
@@ -215,16 +197,17 @@ fn get_swap_chain_vtable() -> Result<*mut usize, Error> {
         Error::RuntimeError(e.to_string())
     })?;
 
-    Ok(p_swap_chain
-        .map(|swap_chain| {
-            unsafe {
-                _ = DestroyWindow(hwnd);
-                _ = UnregisterClassW(wc.lpszClassName, hmodule);
-            }
-            Interceptor::get_vtable_from_instance(swap_chain.as_raw() as _)
-        })
-        .unwrap_or(0 as _)
-    )
+    let swap_chain_vtable = p_swap_chain.map(|swap_chain|
+        Interceptor::get_vtable_from_instance(swap_chain.as_raw() as _)
+    );
+    std::mem::drop(p_device);
+
+    unsafe {
+        _ = DestroyWindow(hwnd);
+        _ = UnregisterClassW(wc.lpszClassName, hmodule);
+    }
+
+    Ok(swap_chain_vtable.unwrap_or(0 as _))
 }
 
 fn init_internal() -> Result<(), Error> {

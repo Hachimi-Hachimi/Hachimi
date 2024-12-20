@@ -13,7 +13,7 @@ use crate::{
     }
 };
 
-use super::utils;
+use super::{utils, wnd_hook};
 
 pub fn is_il2cpp_lib(filename: &str) -> bool {
     filename == "GameAssembly.dll"
@@ -24,6 +24,8 @@ pub fn is_criware_lib(filename: &str) -> bool {
 }
 
 pub fn on_hooking_finished(hachimi: &Hachimi) {
+    wnd_hook::init();
+
     // Kill unity crash handler (just to be safe)
     unsafe {
         if let Err(e) = utils::kill_process_by_name(c"UnityCrashHandler64.exe") {

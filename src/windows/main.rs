@@ -5,10 +5,10 @@ use windows::{core::PCWSTR, Win32::{Foundation::{BOOL, HMODULE, TRUE}, System::L
 
 use crate::core::Hachimi;
 
-use super::hook;
+use super::{hook, wnd_hook};
 
 const DLL_PROCESS_ATTACH: c_ulong = 1;
-//const DLL_PROCESS_DETACH: c_ulong = 0;
+const DLL_PROCESS_DETACH: c_ulong = 0;
 
 pub fn load_libraries() {
     for name in Hachimi::instance().config.load().windows.load_libraries.iter() {
@@ -42,6 +42,12 @@ pub extern "C" fn DllMain(hmodule: HMODULE, call_reason: c_ulong, _reserved: *mu
         load_libraries();
         hook::init();
         info!("Attach completed");
+    }
+    else if call_reason == DLL_PROCESS_DETACH {
+        wnd_hook::uninit();
+
+        info!("Unhooking everything");
+        Hachimi::instance().interceptor.unhook_all();
     }
     TRUE
 }

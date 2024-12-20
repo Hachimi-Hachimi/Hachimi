@@ -284,7 +284,7 @@ impl Gui {
                     });
                     #[cfg(target_os = "windows")]
                     {
-                        use crate::windows::{utils::set_window_topmost, gui_impl::render_hook};
+                        use crate::windows::{utils::set_window_topmost, wnd_hook};
 
                         ui.horizontal(|ui| {
                             let prev_value = self.menu_vsync_value;
@@ -307,7 +307,7 @@ impl Gui {
                                 hachimi.window_always_on_top.store(value, atomic::Ordering::Relaxed);
                                 Thread::main_thread().schedule(|| {
                                     let topmost = Hachimi::instance().window_always_on_top.load(atomic::Ordering::Relaxed);
-                                    unsafe { _ = set_window_topmost(render_hook::get_swap_chain_hwnd(), topmost); }
+                                    unsafe { _ = set_window_topmost(wnd_hook::get_target_hwnd(), topmost); }
                                 });
                             }
                         });

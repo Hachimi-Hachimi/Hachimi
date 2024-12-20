@@ -17,6 +17,15 @@ pub struct HookHandle {
     pub hook_type: HookType
 }
 
+impl HookHandle {
+    unsafe fn unhook(&self) -> Result<(), Error> {
+        match self.hook_type {
+            HookType::Function => interceptor_impl::unhook(self),
+            HookType::Vtable => interceptor_impl::unhook_vtable(self)
+        }
+    }
+}
+
 pub enum HookType {
     Function,
     Vtable
@@ -62,15 +71,18 @@ impl Interceptor {
         }
     }
 
-    pub fn unhook(&self, hook_addr: usize) {
-        if let Some(hook) = self.hook_map.lock().unwrap().remove(&hook_addr) {
-            let res = unsafe { 
-                match hook.hook_type {
-                    HookType::Function => interceptor_impl::unhook(&hook),
-                    HookType::Vtable => interceptor_impl::unhook_vtable(&hook)
-                }
-            };
-            if let Err(e) = res {
+    pub fn unhook(&self, hook_addr: usize) -> Option<HookHandle> {
+        let hook = self.hook_map.lock().unwrap().remove(&hook_addr)?;
+        if let Err(e) = unsafe { hook.unhook() } {
+            error!("Failed to unhook {}: {}", hook.orig_addr, e);
+        }
+
+        Some(hook)
+    }
+
+    pub fn unhook_all(&self) {
+        for (_, hook) in self.hook_map.lock().unwrap().drain() {
+            if let Err(e) = unsafe { hook.unhook() } {
                 error!("Failed to unhook {}: {}", hook.orig_addr, e);
             }
         }
