@@ -1,17 +1,36 @@
 use std::{os::raw::c_uint, sync::atomic::{self, AtomicIsize}};
 
+use egui::mutex::Mutex;
+use once_cell::sync::Lazy;
 use windows::{core::w, Win32::{
     Foundation::{HWND, LPARAM, LRESULT, WPARAM},
     System::Threading::GetCurrentThreadId,
     UI::WindowsAndMessaging::{
         CallNextHookEx, DefWindowProcW, FindWindowW, GetWindowLongPtrW, SetWindowsHookExW, UnhookWindowsHookEx,
-        GWLP_WNDPROC, HCBT_MINMAX, HHOOK, SW_RESTORE, WH_CBT, WM_CLOSE, WM_KEYDOWN, WM_SYSKEYDOWN, WNDPROC
+        GWLP_WNDPROC, HCBT_MINMAX, HHOOK, SW_RESTORE, WH_CBT, WM_CLOSE, WM_KEYDOWN, WM_SYSKEYDOWN, WM_SIZE, WNDPROC
     }
 }};
 
-use crate::{core::{Gui, Hachimi}, il2cpp::{hook::UnityEngine_CoreModule, symbols::Thread}, windows::utils};
+use crate::{core::{Gui, Hachimi}, il2cpp::{hook::{umamusume::SceneManager, UnityEngine_CoreModule}, symbols::Thread}, windows::utils};
 
 use super::gui_impl::input;
+
+struct WndProcCall {
+    hwnd: HWND,
+    umsg: c_uint,
+    wparam: WPARAM,
+    lparam: LPARAM
+}
+
+static WM_SIZE_BUFFER: Lazy<Mutex<Vec<WndProcCall>>> = Lazy::new(|| Mutex::default());
+pub fn drain_wm_size_buffer() {
+    let Some(orig_fn) = (unsafe { std::mem::transmute::<isize, WNDPROC>(WNDPROC_ORIG) }) else {
+        return;
+    };
+    for call in WM_SIZE_BUFFER.lock().drain(..) {
+        unsafe { orig_fn(call.hwnd, call.umsg, call.wparam, call.lparam); }
+    }
+}
 
 static TARGET_HWND: AtomicIsize = AtomicIsize::new(0);
 pub fn get_target_hwnd() -> HWND {
@@ -49,6 +68,17 @@ extern "system" fn wnd_proc(hwnd: HWND, umsg: c_uint, wparam: WPARAM, lparam: LP
                 });
             }
             return LRESULT(0);
+        },
+        WM_SIZE => {
+            if !SceneManager::is_splash_shown() {
+                WM_SIZE_BUFFER.lock().push(WndProcCall {
+                    hwnd, umsg, wparam, lparam
+                });
+                return LRESULT(0);
+            }
+            else {
+                return unsafe { orig_fn(hwnd, umsg, wparam, lparam) };
+            }
         }
         _ => ()
     }

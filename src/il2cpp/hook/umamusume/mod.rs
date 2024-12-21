@@ -52,6 +52,9 @@ mod ApplicationSettingSaveLoader;
 mod LiveTheaterCharaSelect;
 mod LiveTheaterViewController;
 
+#[cfg(target_os = "windows")]
+pub mod SceneManager;
+
 pub fn init() {
     get_assembly_image_or_return!(image, "umamusume.dll");
 
@@ -107,4 +110,7 @@ pub fn init() {
     ApplicationSettingSaveLoader::init(image);
     LiveTheaterCharaSelect::init(image);
     LiveTheaterViewController::init(image);
+
+    #[cfg(target_os = "windows")]
+    SceneManager::init(image);
 }
