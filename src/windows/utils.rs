@@ -1,8 +1,8 @@
 use std::{ffi::CStr, path::{Path, PathBuf}};
 
-use widestring::{Utf16Str, Utf16String};
+use widestring::{U16CString, Utf16Str, Utf16String};
 use windows::{
-    core::PCSTR,
+    core::{w, PCSTR, PCWSTR},
     Win32::{
         Foundation::{CloseHandle, HMODULE, HWND, MAX_PATH},
         System::{
@@ -11,7 +11,7 @@ use windows::{
             SystemInformation::GetSystemDirectoryW,
             Threading::{OpenProcess, TerminateProcess, PROCESS_TERMINATE}
         },
-        UI::WindowsAndMessaging::{SetWindowPos, HWND_NOTOPMOST, HWND_TOPMOST, SWP_NOMOVE, SWP_NOSIZE}
+        UI::WindowsAndMessaging::{MessageBoxW, SetWindowPos, HWND_NOTOPMOST, HWND_TOPMOST, MB_ICONERROR, MB_OK, SWP_NOMOVE, SWP_NOSIZE}
     }
 };
 
@@ -109,4 +109,12 @@ pub fn get_scaling_res() -> Option<(i32, i32)> {
 pub unsafe fn set_window_topmost(hwnd: HWND, topmost: bool) -> Result<(), windows::core::Error> {
     let insert_after = if topmost { HWND_TOPMOST } else { HWND_NOTOPMOST };
     SetWindowPos(hwnd, insert_after, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE)
+}
+
+pub fn show_error(e: impl AsRef<str>) {
+    let s = e.as_ref();
+    error!("{}", s);
+
+    let cstr = U16CString::from_str(s).unwrap();
+    unsafe { MessageBoxW(None, PCWSTR(cstr.as_ptr()), w!("Hachimi Error"), MB_ICONERROR | MB_OK); }
 }
