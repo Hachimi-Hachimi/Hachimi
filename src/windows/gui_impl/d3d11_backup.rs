@@ -64,16 +64,14 @@ pub struct BackupState {
 impl BackupState {
     #[inline]
     pub unsafe fn save(&mut self, ctx: &ID3D11DeviceContext) {
+        // Rasterizer parameters
         self.scissor_count = D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE;
         self.viewport_count = D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE;
         ctx.RSGetScissorRects(&mut self.scissor_count, Some(self.scissor_rects.as_mut_ptr()));
         ctx.RSGetViewports(&mut self.viewport_count, Some(self.viewports.as_mut_ptr()));
-        if let Ok(state) = ctx.RSGetState() {
-            self.raster_state = Some(state);
-        }
-        else {
-            self.raster_state = None;
-        }
+        self.raster_state = ctx.RSGetState().ok();
+
+        // Output-Merger parameters
         ctx.OMGetBlendState(
             Some(&mut self.blend_state),
             Some(&mut self.blend_factor),
@@ -81,6 +79,7 @@ impl BackupState {
         );
         ctx.OMGetDepthStencilState(Some(&mut self.depth_stencil_state), Some(&mut self.stencil_ref));
 
+        // Pixel Shader parameters
         let mut pixel_shader_resources = [None];
         ctx.PSGetShaderResources(0, Some(&mut pixel_shader_resources));
         self.pixel_shader_resource = pixel_shader_resources[0].take();
@@ -89,6 +88,7 @@ impl BackupState {
         ctx.PSGetSamplers(0, Some(&mut samplers));
         self.sampler = samplers[0].take();
 
+        // Shaders
         self.pixel_shader_instances_count = 256;
         self.vertex_shader_instances_count = 256;
         self.geometry_shader_instances_count = 256;
@@ -109,10 +109,12 @@ impl BackupState {
             Some(&mut self.geometry_shader_instances_count),
         );
 
+        // Vertex Shader parameters
         let mut constant_buffers = [None];
         ctx.VSGetConstantBuffers(0, Some(&mut constant_buffers));
         self.constant_buffer = constant_buffers[0].take();
 
+        // Input-Assembler parameters
         self.primitive_topology = ctx.IAGetPrimitiveTopology();
         ctx.IAGetIndexBuffer(
             Some(&mut self.index_buffer),
@@ -126,21 +128,19 @@ impl BackupState {
             Some(&mut self.vertex_buffer_strides),
             Some(&mut self.vertex_buffer_offsets),
         );
-        if let Ok(layout) = ctx.IAGetInputLayout() {
-            self.input_layout = Some(layout);
-        }
-        else {
-            self.input_layout = None;
-        }
+        self.input_layout = ctx.IAGetInputLayout().ok();
     }
 
     #[inline]
     pub unsafe fn restore(&mut self, ctx: &ID3D11DeviceContext) {
+        // Rasterizer parameters
         ctx.RSSetScissorRects(Some(&self.scissor_rects[..self.scissor_count as usize]));
         ctx.RSSetViewports(Some(&self.viewports[..self.viewport_count as usize]));
         if let Some(raster_state) = self.raster_state.take() {
             ctx.RSSetState(&raster_state);
         }
+
+        // Output-Merger parameters
         if let Some(blend_state) = self.blend_state.take() {
             ctx.OMSetBlendState(
                 &blend_state,
@@ -151,8 +151,12 @@ impl BackupState {
         if let Some(depth_stencil_state) = self.depth_stencil_state.take() {
             ctx.OMSetDepthStencilState(&depth_stencil_state, self.stencil_ref);
         }
+
+        // Pixel Shader parameters
         ctx.PSSetShaderResources(0, Some(&[self.pixel_shader_resource.take()]));
         ctx.PSSetSamplers(0, Some(&[self.sampler.take()]));
+
+        // Shaders
         if let Some(pixel_shader) = self.pixel_shader.take() {
             ctx.PSSetShader(
                 &pixel_shader,
@@ -177,7 +181,10 @@ impl BackupState {
         }
         self.geometry_shader_instances.release();
 
+        // Vertex Shader parameters
         ctx.VSSetConstantBuffers(0, Some(&[self.constant_buffer.take()]));
+
+        // Input-Assembler parameters
         ctx.IASetPrimitiveTopology(self.primitive_topology);
         if let Some(index_buffer) = self.index_buffer.take() {
             ctx.IASetIndexBuffer(
