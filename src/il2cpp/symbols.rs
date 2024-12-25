@@ -668,3 +668,77 @@ impl Iterator for FieldsIter {
         Some(field)
     }
 }
+
+#[repr(C)]
+pub struct Il2CppDictionary {
+    pub obj: Il2CppObject,
+    pub buckets: *mut Il2CppArray,
+    pub entries: *mut Il2CppArray,
+    pub count: i32,
+    /* STUB */
+}
+
+#[repr(C)]
+pub struct Il2CppDictionaryEntry<K, V> {
+    pub hash_code: i32,
+    pub next: i32,
+    pub key: K,
+    pub value: V
+}
+
+// Generic Dictionary wrapper
+#[repr(transparent)]
+pub struct Dictionary<K, V> {
+    pub this: *mut Il2CppDictionary,
+    _k: PhantomData<K>,
+    _v: PhantomData<V>
+}
+
+impl<K, V> Into<*mut Il2CppDictionary> for Dictionary<K, V> {
+    fn into(self) -> *mut Il2CppDictionary {
+        self.this
+    }
+}
+
+impl<K, V> From<*mut Il2CppDictionary> for Dictionary<K, V> {
+    fn from(value: *mut Il2CppDictionary) -> Self {
+        Self {
+            this: value,
+            _k: PhantomData,
+            _v: PhantomData
+        }
+    }
+}
+
+impl<K, V> Dictionary<K, V> {
+    pub fn buckets(&self) -> Array<i32> {
+        unsafe { (*self.this).buckets.into() }
+    }
+
+    pub fn entries(&self) -> Array<Il2CppDictionaryEntry<K, V>> {
+        unsafe { (*self.this).entries.into() }
+    }
+
+    pub fn count(&self) -> i32 {
+        unsafe { (*self.this).count }
+    }
+}
+
+impl<K: PartialEq, V> Dictionary<K, V> {
+    pub fn find_entry(&self, key: &K) -> Option<&'static mut Il2CppDictionaryEntry<K, V>> {
+        for entry in unsafe { self.entries().as_slice().iter_mut() } {
+            if entry.key == *key {
+                // freaky lifetime erasure
+                return unsafe { std::ptr::from_mut(entry).as_mut() };
+            }
+        }
+
+        None
+    }
+}
+
+impl<K: PartialEq + 'static, V> Dictionary<K, V> {
+    pub fn get(&self, key: &K) -> Option<&'static mut V> {
+        self.find_entry(&key).map(|e| &mut e.value)
+    }
+}
