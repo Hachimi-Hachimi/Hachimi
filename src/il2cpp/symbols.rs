@@ -1,6 +1,7 @@
 use std::collections::hash_map;
 use std::ffi::CStr;
 use std::marker::PhantomData;
+use std::mem::MaybeUninit;
 use std::os::raw::c_void;
 use std::sync::Mutex;
 
@@ -179,16 +180,14 @@ pub fn find_nested_class(class: *mut Il2CppClass, name: &CStr) -> Result<*mut Il
     Err(Error::ClassNotFound(class_name.to_owned(), name.to_str().unwrap().to_owned()))
 }
 
-pub fn get_field_value<T: Default>(obj: *mut Il2CppObject, field: *mut FieldInfo) -> T {
-    let mut value = T::default();
+pub fn get_field_value<T>(obj: *mut Il2CppObject, field: *mut FieldInfo) -> T {
+    let mut value = MaybeUninit::uninit();
     il2cpp_field_get_value(obj, field, unsafe { std::mem::transmute(&mut value) });
-    value
+    unsafe { value.assume_init() }
 }
 
 pub fn get_field_object_value<T>(obj: *mut Il2CppObject, field: *mut FieldInfo) -> *mut T {
-    let mut value = null_mut();
-    il2cpp_field_get_value(obj, field, unsafe { std::mem::transmute(&mut value) });
-    value
+    get_field_value(obj, field)
 }
 
 pub fn get_field_ptr<T>(obj: *mut Il2CppObject, field: *mut FieldInfo) -> *mut T {
@@ -196,11 +195,11 @@ pub fn get_field_ptr<T>(obj: *mut Il2CppObject, field: *mut FieldInfo) -> *mut T
 }
 
 pub fn set_field_value<T>(obj: *mut Il2CppObject, field: *mut FieldInfo, value: &T) {
-    il2cpp_field_set_value(obj, field, unsafe { std::mem::transmute(value) });
+    il2cpp_field_set_value(obj, field, std::ptr::from_ref(value) as _);
 }
 
 pub fn set_field_object_value<T>(obj: *mut Il2CppObject, field: *mut FieldInfo, value: *const T) {
-    il2cpp_field_set_value(obj, field, unsafe { std::mem::transmute(value) });
+    il2cpp_field_set_value(obj, field, value as _);
 }
 
 pub fn get_field_from_name(class: *mut Il2CppClass, name: &CStr) -> *mut FieldInfo {
