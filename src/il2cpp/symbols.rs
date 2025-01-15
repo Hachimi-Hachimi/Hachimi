@@ -548,7 +548,8 @@ pub fn create_delegate(delegate_class: *mut Il2CppClass, args_count: i32, method
     delegate_ctor(delegate_obj, delegate_obj, delegate_invoke);
     let delegate = delegate_obj as *mut Il2CppDelegate;
     unsafe {
-        (*delegate).method_ptr = std::mem::transmute(method_ptr);
+        (*delegate).method_ptr = method_ptr as _;
+        (*delegate).invoke_impl = method_ptr as _;
     }
 
     Some(delegate)
