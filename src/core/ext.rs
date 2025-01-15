@@ -106,3 +106,25 @@ impl Utf16StringExt for Utf16String {
         Utf16Str::str_eq(self, other)
     }
 }
+
+/// A convenience trait that can be used together with the type aliases defined to
+/// get access to the `new()` and `with_capacity()` methods for the HashMap type alias.
+pub trait HashMapExt {
+    /// Constructs a new HashMap
+    fn new() -> Self;
+    /// Constructs a new HashMap with a given initial capacity
+    fn with_capacity(capacity: usize) -> Self;
+}
+
+impl<K, V, S> HashMapExt for std::collections::HashMap<K, V, S>
+where
+    S: std::hash::BuildHasher + Default,
+{
+    fn new() -> Self {
+        std::collections::HashMap::with_hasher(S::default())
+    }
+
+    fn with_capacity(capacity: usize) -> Self {
+        std::collections::HashMap::with_capacity_and_hasher(capacity, S::default())
+    }
+}

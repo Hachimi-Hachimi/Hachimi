@@ -1,11 +1,10 @@
 use std::{ffi::{CStr, CString}, os::raw::c_void};
-use egui::ahash::HashMapExt;
 use fnv::FnvHashMap;
 use once_cell::sync::Lazy;
 use pelite::{pe::Pe, pe64::PeFile, FileMap};
 use windows::Win32::Foundation::HMODULE;
 
-use crate::{core::Error, windows::utils};
+use crate::{core::{ext::HashMapExt, Error}, windows::utils};
 
 const SYMBOL_LIST: &[&'static str] = &[
     "il2cpp_init",
@@ -35,6 +34,7 @@ const SYMBOL_LIST: &[&'static str] = &[
     "il2cpp_assembly_get_image",
     "il2cpp_class_for_each",
     "il2cpp_class_enum_basetype",
+    "il2cpp_class_is_inited",
     "il2cpp_class_is_generic",
     "il2cpp_class_is_inflated",
     "il2cpp_class_is_assignable_from",
@@ -124,6 +124,8 @@ const SYMBOL_LIST: &[&'static str] = &[
     "il2cpp_gc_foreach_heap",
     "il2cpp_stop_gc_world",
     "il2cpp_start_gc_world",
+    "il2cpp_gc_alloc_fixed",
+    "il2cpp_gc_free_fixed",
     "il2cpp_gchandle_new",
     "il2cpp_gchandle_new_weakref",
     "il2cpp_gchandle_get_target",
@@ -134,10 +136,11 @@ const SYMBOL_LIST: &[&'static str] = &[
     "il2cpp_offset_of_array_length_in_array_object_header",
     "il2cpp_offset_of_array_bounds_in_array_object_header",
     "il2cpp_allocation_granularity",
-    "il2cpp_unity_liveness_calculation_begin",
-    "il2cpp_unity_liveness_calculation_end",
+    "il2cpp_unity_liveness_allocate_struct",
     "il2cpp_unity_liveness_calculation_from_root",
     "il2cpp_unity_liveness_calculation_from_statics",
+    "il2cpp_unity_liveness_finalize",
+    "il2cpp_unity_liveness_free_struct",
     "il2cpp_method_get_return_type",
     "il2cpp_method_get_declaring_type",
     "il2cpp_method_get_name",
@@ -207,6 +210,7 @@ const SYMBOL_LIST: &[&'static str] = &[
     "il2cpp_type_get_attrs",
     "il2cpp_type_equals",
     "il2cpp_type_get_assembly_qualified_name",
+    "il2cpp_type_get_reflection_name",
     "il2cpp_type_is_static",
     "il2cpp_type_is_pointer_type",
     "il2cpp_image_get_assembly",
@@ -226,18 +230,20 @@ const SYMBOL_LIST: &[&'static str] = &[
     "il2cpp_unity_install_unitytls_interface",
     "il2cpp_custom_attrs_from_class",
     "il2cpp_custom_attrs_from_method",
+    "il2cpp_custom_attrs_from_field",
     "il2cpp_custom_attrs_get_attr",
     "il2cpp_custom_attrs_has_attr",
     "il2cpp_custom_attrs_construct",
     "il2cpp_custom_attrs_free",
     "il2cpp_class_set_userdata",
     "il2cpp_class_get_userdata_offset",
-    "il2cpp_set_default_thread_affinity"
+    "il2cpp_set_default_thread_affinity",
+    "il2cpp_unity_set_android_network_up_state_func"
 ];
 
-const START_RVA: u32 = 0x8c6714;
+const START_RVA: u32 = 0x7834a2;
 fn generate_symbol_map() -> Result<FnvHashMap<&'static str, CString>, Error> {
-    let mut map = FnvHashMap::with_capacity(225);
+    let mut map = FnvHashMap::with_capacity(SYMBOL_LIST.len());
 
     let mut path = utils::get_game_dir().unwrap();
     path.push("UnityPlayer.dll");
@@ -252,7 +258,7 @@ fn generate_symbol_map() -> Result<FnvHashMap<&'static str, CString>, Error> {
         let name_offset = pe.rva_to_file_offset(rva + 0x4 + rip_offset)?;
         let name = unsafe { CStr::from_ptr(image[name_offset..].as_ptr() as _) };
         map.insert(*symbol, name.to_owned());
-        rva += if rva == START_RVA { 0x35 } else { 0x30 };
+        rva += if rva == START_RVA { 0x28 } else { 0x26 };
     }
 
     Ok(map)
