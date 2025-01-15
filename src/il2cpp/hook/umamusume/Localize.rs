@@ -5,7 +5,7 @@ use once_cell::unsync::Lazy;
 
 use crate::{
     core::{game::Region, utils, Hachimi, SugoiClient},
-    il2cpp::{ext::StringExt, symbols::{get_method_overload_addr, unbox}, types::*}
+    il2cpp::{ext::{Il2CppStringExt, StringExt}, symbols::{get_method_overload_addr, unbox}, types::*}
 };
 
 use super::TextId;

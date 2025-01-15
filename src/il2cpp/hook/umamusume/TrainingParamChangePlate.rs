@@ -1,10 +1,7 @@
 use crate::{
     core::Hachimi,
     il2cpp::{
-        hook::UnityEngine_TextRenderingModule::TextGenerator::IgnoreTGFiltersContext,
-        symbols::get_method_addr,
-        ext::StringExt,
-        types::*
+        ext::{Il2CppStringExt, StringExt}, hook::UnityEngine_TextRenderingModule::TextGenerator::IgnoreTGFiltersContext, symbols::get_method_addr, types::*
     }
 };
 

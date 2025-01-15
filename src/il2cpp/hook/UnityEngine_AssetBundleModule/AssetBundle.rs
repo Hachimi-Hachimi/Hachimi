@@ -5,14 +5,11 @@ use once_cell::sync::Lazy;
 use widestring::Utf16Str;
 
 use crate::{core::{ext::Utf16StringExt, hachimi::AssetMetadata}, il2cpp::{
-    api::il2cpp_resolve_icall,
-    hook::{
+    api::il2cpp_resolve_icall, ext::{Il2CppObjectExt, Il2CppStringExt}, hook::{
         umamusume::{StoryRaceTextAsset, StoryTimelineData, TextDotData, TextRubyData},
         Cute_UI_Assembly::AtlasReference,
         UnityEngine_CoreModule::{GameObject, Texture2D}
-    },
-    symbols::GCHandle,
-    types::*
+    }, symbols::GCHandle, types::*
 }};
 
 pub const ASSET_PATH_PREFIX: &str = "assets/_gallopresources/bundle/resources/";

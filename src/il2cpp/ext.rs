@@ -1,7 +1,8 @@
-use std::sync::Mutex;
+use std::{hash::Hasher, sync::Mutex};
 
+use fnv::FnvHasher;
 use once_cell::sync::Lazy;
-use widestring::Utf16String;
+use widestring::{Utf16Str, Utf16String};
 
 use crate::core::hachimi::LocalizedData;
 
@@ -129,5 +130,50 @@ impl LocalizedDataExt for LocalizedData {
 
         *handle_opt = Some(GCHandle::new(tmp_font, false));
         tmp_font
+    }
+}
+
+pub trait Il2CppStringExt {
+    fn chars_ptr(&self) -> *const Il2CppChar;
+    fn as_utf16str(&self) -> &Utf16Str;
+    fn hash(&self) -> u64;
+}
+
+impl Il2CppStringExt for Il2CppString {
+    fn chars_ptr(&self) -> *const Il2CppChar {
+        self.chars.as_ptr()
+    }
+
+    fn as_utf16str(&self) -> &Utf16Str {
+        unsafe { Utf16Str::from_slice_unchecked(std::slice::from_raw_parts(self.chars.as_ptr(), self.length as usize)) }
+    }
+
+    fn hash(&self) -> u64 {
+        let data = self.chars_ptr() as *const u8;
+        let len = self.length as usize * std::mem::size_of::<Il2CppChar>();
+        
+        let mut hasher = FnvHasher::default();
+        hasher.write(unsafe { std::slice::from_raw_parts(data, len) });
+        hasher.finish()
+    }
+}
+
+pub trait MethodInfoExt {
+    fn method_pointer(&self) -> usize;
+}
+
+impl MethodInfoExt for MethodInfo {
+    fn method_pointer(&self) -> usize {
+        unsafe { std::mem::transmute(self.methodPointer) }
+    }
+}
+
+pub trait Il2CppObjectExt {
+    fn klass(&self) -> *mut Il2CppClass;
+}
+
+impl Il2CppObjectExt for Il2CppObject {
+    fn klass(&self) -> *mut Il2CppClass {
+        unsafe { *self.__bindgen_anon_1.klass.as_ref() }
     }
 }

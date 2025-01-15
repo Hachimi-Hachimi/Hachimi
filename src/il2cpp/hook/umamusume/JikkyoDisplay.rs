@@ -1,6 +1,6 @@
 use crate::{
     core::{utils::{wrap_text, wrap_text_il2cpp}, Hachimi},
-    il2cpp::{symbols::get_method_addr, ext::StringExt, types::*}
+    il2cpp::{ext::{Il2CppStringExt, StringExt}, symbols::get_method_addr, types::*}
 };
 
 const LINE_WIDTH: i32 = 24;

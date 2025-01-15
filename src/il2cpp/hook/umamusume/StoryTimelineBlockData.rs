@@ -1,7 +1,7 @@
 use std::ptr::null_mut;
 
 use crate::il2cpp::{
-    symbols::{get_field_from_name, get_field_object_value, get_field_value, set_field_value, IList}, types::*
+    ext::Il2CppObjectExt, symbols::{get_field_from_name, get_field_object_value, get_field_value, set_field_value, IList}, types::*
 };
 
 use super::{StoryTimelineTextClipData, StoryTimelineTrackData};

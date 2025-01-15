@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use crate::{core::Hachimi, il2cpp::{symbols::get_method_addr, ext::StringExt, types::*}};
+use crate::{core::Hachimi, il2cpp::{ext::{Il2CppStringExt, StringExt}, symbols::get_method_addr, types::*}};
 
 type GetMovieFilePathFn = extern "C" fn(this: *mut Il2CppObject, movie_file: *mut Il2CppString) -> *mut Il2CppString;
 extern "C" fn GetMovieFilePath(this: *mut Il2CppObject, movie_file: *mut Il2CppString) -> *mut Il2CppString {

@@ -3,10 +3,7 @@ use std::ptr::null_mut;
 use crate::{
     core::Hachimi,
     il2cpp::{
-        hook::UnityEngine_TextRenderingModule::TextGenerator::IgnoreTGFiltersContext,
-        symbols::{get_field_from_name, get_field_object_value, get_method_addr, set_field_object_value},
-        ext::StringExt,
-        types::*
+        ext::{Il2CppStringExt, StringExt}, hook::UnityEngine_TextRenderingModule::TextGenerator::IgnoreTGFiltersContext, symbols::{get_field_from_name, get_field_object_value, get_method_addr, set_field_object_value}, types::*
     }
 };
 

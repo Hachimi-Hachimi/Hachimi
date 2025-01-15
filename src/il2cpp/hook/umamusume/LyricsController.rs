@@ -5,7 +5,7 @@ use fnv::FnvHashMap;
 use crate::{
     core::{ext::Utf16StringExt, Hachimi},
     il2cpp::{
-        ext::StringExt,
+        ext::{Il2CppStringExt, StringExt},
         symbols::{get_field_from_name, get_field_object_value, get_method_addr, Array, Dictionary},
         types::*
     }

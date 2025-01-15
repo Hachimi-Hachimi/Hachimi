@@ -9,7 +9,7 @@ use sqlparser::{
     parser::Parser
 };
 
-use crate::il2cpp::{symbols::get_method_addr, sql::{self, ExprExt, SelectExt, SelectItemExt}, types::*};
+use crate::il2cpp::{ext::Il2CppStringExt, sql::{self, ExprExt, SelectExt, SelectItemExt}, symbols::get_method_addr, types::*};
 
 pub static SELECT_QUERIES: Lazy<Mutex<FnvHashMap<usize, Box<dyn sql::SelectQueryState + Send + Sync>>>> =
     Lazy::new(|| Mutex::new(FnvHashMap::default()));

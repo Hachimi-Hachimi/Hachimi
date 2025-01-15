@@ -1,6 +1,6 @@
 use std::{io::Write, path::{Path, PathBuf}};
 
-use crate::{core::utils::{get_file_modified_time, load_rgba_png_file}, il2cpp::types::*};
+use crate::{core::utils::{get_file_modified_time, load_rgba_png_file}, il2cpp::{ext::Il2CppStringExt, types::*}};
 
 use super::{
     hook::{mscorlib, UnityEngine_CoreModule::{Texture, Texture2D},

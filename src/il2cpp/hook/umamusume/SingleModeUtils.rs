@@ -1,4 +1,4 @@
-use crate::{core::{template, Hachimi}, il2cpp::{symbols::get_method_addr, ext::StringExt, types::*}};
+use crate::{core::{template, Hachimi}, il2cpp::{ext::{Il2CppStringExt, StringExt}, symbols::get_method_addr, types::*}};
 
 use super::{Localize, MasterSingleModeTurn::SingleModeTurn, TextId};
 
