@@ -1,6 +1,6 @@
 mod main;
 mod hook;
-mod ffi;
+mod utils;
 pub mod game_impl;
 pub mod log_impl;
 pub mod hachimi_impl;

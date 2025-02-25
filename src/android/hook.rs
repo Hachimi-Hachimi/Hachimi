@@ -6,7 +6,7 @@ use std::{
 use jni::sys::{jint, JNINativeMethod, JNIEnv, jclass};
 
 use crate::{android::gui_impl::input_hook, core::{Error, Hachimi, Interceptor}};
-use super::ffi;
+use super::utils;
 
 const LINKER_MODULE: &str = if cfg!(target_pointer_width = "64") {
     "linker64"
@@ -67,7 +67,7 @@ extern "C" fn JNINativeInterface_RegisterNatives(env: JNIEnv, class: jclass, met
 }
 
 fn init_internal(env: *mut jni::sys::JNIEnv) -> Result<(), Error> {
-    let api_level = ffi::get_device_api_level();
+    let api_level = utils::get_device_api_level(env);
     info!("API level: {}", api_level);
 
     let hachimi = Hachimi::instance();
