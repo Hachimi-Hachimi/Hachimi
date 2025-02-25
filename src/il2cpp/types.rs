@@ -3027,6 +3027,12 @@ pub struct Resolution {
     pub height: i32,
     pub refresh_rate: i32
 }
+#[repr(C)]
+#[derive(Debug, Deserialize, Serialize, Clone, Default)]
+pub struct RefreshRate {
+    pub numerator: u32,
+    pub denominator: u32
+}
 
 /************** ACTk (READ-ONLY) **************/
 #[repr(C)]

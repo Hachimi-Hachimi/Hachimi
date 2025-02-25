@@ -35,14 +35,17 @@ pub fn apply_auto_full_screen(mut width: i32, mut height: i32) -> bool {
     }
 
     let full_screen_mode = windows_config.full_screen_mode as i32;
-    let preferred_refresh_rate = preferred_res.refresh_rate;
-    get_orig_fn!(SetResolution, SetResolutionFn)(width, height, full_screen_mode, preferred_refresh_rate);
+    let preferred_refresh_rate = RefreshRate {
+        numerator: preferred_res.refresh_rate as u32,
+        denominator: 1
+    };
+    get_orig_fn!(SetResolution_Injected, SetResolutionInjectedFn)(width, height, full_screen_mode, &preferred_refresh_rate);
 
     true
 }
 
-type SetResolutionFn = extern "C" fn(width: i32, height: i32, fullscreen_mode: i32, preferred_refresh_rate: i32);
-extern "C" fn SetResolution(width: i32, height: i32, full_screen_mode: i32, preferred_refresh_rate: i32) {
+type SetResolutionInjectedFn = extern "C" fn(width: i32, height: i32, fullscreen_mode: i32, preferred_refresh_rate: *const RefreshRate);
+extern "C" fn SetResolution_Injected(width: i32, height: i32, full_screen_mode: i32, preferred_refresh_rate: *const RefreshRate) {
     let windows_config = &Hachimi::instance().config.load().windows;
     if windows_config.auto_full_screen {
         if apply_auto_full_screen(width, height) {
@@ -50,17 +53,18 @@ extern "C" fn SetResolution(width: i32, height: i32, full_screen_mode: i32, pref
         }
     }
 
-    get_orig_fn!(SetResolution, SetResolutionFn)(width, height, full_screen_mode, preferred_refresh_rate);
+    get_orig_fn!(SetResolution_Injected, SetResolutionInjectedFn)(width, height, full_screen_mode, preferred_refresh_rate);
 }
 
 pub fn init(UnityEngine_CoreModule: *const Il2CppImage) {
     get_class_or_return!(UnityEngine_CoreModule, UnityEngine, Screen);
 
-    let SetResolution_addr = il2cpp_resolve_icall(
-        c"UnityEngine.Screen::SetResolution(System.Int32,System.Int32,UnityEngine.FullScreenMode,System.Int32)".as_ptr()
+    let SetResolution_Injected_addr = il2cpp_resolve_icall(
+        c"UnityEngine.Screen::SetResolution_Injected(System.Int32,System.Int32,\
+        UnityEngine.FullScreenMode,UnityEngine.RefreshRate)".as_ptr()
     );
 
-    new_hook!(SetResolution_addr, SetResolution);
+    new_hook!(SetResolution_Injected_addr, SetResolution_Injected);
 
     unsafe {
         GET_CURRENTRESOLUTION_ADDR = get_method_addr(Screen, c"get_currentResolution", 0);
