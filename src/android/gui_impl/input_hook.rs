@@ -94,19 +94,6 @@ extern "C" fn nativeInjectEvent(mut env: JNIEnv, obj: JObject, input_event: JObj
             }
         }
 
-        /* TODO
-        let keyboard_shown = KEYBOARD_SHOWN.load(Ordering::Relaxed);
-        let wants_keyboard_input = gui.context.wants_keyboard_input();
-        if wants_keyboard_input && !keyboard_shown {
-            show_soft_input(&mut env, true);
-            KEYBOARD_SHOWN.store(true, Ordering::Relaxed);
-        }
-        else if !wants_keyboard_input && keyboard_shown {
-            show_soft_input(&mut env, false);
-            KEYBOARD_SHOWN.store(false, Ordering::Relaxed);
-        }
-        */
-
         return JNI_TRUE;
     }
     else if env.is_instance_of(&input_event, &key_event_class).unwrap() {
@@ -126,7 +113,15 @@ extern "C" fn nativeInjectEvent(mut env: JNIEnv, obj: JObject, input_event: JObj
                 VOLUME_DOWN_PRESSED.store(pressed, Ordering::Relaxed);
                 &VOLUME_UP_PRESSED
             }
-            _ => return get_orig_fn!(nativeInjectEvent, NativeInjectEventFn)(env, obj, input_event)
+            _ => {
+                if pressed && key_code == Hachimi::instance().config.load().android.menu_open_key {
+                    let Some(mut gui) = Gui::instance().map(|m| m.lock().unwrap()) else {
+                        return get_orig_fn!(nativeInjectEvent, NativeInjectEventFn)(env, obj, input_event);
+                    };
+                    gui.toggle_menu();
+                }
+                return get_orig_fn!(nativeInjectEvent, NativeInjectEventFn)(env, obj, input_event);
+            }
         };
 
         if pressed && other_atomic.load(Ordering::Relaxed) {
@@ -179,53 +174,6 @@ fn get_view(mut env: JNIEnv) -> JObject<'_> {
         .l()
         .unwrap()
 }
-
-/* TODO: incomplete code + currently not functional, view seems to be in touch mode
-fn show_soft_input(env: &mut JNIEnv, show: bool) {
-    let ctx_class = env.find_class("android/content/Context").unwrap();
-    let ime = env
-        .get_static_field(ctx_class, "INPUT_METHOD_SERVICE", "Ljava/lang/String;")
-        .unwrap();
-
-    let ime_manager = env
-        .call_method(
-            &activity,
-            "getSystemService",
-            "(Ljava/lang/String;)Ljava/lang/Object;",
-            &[ime.borrow()],
-        )
-        .unwrap()
-        .l()
-        .unwrap();
-
-    if show {
-        debug!("showing");
-        let result = env.call_method(
-            ime_manager,
-            "showSoftInput",
-            "(Landroid/view/View;I)Z",
-            &[(&view).into(), 2i32.into()],
-        )
-        .unwrap()
-        .z()
-        .unwrap();
-        debug!("res: {}", result);
-    }
-    else {
-        debug!("hiding");
-        let window_token = env
-            .call_method(view, "getWindowToken", "()Landroid/os/IBinder;", &[])
-            .unwrap();
-        env.call_method(
-            ime_manager,
-            "hideSoftInputFromWindow",
-            "(Landroid/os/IBinder;I)Z",
-            &[window_token.borrow(), 0i32.into()],
-        )
-        .unwrap();
-    }
-}
-*/
 
 pub static mut NATIVE_INJECT_EVENT_ADDR: usize = 0;
 
