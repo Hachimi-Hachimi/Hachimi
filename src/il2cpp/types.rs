@@ -629,7 +629,7 @@ pub struct Il2CppType__bindgen_ty_1 {
     pub __genericParameterIndex: __BindgenUnionField<GenericParameterIndex>,
     pub genericParameterHandle: __BindgenUnionField<Il2CppMetadataGenericParameterHandle>,
     pub generic_class: __BindgenUnionField<*mut Il2CppGenericClass>,
-    pub bindgen_union_field: u64,
+    pub bindgen_union_field: usize,
 }
 impl Il2CppType {
     #[inline]
@@ -1319,7 +1319,7 @@ pub struct Il2CppRGCTXData {
     pub method: __BindgenUnionField<*const MethodInfo>,
     pub type_: __BindgenUnionField<*const Il2CppType>,
     pub klass: __BindgenUnionField<*mut Il2CppClass>,
-    pub bindgen_union_field: u64,
+    pub bindgen_union_field: usize,
 }
 #[repr(C)]
 pub struct MethodInfo {
@@ -1345,13 +1345,13 @@ pub struct MethodInfo {
 pub struct MethodInfo__bindgen_ty_1 {
     pub rgctx_data: __BindgenUnionField<*const Il2CppRGCTXData>,
     pub methodMetadataHandle: __BindgenUnionField<Il2CppMetadataMethodDefinitionHandle>,
-    pub bindgen_union_field: u64,
+    pub bindgen_union_field: usize,
 }
 #[repr(C)]
 pub struct MethodInfo__bindgen_ty_2 {
     pub genericMethod: __BindgenUnionField<*const Il2CppGenericMethod>,
     pub genericContainerHandle: __BindgenUnionField<Il2CppMetadataGenericContainerHandle>,
-    pub bindgen_union_field: u64,
+    pub bindgen_union_field: usize,
 }
 impl MethodInfo {
     #[inline]
@@ -1989,7 +1989,7 @@ pub struct Il2CppObject {
 pub struct Il2CppObject__bindgen_ty_1 {
     pub klass: __BindgenUnionField<*mut Il2CppClass>,
     pub vtable: __BindgenUnionField<*mut Il2CppVTable>,
-    pub bindgen_union_field: u64,
+    pub bindgen_union_field: usize,
 }
 pub type il2cpp_array_lower_bound_t = i32;
 #[repr(C)]
