@@ -23,10 +23,15 @@ extern "C" fn loader_dlopen(filename: *const c_char, flags: c_int, caller_addr: 
     };
 
     let handle = orig_fn(filename, flags, caller_addr);
+    if filename.is_null() {
+        return handle;
+    }
+
     let filename_str = unsafe { CStr::from_ptr(filename).to_str().unwrap() };
     if hachimi.on_dlopen(filename_str, handle as usize) {
         hachimi.interceptor.unhook(loader_dlopen as usize);
     }
+
     handle
 }
 
@@ -38,10 +43,15 @@ extern "C" fn dlopen_v30(filename: *const c_char, flags: c_int, extinfo: *const 
     };
 
     let handle = orig_fn(filename, flags, extinfo, caller_addr);
+    if filename.is_null() {
+        return handle;
+    }
+
     let filename_str = unsafe { CStr::from_ptr(filename).to_str().unwrap() };
     if hachimi.on_dlopen(filename_str, handle as usize) {
         hachimi.interceptor.unhook(dlopen_v30 as usize);
     }
+
     handle
 }
 
