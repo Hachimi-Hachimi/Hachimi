@@ -6,6 +6,8 @@ TMP_BASE_APK=/tmp/hachimi-base.apk
 TMP_CONFIG_APK=/tmp/hachimi-config.apk
 APK_ARM64_LIB_DIR="$APK_EXTRACT_DIR/lib/arm64-v8a"
 APK_ARM_LIB_DIR="$APK_EXTRACT_DIR/lib/armeabi-v7a"
+APK_X86_LIB_DIR="$APK_EXTRACT_DIR/lib/x86"
+APK_X86_64_LIB_DIR="$APK_EXTRACT_DIR/lib/x86_64"
 
 if [ -z "$PACKAGE_NAME" ]; then
     PACKAGE_NAME="jp.co.cygames.umamusume"
@@ -61,6 +63,12 @@ if [ -d "$APK_ARM64_LIB_DIR" ]; then
 elif [ -d "$APK_ARM_LIB_DIR" ]; then
     BUILD_DIR=./build/armv7-linux-androideabi
     APK_LIB_DIR="$APK_ARM_LIB_DIR"
+elif [ -d "$APK_X86_LIB_DIR" ]; then
+    BUILD_DIR=./build/i686-linux-android
+    APK_LIB_DIR="$APK_X86_LIB_DIR"
+elif [ -d "$APK_X86_64_LIB_DIR" ]; then
+    BUILD_DIR=./build/x86_64-linux-android
+    APK_LIB_DIR="$APK_X86_64_LIB_DIR"
 else
     echo "-- Failed to detect config architecture!"
     exit 1
