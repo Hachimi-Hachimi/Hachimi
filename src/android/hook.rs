@@ -14,6 +14,26 @@ const LINKER_MODULE: &str = if cfg!(target_pointer_width = "64") {
     "linker"
 };
 
+type DlopenFn = extern "C" fn(filename: *const c_char, flags: c_int) -> *mut c_void;
+extern "C" fn dlopen(filename: *const c_char, flags: c_int) -> *mut c_void {
+    let hachimi = Hachimi::instance();
+    let orig_fn: DlopenFn = unsafe {
+        std::mem::transmute(hachimi.interceptor.get_trampoline_addr(dlopen as usize))
+    };
+
+    let handle = orig_fn(filename, flags);
+    if filename.is_null() {
+        return handle;
+    }
+
+    let filename_str = unsafe { CStr::from_ptr(filename).to_str().unwrap() };
+    if hachimi.on_dlopen(filename_str, handle as usize) {
+        hachimi.interceptor.unhook(loader_dlopen as usize);
+    }
+
+    handle
+}
+
 // android/platform/bionic/linker/dlfcn.cpp
 type LoaderDlopenFn = extern "C" fn(filename: *const c_char, flags: c_int, caller_addr: *const c_void) -> *mut c_void;
 extern "C" fn loader_dlopen(filename: *const c_char, flags: c_int, caller_addr: *const c_void) -> *mut c_void {
@@ -82,8 +102,13 @@ fn init_internal(env: *mut jni::sys::JNIEnv) -> Result<(), Error> {
 
     let hachimi = Hachimi::instance();
 
+    if std::fs::metadata("/vendor/waydroid.prop").ok().is_some_and(|m| m.is_file()) {
+        let dlopen_addr = libc::dlopen as usize;
+        info!("Hello Waydroid! Hooking dlopen: {}", dlopen_addr);
+        hachimi.interceptor.hook(dlopen_addr, dlopen as usize)?;
+    }
     // A11
-    if api_level == 30 {
+    else if api_level == 30 {
         let dlopen_addr = Interceptor::find_symbol_by_name(LINKER_MODULE, "__dl__Z9do_dlopenPKciPK17android_dlextinfoPKv")?;
         info!("Hooking dlopen_v30: {}", dlopen_addr);
         hachimi.interceptor.hook(dlopen_addr, dlopen_v30 as usize)?;
