@@ -1,13 +1,7 @@
+use std::ops::Not;
+
 use crate::{core::{template, Hachimi}, il2cpp::{ext::{Il2CppStringExt, StringExt}, symbols::get_method_addr, types::*}};
 
-/**
- * UnityEngine.TextRenderingModule.dll - UnityEngine::TextGenerator::PopulateWithErrors
- *
- * A variant of TextGenerator::Populate that the game exclusively uses to render text.
- *
- * DEV NOTE: Due to the lack of usage context, it should be considered a fallback for when there are
- * strings that can't be modified directly using another hook.
- */
 type PopulateWithErrorsFn = extern "C" fn(
     this: *mut Il2CppObject, str: *mut Il2CppString,
     settings: *mut TextGenerationSettings_t, context: *mut Il2CppObject
@@ -17,16 +11,16 @@ extern "C" fn PopulateWithErrors(
     settings: *mut TextGenerationSettings_t, context: *mut Il2CppObject
 ) -> bool {
     let orig_fn = get_orig_fn!(PopulateWithErrors, PopulateWithErrorsFn);
-    let hashed_dict = &Hachimi::instance().localized_data.load().hashed_dict;
-    if hashed_dict.is_empty() {
-        return orig_fn(this, str_, settings, context);
-    }
+    let localized_data = &Hachimi::instance().localized_data.load();
+    let hashed_dict = &localized_data.hashed_dict;
 
-    let hash = unsafe { (*str_).hash() };
-    if let Some(text) = hashed_dict.get(&hash) {
+    if let Some(text) = hashed_dict.is_empty().not()
+        .then(|| hashed_dict.get(&unsafe { (*str_).hash() }))
+        .flatten()
+    {
         orig_fn(this, text.to_il2cpp_string(), settings, context)
     }
-    else {
+    else if !localized_data.localize_dict.is_empty() || !localized_data.text_data_dict.is_empty() {
         let str = unsafe { (*str_).as_utf16str() };
 
         // Only try to evaluate a template if it looks like one
@@ -42,6 +36,9 @@ extern "C" fn PopulateWithErrors(
             str_
         };
         orig_fn(this, new_str, settings, context)
+    }
+    else {
+        orig_fn(this, str_, settings, context)
     }
 }
 
