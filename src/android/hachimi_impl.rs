@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::core::Hachimi;
 
+use super::gui_impl::keymap;
+
 pub fn is_il2cpp_lib(filename: &str) -> bool {
     filename.ends_with("libil2cpp.so")
 }
@@ -20,5 +22,5 @@ pub struct Config {
 }
 
 impl Config {
-    fn default_menu_open_key() -> i32 { 22 /* KEYCODE_DPAD_RIGHT */ }
+    fn default_menu_open_key() -> i32 { keymap::KEYCODE_DPAD_RIGHT }
 }
