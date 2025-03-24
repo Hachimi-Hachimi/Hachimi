@@ -4,11 +4,11 @@ use crate::{core::{template, Hachimi}, il2cpp::{ext::{Il2CppStringExt, StringExt
 
 type PopulateWithErrorsFn = extern "C" fn(
     this: *mut Il2CppObject, str: *mut Il2CppString,
-    settings: *mut TextGenerationSettings_t, context: *mut Il2CppObject
+    settings: TextGenerationSettings_t, context: *mut Il2CppObject
 ) -> bool;
 extern "C" fn PopulateWithErrors(
     this: *mut Il2CppObject, str_: *mut Il2CppString,
-    settings: *mut TextGenerationSettings_t, context: *mut Il2CppObject
+    mut settings: TextGenerationSettings_t, context: *mut Il2CppObject
 ) -> bool {
     let orig_fn = get_orig_fn!(PopulateWithErrors, PopulateWithErrorsFn);
     let localized_data = &Hachimi::instance().localized_data.load();
@@ -26,7 +26,7 @@ extern "C" fn PopulateWithErrors(
         // Only try to evaluate a template if it looks like one
         let new_str = if str.as_slice().contains(&36) { // 36 = dollar sign ($)
             let mut context = TemplateContext {
-                settings: unsafe { settings.as_mut().unwrap() }
+                settings: &mut settings
             };
             Hachimi::instance().template_parser
                 .eval_with_context(&str.to_string(), &mut context)
