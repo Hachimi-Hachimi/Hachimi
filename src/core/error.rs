@@ -90,3 +90,6 @@ impl From<zip::result::ZipError> for Error {
         Error::ZipError(e)
     }
 }
+
+impl std::error::Error for Error {
+}
