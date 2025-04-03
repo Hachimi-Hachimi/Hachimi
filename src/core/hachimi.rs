@@ -1,4 +1,4 @@
-use std::{fs, path::{Path, PathBuf}, process, sync::{atomic::{self, AtomicBool, AtomicI32}, Arc}};
+use std::{fs, path::{Path, PathBuf}, process, sync::{atomic::{self, AtomicBool, AtomicI32}, Arc, Mutex, MutexGuard}};
 use arc_swap::ArcSwap;
 use fnv::FnvHashMap;
 use once_cell::sync::OnceCell;
@@ -10,7 +10,7 @@ use super::{game::Game, ipc, plurals, template, template_filters, tl_repo, utils
 
 pub struct Hachimi {
     // Hooking stuff
-    pub interceptor: Interceptor,
+    pub interceptor: Mutex<Interceptor>,
     pub hooking_finished: AtomicBool,
 
     // Localized data
@@ -73,7 +73,7 @@ impl Hachimi {
         let config = Self::load_config(&game.data_dir)?;
 
         Ok(Hachimi {
-            interceptor: Interceptor::default(),
+            interceptor: Mutex::default(),
             hooking_finished: AtomicBool::new(false),
 
             // Don't load localized data initially since it might fail, logging the error is not possible here
@@ -96,6 +96,10 @@ impl Hachimi {
 
             config: ArcSwap::new(Arc::new(config))
         })
+    }
+
+    pub fn interceptor(&self) -> MutexGuard<'_, Interceptor> {
+        self.interceptor.lock().unwrap()
     }
 
     fn load_config(data_dir: &Path) -> Result<Config, Error> {

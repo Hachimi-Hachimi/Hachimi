@@ -15,7 +15,8 @@ pub enum Error {
     OutOfDiskSpace,
     FileHashMismatch(String),
     ZipError(zip::result::ZipError),
-    RuntimeError(String)
+    RuntimeError(String),
+    AlreadyHooked
 }
 
 impl fmt::Display for Error {
@@ -62,6 +63,9 @@ impl fmt::Display for Error {
             },
             Error::RuntimeError(msg) => {
                 write!(f, "{}", msg)
+            },
+            Error::AlreadyHooked => {
+                write!(f, "Attempted to hook a method that's already hooked")
             }
         }
     }

@@ -575,6 +575,7 @@ dependencies = [
  "image",
  "jni",
  "libc",
+ "libffi",
  "log",
  "minhook",
  "mlua",
@@ -726,6 +727,23 @@ name = "libc"
 version = "0.2.153"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9c198f91728a82281a64e1f4f9eeb25d82cb32a5de251c6bd1b5154d63a8e7bd"
+
+[[package]]
+name = "libffi"
+version = "3.2.0"
+source = "git+https://github.com/LeadRDRK/libffi-rs.git?rev=5c732a3844b7ed65692b65b224e7ed9ab519d3b7#5c732a3844b7ed65692b65b224e7ed9ab519d3b7"
+dependencies = [
+ "libc",
+ "libffi-sys",
+]
+
+[[package]]
+name = "libffi-sys"
+version = "2.3.0"
+source = "git+https://github.com/LeadRDRK/libffi-rs.git?rev=5c732a3844b7ed65692b65b224e7ed9ab519d3b7#5c732a3844b7ed65692b65b224e7ed9ab519d3b7"
+dependencies = [
+ "cc",
+]
 
 [[package]]
 name = "linux-raw-sys"
