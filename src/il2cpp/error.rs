@@ -1,6 +1,6 @@
 use std::{fmt::Display, sync::Arc};
 
-use super::wrapper::Exception;
+use super::{types::Il2CppTypeEnum, wrapper::Exception};
 
 #[derive(Debug)]
 pub enum Error {
@@ -14,7 +14,9 @@ pub enum Error {
     },
     Exception(Exception),
     InvokeUnboundInstanceMethod,
-    AccessUnboundInstanceField
+    AccessUnboundInstanceField,
+    UnknownType(Il2CppTypeEnum),
+    CoreError(crate::core::Error)
 }
 
 impl Error {
@@ -39,7 +41,13 @@ impl Display for Error {
                 f.write_str("Attempted to invoke an instance method without binding an instance"),
 
             Error::AccessUnboundInstanceField =>
-                f.write_str("Attempted to access an instance field without binding an instance")
+                f.write_str("Attempted to access an instance field without binding an instance"),
+
+            Error::UnknownType(type_enum) =>
+                write!(f, "Unknown type: {type_enum}"),
+
+            Error::CoreError(e) =>
+                e.fmt(f)
         }
     }
 }
@@ -50,5 +58,11 @@ impl std::error::Error for Error {
 impl From<Error> for mlua::Error {
     fn from(value: Error) -> Self {
         mlua::Error::ExternalError(Arc::new(value))
+    }
+}
+
+impl From<crate::core::Error> for Error {
+    fn from(value: crate::core::Error) -> Self {
+        Error::CoreError(value)
     }
 }

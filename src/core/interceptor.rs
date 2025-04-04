@@ -1,4 +1,4 @@
-use std::{collections::{hash_map, BTreeMap}, ops::Deref, os::raw::c_void, rc::Rc};
+use std::{any::Any, collections::{hash_map, BTreeMap}, ops::Deref, os::raw::c_void, sync::Arc};
 
 use fnv::FnvHashMap;
 use libffi::{middle::{Cif, Closure}, raw::{ffi_call, ffi_cif}};
@@ -24,11 +24,13 @@ pub struct HookHandle {
     pub orig_hook_addr: Option<usize> // Set when a normal hook is already done and an ffi hook takes over
 }
 
+pub type FfiUserData = Arc<dyn Any + Send + Sync>;
+
 struct FfiHookHandle {
     pub root_hook: usize,
     #[allow(dead_code)] // Kept around so the closure doesnt get deallocated
     pub closure: ClosureWrapper,
-    pub children: BTreeMap<FfiHookFn, usize> // hook -> userdata
+    pub children: BTreeMap<usize, (FfiHookFn, FfiUserData)> // (hook, userdata ptr) -> userdata
 }
 
 struct ClosureWrapper(Closure<'static>);
@@ -93,14 +95,16 @@ pub type FfiHookFn = fn(
     result: &mut c_void,
     args: *const *const c_void,
     next: &FfiNext,
-    userdata: usize
+    userdata: FfiUserData,
+    id: usize
 );
 
 pub enum FfiNext {
     Hook {
         f: FfiHookFn,
-        next: Rc<FfiNext>,
-        userdata: usize
+        next: Box<FfiNext>,
+        userdata: FfiUserData,
+        id: usize
     },
     Root(usize)
 }
@@ -112,7 +116,7 @@ impl FfiNext {
         args: *const *const c_void
     ) {
         match self {
-            FfiNext::Hook { f, next, userdata } => f(cif, result, args, &next, *userdata),
+            FfiNext::Hook { f, next, userdata, id } => f(cif, result, args, &next, userdata.clone(), *id),
             FfiNext::Root(addr) => unsafe { ffi_call(
                 cif as *const _ as *mut _,
                 Some(std::mem::transmute(*addr)),
@@ -170,7 +174,14 @@ impl Interceptor {
         }
     }
 
-    pub fn hook_ffi(&mut self, orig: impl Into<HookOrig>, cif: Cif, hook_fn: FfiHookFn, userdata: usize) -> Result<(), Error> {
+    /// Returns an id (determined by the userdata arc) to unhook it
+    pub fn hook_ffi<T: 'static + Send + Sync>(
+        &mut self,
+        orig: impl Into<HookOrig>,
+        cif: Cif,
+        hook_fn: FfiHookFn,
+        userdata: T
+    ) -> Result<usize, Error> {
         let orig = orig.into();
         let orig_addr = match orig {
             HookOrig::Function(addr) => addr,
@@ -181,7 +192,10 @@ impl Interceptor {
         match self.ffi_hooks.entry(orig_addr) {
             hash_map::Entry::Occupied(mut e) => {
                 let hook = e.get_mut();
-                hook.children.insert(hook_fn, userdata);
+                let userdata = Arc::new(userdata);
+                let id = hook.children.last_entry().map(|e| *e.key() + 1).unwrap_or(0);
+                hook.children.insert(id, (hook_fn, userdata));
+                Ok(id)
             },
 
             hash_map::Entry::Vacant(e) => {
@@ -213,11 +227,14 @@ impl Interceptor {
                         self.hooks_by_hook_addr.insert(new_hook.hook_addr, index);
                         */
 
+                        let userdata = Arc::new(userdata);
                         e.insert(FfiHookHandle {
                             root_hook: index,
                             closure,
-                            children: [(hook_fn, userdata)].into_iter().collect()
+                            children: [(0, (hook_fn, userdata as FfiUserData))].into_iter().collect()
                         });
+
+                        Ok(0)
                     },
 
                     hash_map::Entry::Vacant(e2) => {
@@ -227,16 +244,18 @@ impl Interceptor {
                         e2.insert(index); // Used to prevent multiple hooks to the same orig function
                         // No need to insert it into the hook addr map, we don't use it
 
+                        let userdata = Arc::new(userdata);
                         e.insert(FfiHookHandle {
                             root_hook: index,
                             closure,
-                            children: [(hook_fn, userdata)].into_iter().collect()
+                            children: [(0, (hook_fn, userdata as FfiUserData))].into_iter().collect()
                         });
+
+                        Ok(0)
                     }
                 }
             }
         }
-        Ok(())
     }
 
     fn create_ffi_root_hook(orig: &HookOrig, cif: Cif) -> Result<(HookHandle, ClosureWrapper), Error> {
@@ -265,22 +284,23 @@ impl Interceptor {
 
         // Get hook handle
         let hachimi = Hachimi::instance();
-        let mut next: Rc<FfiNext>;
+        let mut next: Box<FfiNext>;
         {
             let interceptor = hachimi.interceptor();
             let ffi_hook = interceptor.ffi_hooks.get(&orig_addr).unwrap();
             let hook = &interceptor.hooks[ffi_hook.root_hook];
 
             // Prepare calls
-            next = Rc::new(FfiNext::Root(hook.orig_hook_addr.unwrap_or_else(|| hook.trampoline_addr)));
+            next = Box::new(FfiNext::Root(hook.orig_hook_addr.unwrap_or_else(|| hook.trampoline_addr)));
 
             // Yup, that's a Linked List:tm:
             // Last hook will be called first, and then it's up to its mercy to call the other ones
-            for (child_hook, userdata) in ffi_hook.children.iter() {
-                next = Rc::new(FfiNext::Hook {
+            for (id, (child_hook, userdata)) in ffi_hook.children.iter() {
+                next = Box::new(FfiNext::Hook {
                     f: *child_hook,
                     next,
-                    userdata: *userdata
+                    userdata: userdata.clone(),
+                    id: *id
                 });
             }
         } // interceptor drops here
@@ -359,12 +379,12 @@ impl Interceptor {
         }
     }
 
-    pub fn unhook_ffi(&mut self, orig: impl Into<HookOrig>, hook_fn: FfiHookFn) -> bool {
+    pub fn unhook_ffi(&mut self, orig: impl Into<HookOrig>, id: usize) -> Option<(FfiHookFn, Arc<dyn Any + Send + Sync>)> {
         let orig_addr = orig.into().addr();
         match self.ffi_hooks.entry(orig_addr) {
             hash_map::Entry::Occupied(mut e) => {
                 let hook = e.get_mut();
-                let removed = hook.children.remove(&hook_fn).is_some();
+                let removed = hook.children.remove(&id);
                 if hook.children.is_empty() {
                     let index = hook.root_hook;
                     let root_hook = &self.hooks[index];
@@ -382,7 +402,7 @@ impl Interceptor {
                 }
                 removed
             },
-            hash_map::Entry::Vacant(_) => false
+            hash_map::Entry::Vacant(_) => None
         }
     }
 

@@ -8,8 +8,8 @@ use crate::il2cpp::{api::{il2cpp_field_get_flags, il2cpp_field_get_value, il2cpp
 use super::{Array, Class, GetRaw, NativePointer, Object, Pointer, Reference, Type, Value, ValueType};
 
 pub trait Field: GetRaw<*mut FieldInfo> {
-    unsafe fn name(&self) -> &'static CStr {
-        CStr::from_ptr((*self.raw()).name)
+    fn name(&self) -> &'static CStr {
+        unsafe { CStr::from_ptr((*self.raw()).name) }
     }
 
     fn type_(&self) -> Type {

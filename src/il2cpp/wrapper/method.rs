@@ -1,10 +1,11 @@
-use std::os::raw::c_void;
+use std::{os::raw::c_void, sync::{Arc, Weak}};
 
-use mlua::{MetaMethod, UserData, UserDataFields, UserDataMethods};
+use libffi::{middle::{Cif, Type as FfiType}, raw::ffi_cif};
+use mlua::{AnyUserData, Lua, MetaMethod, MultiValue, UserData, UserDataFields, UserDataMethods};
 
-use crate::il2cpp::{api::{il2cpp_method_is_generic, il2cpp_method_is_inflated, il2cpp_method_is_instance, il2cpp_runtime_invoke}, types::*, Error};
+use crate::{core::{interceptor::{FfiHookFn, FfiNext, FfiUserData}, Hachimi}, il2cpp::{api::{il2cpp_method_is_generic, il2cpp_method_is_inflated, il2cpp_method_is_instance, il2cpp_runtime_invoke}, types::*, Error}};
 
-use super::{Array, Exception, Field, GetRaw, NativePointer, Object, Pointer, Reference, Type, Value, ValueType};
+use super::{value::InvokerParam, Class, Exception, GetRaw, NativePointer, Object, Type, Value};
 
 pub trait Method: GetRaw<*const MethodInfo> {
     fn raw_object(&self) -> *mut c_void;
@@ -15,6 +16,10 @@ pub trait Method: GetRaw<*const MethodInfo> {
 
     fn return_type(&self) -> Type {
         unsafe { Type::new_unchecked((*self.raw()).return_type) }
+    }
+
+    fn class(&self) -> Class {
+        unsafe { Class::new_unchecked((*self.raw()).klass) }
     }
 
     fn invoke(&self, args: &[Value]) -> Result<Value, Error> {
@@ -54,6 +59,51 @@ pub trait Method: GetRaw<*const MethodInfo> {
         Ok(unsafe { Value::from_invoker_return(res, self.return_type()) })
     }
 
+    fn hook(&self, hook_addr: usize) -> Result<usize, Error> {
+        Ok(Hachimi::instance().interceptor().hook(self.method_pointer(), hook_addr)?)
+    }
+
+    fn hook_ffi<T: 'static + Send + Sync>(&self, hook_fn: FfiHookFn, userdata: T) -> Result<usize, Error> {
+        Ok(Hachimi::instance().interceptor().hook_ffi(self.method_pointer(), self.cif()?, hook_fn, userdata)?)
+    }
+
+    fn cif(&self) -> Result<Cif, Error> {
+        let raw_params = self.parameters();
+        let mut params: Vec<FfiType>;
+        if self.is_static() {
+            params = Vec::with_capacity(raw_params.len());
+        }
+        else {
+            // extra "this" parameter
+            params = Vec::with_capacity(raw_params.len() + 1);
+            params.push(FfiType::pointer());
+        }
+        let conv_iter = raw_params
+            .iter()
+            .map(|p|
+                p.to_ffi_type()
+                    .ok_or_else(||
+                        Error::UnknownType(p.type_enum())
+                    )
+            );
+        for res in conv_iter {
+            params.push(res?);
+        }
+
+        Ok(Cif::new(
+            params,
+            self.return_type()
+                .to_ffi_type()
+                .ok_or_else(||
+                    Error::UnknownType(self.return_type().type_enum())
+                )?
+        ))
+    }
+
+    fn method_pointer(&self) -> usize {
+        unsafe { (*self.raw()).methodPointer }
+    }
+
     fn is_static(&self) -> bool {
         !il2cpp_method_is_instance(self.raw())
     }
@@ -68,7 +118,11 @@ pub trait Method: GetRaw<*const MethodInfo> {
 }
 
 trait MethodUserData: Method {
-    fn lua_invoke(&self, args: mlua::MultiValue) -> Result<Value, mlua::Error> {
+    fn lua_invoke(&self, args: MultiValue) -> mlua::Result<Value> {
+        Ok(self.invoke(&self.lua_args_to_values(args)?)?)
+    }
+
+    fn lua_args_to_values(&self, args: MultiValue) -> mlua::Result<Vec<Value>> {
         let params = self.parameters();
         if params.len() != args.len() {
             Err(Error::InvalidArgumentCount {
@@ -77,212 +131,229 @@ trait MethodUserData: Method {
             })?;
         }
 
-        fn arg_try_into<T, U: TryInto<T>>(value: U, n: usize) -> Result<T, mlua::Error>
-        where
-            U::Error: std::string::ToString
-        {
-            Ok(value.try_into().map_err(|e| Error::invalid_argument(n as _, e.to_string()))?)
-        }
-
-        fn invalid_arg_type_error(arg: &mlua::Value, n: usize) -> Error {
-            Error::invalid_argument(n as _, format!("unexpected type: {}", arg.type_name()))
-        }
-
         #[allow(non_upper_case_globals)]
-        let args = params.iter()
-            .zip(args)
+        Ok(params.iter()
+            .zip(args.into_iter())
             .enumerate()
             .map(|(n, (type_, arg))| {
-                // All value types are allowed to be null
-                if arg.is_nil() {
-                    return Ok(Value::NULL);
-                }
-                match type_.type_enum() {
-                    // expect null value but not nil (checked above)
-                    Il2CppTypeEnum_IL2CPP_TYPE_VOID => Err(invalid_arg_type_error(&arg, n))?,
-                    Il2CppTypeEnum_IL2CPP_TYPE_BOOLEAN => {
-                        if let mlua::Value::Boolean(b) = arg {
-                            Ok(Value::Boolean(b))
-                        } else {
-                            Err(invalid_arg_type_error(&arg, n))?
-                        }
-                    }
-                    Il2CppTypeEnum_IL2CPP_TYPE_CHAR => {
-                        if let mlua::Value::Integer(i) = arg {
-                            Ok(Value::Char(arg_try_into(i, n)?))
-                        } else {
-                            Err(invalid_arg_type_error(&arg, n))?
-                        }
-                    }
-                    Il2CppTypeEnum_IL2CPP_TYPE_I1 => {
-                        if let mlua::Value::Integer(i) = arg {
-                            Ok(Value::I1(arg_try_into(i, n)?))
-                        } else {
-                            Err(invalid_arg_type_error(&arg, n))?
-                        }
-                    }
-                    Il2CppTypeEnum_IL2CPP_TYPE_U1 => {
-                        if let mlua::Value::Integer(i) = arg {
-                            Ok(Value::U1(arg_try_into(i, n)?))
-                        } else {
-                            Err(invalid_arg_type_error(&arg, n))?
-                        }
-                    }
-                    Il2CppTypeEnum_IL2CPP_TYPE_I2 => {
-                        if let mlua::Value::Integer(i) = arg {
-                            Ok(Value::I2(arg_try_into(i, n)?))
-                        } else {
-                            Err(invalid_arg_type_error(&arg, n))?
-                        }
-                    }
-                    Il2CppTypeEnum_IL2CPP_TYPE_U2 => {
-                        if let mlua::Value::Integer(i) = arg {
-                            Ok(Value::U2(arg_try_into(i, n)?))
-                        } else {
-                            Err(invalid_arg_type_error(&arg, n))?
-                        }
-                    }
-                    Il2CppTypeEnum_IL2CPP_TYPE_I4 => {
-                        if let mlua::Value::Integer(i) = arg {
-                            Ok(Value::I4(arg_try_into(i, n)?))
-                        } else {
-                            Err(invalid_arg_type_error(&arg, n))?
-                        }
-                    }
-                    Il2CppTypeEnum_IL2CPP_TYPE_U4 => {
-                        if let mlua::Value::Integer(i) = arg {
-                            Ok(Value::U4(arg_try_into(i, n)?))
-                        } else {
-                            Err(invalid_arg_type_error(&arg, n))?
-                        }
-                    }
-                    Il2CppTypeEnum_IL2CPP_TYPE_I8 => {
-                        if let mlua::Value::Integer(i) = arg {
-                            Ok(Value::I8(arg_try_into(i, n)?))
-                        } else {
-                            Err(invalid_arg_type_error(&arg, n))?
-                        }
-                    }
-                    Il2CppTypeEnum_IL2CPP_TYPE_U8 => {
-                        if let mlua::Value::Integer(i) = arg {
-                            Ok(Value::U8(arg_try_into(i, n)?))
-                        } else {
-                            Err(invalid_arg_type_error(&arg, n))?
-                        }
-                    }
-                    Il2CppTypeEnum_IL2CPP_TYPE_R4 => {
-                        if let mlua::Value::Number(v) = arg {
-                            Ok(Value::R4(v as _))
-                        } else {
-                            Err(invalid_arg_type_error(&arg, n))?
-                        }
-                    }
-                    Il2CppTypeEnum_IL2CPP_TYPE_R8 => {
-                        if let mlua::Value::Number(v) = arg {
-                            Ok(Value::R8(v))
-                        } else {
-                            Err(invalid_arg_type_error(&arg, n))?
-                        }
-                    }
-                    Il2CppTypeEnum_IL2CPP_TYPE_STRING => {
-                        if let mlua::Value::UserData(ud) = arg {
-                            Ok(Value::String(*ud.borrow::<super::String>()?))
-                        } else {
-                            Err(invalid_arg_type_error(&arg, n))?
-                        }
-                    }
-                    Il2CppTypeEnum_IL2CPP_TYPE_PTR | Il2CppTypeEnum_IL2CPP_TYPE_FNPTR => {
-                        if let mlua::Value::UserData(ud) = arg {
-                            Ok(Value::Pointer(*ud.borrow::<Pointer>()?))
-                        } else {
-                            Err(invalid_arg_type_error(&arg, n))?
-                        }
-                    }
-                    Il2CppTypeEnum_IL2CPP_TYPE_BYREF => {
-                        if let mlua::Value::UserData(ud) = arg {
-                            Ok(Value::Reference(*ud.borrow::<Reference>()?))
-                        } else {
-                            Err(invalid_arg_type_error(&arg, n))?
-                        }
-                    }
-                    Il2CppTypeEnum_IL2CPP_TYPE_VALUETYPE => {
-                        match arg {
-                            mlua::Value::UserData(ud) => Ok(Value::ValueType(ud.borrow::<ValueType>()?.clone())),
-                            // Allow passing enum values as integers
-                            mlua::Value::Integer(i) => {
-                                let class = type_.class();
-                                if class.is_enum() {
-                                    if let Some(field) = class.field(c"value__") {
-                                        match field.type_().type_enum() {
-                                            Il2CppTypeEnum_IL2CPP_TYPE_I1 => return Ok(Value::I1(arg_try_into(i, n)?)),
-                                            Il2CppTypeEnum_IL2CPP_TYPE_U1 => return Ok(Value::U1(arg_try_into(i, n)?)),
-                                            Il2CppTypeEnum_IL2CPP_TYPE_I2 => return Ok(Value::I2(arg_try_into(i, n)?)),
-                                            Il2CppTypeEnum_IL2CPP_TYPE_U2 => return Ok(Value::U2(arg_try_into(i, n)?)),
-                                            Il2CppTypeEnum_IL2CPP_TYPE_I4 => return Ok(Value::I4(arg_try_into(i, n)?)),
-                                            Il2CppTypeEnum_IL2CPP_TYPE_U4 => return Ok(Value::U4(arg_try_into(i, n)?)),
-                                            Il2CppTypeEnum_IL2CPP_TYPE_I8 => return Ok(Value::I8(arg_try_into(i, n)?)),
-                                            Il2CppTypeEnum_IL2CPP_TYPE_U8 => return Ok(Value::U8(arg_try_into(i, n)?)),
-                                            Il2CppTypeEnum_IL2CPP_TYPE_CHAR => return Ok(Value::Char(arg_try_into(i, n)?)),
-                                            _ => ()
-                                        }
-                                    }
-                                }
-                                Err(invalid_arg_type_error(&arg, n))?
-                            }
-                            _ => Err(invalid_arg_type_error(&arg, n))?
-                        }
-                    }
-                    Il2CppTypeEnum_IL2CPP_TYPE_CLASS => {
-                        if let mlua::Value::UserData(ud) = arg {
-                            Ok(Value::Class(*ud.borrow::<Object>()?))
-                        } else {
-                            Err(invalid_arg_type_error(&arg, n))?
-                        }
-                    }
-                    Il2CppTypeEnum_IL2CPP_TYPE_ARRAY => {
-                        if let mlua::Value::UserData(ud) = arg {
-                            Ok(Value::Array(*ud.borrow::<Array>()?))
-                        } else {
-                            Err(invalid_arg_type_error(&arg, n))?
-                        }
-                    }
-                    Il2CppTypeEnum_IL2CPP_TYPE_GENERICINST => {
-                        if let mlua::Value::UserData(ud) = arg {
-                            Ok(Value::GenericInstance(*ud.borrow::<Object>()?))
-                        } else {
-                            Err(invalid_arg_type_error(&arg, n))?
-                        }
-                    }
-                    Il2CppTypeEnum_IL2CPP_TYPE_OBJECT => {
-                        if let mlua::Value::UserData(ud) = arg {
-                            Ok(Value::Object(*ud.borrow::<Object>()?))
-                        } else {
-                            Err(invalid_arg_type_error(&arg, n))?
-                        }
-                    }
-                    Il2CppTypeEnum_IL2CPP_TYPE_SZARRAY => {
-                        if let mlua::Value::UserData(ud) = arg {
-                            Ok(Value::SzArray(*ud.borrow::<Array>()?))
-                        } else {
-                            Err(invalid_arg_type_error(&arg, n))?
-                        }
-                    }
-                    _ => Err(invalid_arg_type_error(&arg, n))?,
-                }
+                Ok(Value::from_lua(arg, *type_).ok_or_else(|| Error::invalid_argument(n as _, None))?)
             })
-            .collect::<Result<Vec<Value>, mlua::Error>>()?;
-
-        Ok(self.invoke(&args)?)
+            .collect::<Result<Vec<Value>, mlua::Error>>()?
+        )
     }
 
     fn add_method_methods<M: UserDataMethods<Self>>(methods: &mut M) where Self: Sized {
         methods.add_method("invoke", |_, this, args| this.lua_invoke(args));
         methods.add_meta_method(MetaMethod::Call, |_, this, args| this.lua_invoke(args));
+
+        methods.add_method("hook", |lua, this, callback: mlua::Function| {
+            // TODO: return a hook handle that can be used to unhook
+            this.hook_ffi(Self::ffi_hook_callback, LuaHookUserData {
+                method: UnboundMethod(this.raw()),
+                lua: lua.app_data_ref::<Weak<Lua>>()
+                    .ok_or_else(|| mlua::Error::external("Failed to obtain weak reference to Lua"))?
+                    .clone(),
+                callback,
+                orig_addr: this.method_pointer()
+            })?;
+            Ok(())
+        });
+    }
+
+    fn ffi_hook_callback(
+        cif: &ffi_cif,
+        result: &mut c_void,
+        args: *const *const c_void,
+        next: &FfiNext,
+        userdata: FfiUserData,
+        id: usize
+    ) {
+        match Self::ffi_hook_callback_internal(cif, result, args, next, userdata, id) {
+            Err(e) => error!("{e}"),
+            _ => ()
+        }
+    }
+
+    fn ffi_hook_callback_internal(
+        cif: &ffi_cif,
+        result: &mut c_void,
+        args: *const *const c_void,
+        next: &FfiNext,
+        userdata: FfiUserData,
+        id: usize
+    ) -> mlua::Result<()> {
+        let hook_data: &LuaHookUserData = userdata.downcast_ref().unwrap();
+        let Some(lua) = hook_data.lua.upgrade() else {
+            Hachimi::instance().interceptor().unhook_ffi(hook_data.orig_addr, id);
+            next.call(cif, result, args);
+            return Ok(());
+        };
+
+        let next_wrapper_ud = lua.create_userdata(FfiNextWrapper {
+            method: hook_data.method,
+            cif,
+            result,
+            next,
+            called: false,
+            invalidated: false
+        }).inspect_err(|_|
+            next.call(cif, result, args)
+        )?;
+
+        fn do_call(
+            hook_data: &LuaHookUserData,
+            args: *const *const c_void,
+            lua: Arc<Lua>,
+            next_wrapper_ud: AnyUserData
+        ) -> mlua::Result<mlua::Value> {
+            let mut p = args;
+            let mut lua_args = mlua::MultiValue::new();
+            if !hook_data.method.is_static() {
+                // "this" parameter
+                lua_args.push_back(unsafe {
+                    lua.pack(Value::from_ffi_value(*args as _, hook_data.method.class().type_())?)?
+                });
+                unsafe { p = args.add(1) }
+            }
+
+            // actual parameters
+            let params_iter = hook_data.method.parameters()
+                .iter()
+                .enumerate();
+
+            for (i, type_) in params_iter {
+                let v = unsafe { Value::from_ffi_value(*p.add(i) as _, *type_)? };
+                lua_args.push_back(lua.pack(v)?);
+            }
+
+            // "next" method
+            lua_args.push_back(lua.pack(next_wrapper_ud)?);
+
+            hook_data.callback.call(lua_args)
+        }
+
+        let call_res = do_call(hook_data, args, lua.clone(), next_wrapper_ud.clone());
+        let mut next_wrapper = next_wrapper_ud.borrow_mut::<FfiNextWrapper>()?;
+        next_wrapper.invalidated = true;
+
+        let lua_ret_val = match call_res {
+            Ok(v) => v,
+            Err(e) => {
+                if !next_wrapper.called {
+                    warn!("Implicitly calling next function due to error in hook");
+                    next.call(cif, result, args);
+                }
+                return Err(e);
+            }
+        };
+        let ret_type = hook_data.method.return_type();
+        let ret_type_enum = ret_type.type_enum();
+
+        if let Some(ret_val) = Value::from_lua(lua_ret_val, ret_type) {
+            if ret_type_enum == Il2CppTypeEnum_IL2CPP_TYPE_VOID {
+                // Do nothing, we're just here for the type check
+                return Ok(());
+            }
+
+            if let Some(invoker_param) = unsafe { ret_val.to_invoker_param(ret_type) } {
+                let ptr = invoker_param.get();
+
+                #[allow(non_upper_case_globals)]
+                match ret_type_enum {
+                    // these types are passed by reference or a raw pointer value
+                    Il2CppTypeEnum_IL2CPP_TYPE_STRING |
+                    Il2CppTypeEnum_IL2CPP_TYPE_PTR |
+                    Il2CppTypeEnum_IL2CPP_TYPE_BYREF |
+                    Il2CppTypeEnum_IL2CPP_TYPE_CLASS |
+                    Il2CppTypeEnum_IL2CPP_TYPE_ARRAY |
+                    Il2CppTypeEnum_IL2CPP_TYPE_GENERICINST |
+                    Il2CppTypeEnum_IL2CPP_TYPE_FNPTR |
+                    Il2CppTypeEnum_IL2CPP_TYPE_OBJECT |
+                    Il2CppTypeEnum_IL2CPP_TYPE_SZARRAY => {
+                        unsafe { *(result as *mut _ as *mut *const _) = ptr; }
+                    },
+                    // everything else is passed by value
+                    _ => {
+                        let size = ret_type.class().instance_size();
+                        unsafe { std::ptr::copy_nonoverlapping(ptr, result, size.try_into().unwrap()); }
+                    }
+                }
+
+                return Ok(());
+            }
+        }
+
+        warn!("Unable to convert Lua return value");
+        if !next_wrapper.called {
+            warn!("Implicitly calling next function");
+            next.call(cif, result, args);
+        }
+
+        Ok(())
     }
 
     fn add_method_fields<F: UserDataFields<Self>>(_fields: &mut F) where Self: Sized {}
 }
 
+struct LuaHookUserData {
+    method: UnboundMethod,
+    lua: Weak<Lua>,
+    callback: mlua::Function,
+    orig_addr: usize
+}
+
+unsafe impl Send for LuaHookUserData {}
+unsafe impl Sync for LuaHookUserData {}
+
+struct LuaHookHandle {
+    orig_addr: usize,
+    id: usize
+}
+
+impl LuaHookHandle {
+    fn unhook(&self) -> bool {
+        Hachimi::instance().interceptor().unhook_ffi(self.orig_addr, self.id).is_some()
+    }
+}
+
+impl UserData for LuaHookHandle {
+    fn add_methods<M: UserDataMethods<Self>>(methods: &mut M) {
+        methods.add_method("unhook", |_, this, ()| Ok(this.unhook()));
+    }
+}
+
+struct FfiNextWrapper {
+    method: UnboundMethod,
+    cif: *const ffi_cif,
+    result: *mut c_void,
+    next: *const FfiNext,
+    called: bool,
+    invalidated: bool
+}
+
+impl UserData for FfiNextWrapper {
+    fn add_methods<M: UserDataMethods<Self>>(methods: &mut M) {
+        methods.add_meta_method_mut(MetaMethod::Call, |_, this, args: MultiValue| {
+            if this.invalidated {
+                return Err(mlua::Error::external("Attempted to call invalidated next method"));
+            }
+
+            let arg_values = this.method.lua_args_to_values(args)?;
+            let ffi_args: Vec<InvokerParam> = arg_values.iter()
+                .zip(this.method.parameters())
+                .enumerate()
+                .map(|(i, (v, type_))| unsafe {
+                    v.to_invoker_param(*type_)
+                        .ok_or(Error::invalid_argument(i as _, "incompatible value type".to_owned()))
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+
+            unsafe { (*this.next).call(&*this.cif, &mut *this.result, ffi_args.as_ptr() as _); }
+            this.called = true;
+            Ok(unsafe { Value::from_ffi_value(this.result, this.method.return_type())? })
+        });
+    }
+}
 
 wrapper_struct!(UnboundMethod, *const MethodInfo);
 

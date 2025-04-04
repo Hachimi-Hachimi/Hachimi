@@ -2,11 +2,11 @@ use std::{marker::PhantomData, os::raw::c_void};
 
 use mlua::IntoLua;
 
-use crate::il2cpp::{types::*, wrapper::GetRaw};
+use crate::il2cpp::{types::*, wrapper::GetRaw, Error};
 
-use super::{Array, Object, Pointer, Reference, Type, ValueType};
+use super::{Array, Field, Object, Pointer, Reference, Type, ValueType};
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub enum Value {
     Void,
     Boolean(bool),
@@ -21,6 +21,8 @@ pub enum Value {
     U8(u64),
     R4(f32),
     R8(f64),
+    I(isize),
+    U(usize),
     String(super::String),
     Pointer(Pointer),
     Reference(Reference),
@@ -33,24 +35,6 @@ pub enum Value {
 }
 
 impl Value {
-    /*
-    pub fn number(&self) -> Option<f64> {
-        Some(match self {
-            Self::I1(v) => *v as _,
-            Self::U1(v) => *v as _,
-            Self::I2(v) => *v as _,
-            Self::U2(v) => *v as _,
-            Self::I4(v) => *v as _,
-            Self::U4(v) => *v as _,
-            Self::I8(v) => *v as _,
-            Self::U8(v) => *v as _,
-            Self::R4(v) => *v as _,
-            Self::R8(v) => *v,
-            _ => return None
-        })
-    }
-    */
-
     pub const NULL: Value = Value::Void;
 
     pub fn is_void(&self) -> bool {
@@ -161,6 +145,20 @@ impl Value {
             Value::R8(v) => if type_enum == Il2CppTypeEnum_IL2CPP_TYPE_R8 {
                 return Some(from_ref(v) as _)
             },
+            Value::I(v) => match type_enum {
+                Il2CppTypeEnum_IL2CPP_TYPE_I => return Some(from_ref(v) as _),
+                Il2CppTypeEnum_IL2CPP_TYPE_VALUETYPE => if class.is_enum_with_type(Il2CppTypeEnum_IL2CPP_TYPE_I) {
+                    return Some(from_ref(v) as _)
+                },
+                _ => ()
+            },
+            Value::U(v) => match type_enum {
+                Il2CppTypeEnum_IL2CPP_TYPE_U => return Some(from_ref(v) as _),
+                Il2CppTypeEnum_IL2CPP_TYPE_VALUETYPE => if class.is_enum_with_type(Il2CppTypeEnum_IL2CPP_TYPE_U) {
+                    return Some(from_ref(v) as _)
+                },
+                _ => ()
+            },
             Value::String(string) => if type_enum == Il2CppTypeEnum_IL2CPP_TYPE_STRING {
                 return Some(string.raw() as _)
             },
@@ -194,6 +192,203 @@ impl Value {
     pub unsafe fn to_invoker_param(&self, type_: Type) -> Option<InvokerParam> {
         self.to_invoker_param_raw(type_).map(|ptr| InvokerParam::new(ptr, self))
     }
+
+    pub fn from_lua(value: mlua::Value, type_: Type) -> Option<Self> {
+        // All value types are allowed to be null
+        if value.is_nil() {
+            return Some(Value::NULL);
+        }
+        #[allow(non_upper_case_globals)]
+        match type_.type_enum() {
+            // expect null value but not nil (checked above)
+            Il2CppTypeEnum_IL2CPP_TYPE_VOID => (),
+            Il2CppTypeEnum_IL2CPP_TYPE_BOOLEAN => {
+                if let mlua::Value::Boolean(b) = value {
+                    return Some(Value::Boolean(b))
+                }
+            }
+            Il2CppTypeEnum_IL2CPP_TYPE_CHAR => {
+                if let mlua::Value::Integer(i) = value {
+                    return Some(Value::Char(i.try_into().ok()?))
+                }
+            }
+            Il2CppTypeEnum_IL2CPP_TYPE_I1 => {
+                if let mlua::Value::Integer(i) = value {
+                    return Some(Value::I1(i.try_into().ok()?))
+                }
+            }
+            Il2CppTypeEnum_IL2CPP_TYPE_U1 => {
+                if let mlua::Value::Integer(i) = value {
+                    return Some(Value::U1(i.try_into().ok()?))
+                }
+            }
+            Il2CppTypeEnum_IL2CPP_TYPE_I2 => {
+                if let mlua::Value::Integer(i) = value {
+                    return Some(Value::I2(i.try_into().ok()?))
+                }
+            }
+            Il2CppTypeEnum_IL2CPP_TYPE_U2 => {
+                if let mlua::Value::Integer(i) = value {
+                    return Some(Value::U2(i.try_into().ok()?))
+                }
+            }
+            Il2CppTypeEnum_IL2CPP_TYPE_I4 => {
+                if let mlua::Value::Integer(i) = value {
+                    return Some(Value::I4(i.try_into().ok()?))
+                }
+            }
+            Il2CppTypeEnum_IL2CPP_TYPE_U4 => {
+                if let mlua::Value::Integer(i) = value {
+                    return Some(Value::U4(i.try_into().ok()?))
+                }
+            }
+            Il2CppTypeEnum_IL2CPP_TYPE_I8 => {
+                if let mlua::Value::Integer(i) = value {
+                    return Some(Value::I8(i))
+                }
+            }
+            Il2CppTypeEnum_IL2CPP_TYPE_U8 => {
+                if let mlua::Value::Integer(i) = value {
+                    return Some(Value::U8(i as u64))
+                }
+            }
+            Il2CppTypeEnum_IL2CPP_TYPE_R4 => {
+                if let mlua::Value::Number(v) = value {
+                    return Some(Value::R4(v as f32))
+                }
+            }
+            Il2CppTypeEnum_IL2CPP_TYPE_R8 => {
+                if let mlua::Value::Number(v) = value {
+                    return Some(Value::R8(v))
+                }
+            }
+            Il2CppTypeEnum_IL2CPP_TYPE_STRING => {
+                if let mlua::Value::UserData(ud) = value {
+                    return Some(Value::String(*ud.borrow::<super::String>().ok()?))
+                }
+            }
+            Il2CppTypeEnum_IL2CPP_TYPE_PTR | Il2CppTypeEnum_IL2CPP_TYPE_FNPTR => {
+                if let mlua::Value::UserData(ud) = value {
+                    return Some(Value::Pointer(*ud.borrow::<Pointer>().ok()?))
+                }
+            }
+            Il2CppTypeEnum_IL2CPP_TYPE_BYREF => {
+                if let mlua::Value::UserData(ud) = value {
+                    return Some(Value::Reference(*ud.borrow::<Reference>().ok()?))
+                }
+            }
+            Il2CppTypeEnum_IL2CPP_TYPE_VALUETYPE => {
+                match value {
+                    mlua::Value::UserData(ud) => return Some(Value::ValueType(ud.borrow::<ValueType>().ok()?.clone())),
+                    // Allow passing enum values as integers
+                    mlua::Value::Integer(i) => {
+                        let class = type_.class();
+                        if class.is_enum() {
+                            if let Some(field) = class.field(c"value__") {
+                                match field.type_().type_enum() {
+                                    Il2CppTypeEnum_IL2CPP_TYPE_I1 => return Some(Value::I1(i.try_into().ok()?)),
+                                    Il2CppTypeEnum_IL2CPP_TYPE_U1 => return Some(Value::U1(i.try_into().ok()?)),
+                                    Il2CppTypeEnum_IL2CPP_TYPE_I2 => return Some(Value::I2(i.try_into().ok()?)),
+                                    Il2CppTypeEnum_IL2CPP_TYPE_U2 => return Some(Value::U2(i.try_into().ok()?)),
+                                    Il2CppTypeEnum_IL2CPP_TYPE_I4 => return Some(Value::I4(i.try_into().ok()?)),
+                                    Il2CppTypeEnum_IL2CPP_TYPE_U4 => return Some(Value::U4(i.try_into().ok()?)),
+                                    Il2CppTypeEnum_IL2CPP_TYPE_I8 => return Some(Value::I8(i)),
+                                    Il2CppTypeEnum_IL2CPP_TYPE_U8 => return Some(Value::U8(i as u64)),
+                                    Il2CppTypeEnum_IL2CPP_TYPE_CHAR => return Some(Value::Char(i.try_into().ok()?)),
+                                    _ => ()
+                                }
+                            }
+                        }
+                    }
+                    _ => ()
+                }
+            }
+            Il2CppTypeEnum_IL2CPP_TYPE_CLASS => {
+                if let mlua::Value::UserData(ud) = value {
+                    return Some(Value::Class(*ud.borrow::<Object>().ok()?))
+                }
+            }
+            Il2CppTypeEnum_IL2CPP_TYPE_ARRAY => {
+                if let mlua::Value::UserData(ud) = value {
+                    return Some(Value::Array(*ud.borrow::<Array>().ok()?))
+                }
+            }
+            Il2CppTypeEnum_IL2CPP_TYPE_GENERICINST => {
+                if let mlua::Value::UserData(ud) = value {
+                    return Some(Value::GenericInstance(*ud.borrow::<Object>().ok()?))
+                }
+            }
+            Il2CppTypeEnum_IL2CPP_TYPE_OBJECT => {
+                if let mlua::Value::UserData(ud) = value {
+                    return Some(Value::Object(*ud.borrow::<Object>().ok()?))
+                }
+            }
+            Il2CppTypeEnum_IL2CPP_TYPE_SZARRAY => {
+                if let mlua::Value::UserData(ud) = value {
+                    return Some(Value::SzArray(*ud.borrow::<Array>().ok()?))
+                }
+            }
+            _ => ()
+        }
+
+        None
+    }
+
+    pub unsafe fn from_ffi_value(ptr: *const c_void, type_: Type) -> Result<Self, Error> {
+        if ptr.is_null() {
+            return Ok(Value::Void);
+        }
+
+        #[allow(non_upper_case_globals)]
+        Ok(match type_.type_enum() {
+            Il2CppTypeEnum_IL2CPP_TYPE_BOOLEAN => Value::Boolean(*(ptr as *const bool)),
+            Il2CppTypeEnum_IL2CPP_TYPE_CHAR => Value::Char(*(ptr as *const u16)),
+            Il2CppTypeEnum_IL2CPP_TYPE_I1 => Value::I1(*(ptr as *const i8)),
+            Il2CppTypeEnum_IL2CPP_TYPE_U1 => Value::U1(*(ptr as *const u8)),
+            Il2CppTypeEnum_IL2CPP_TYPE_I2 => Value::I2(*(ptr as *const i16)),
+            Il2CppTypeEnum_IL2CPP_TYPE_U2 => Value::U2(*(ptr as *const u16)),
+            Il2CppTypeEnum_IL2CPP_TYPE_I4 => Value::I4(*(ptr as *const i32)),
+            Il2CppTypeEnum_IL2CPP_TYPE_U4 => Value::U4(*(ptr as *const u32)),
+            Il2CppTypeEnum_IL2CPP_TYPE_I8 => Value::I8(*(ptr as *const i64)),
+            Il2CppTypeEnum_IL2CPP_TYPE_U8 => Value::U8(*(ptr as *const u64)),
+            Il2CppTypeEnum_IL2CPP_TYPE_R4 => Value::R4(*(ptr as *const f32)),
+            Il2CppTypeEnum_IL2CPP_TYPE_R8 => Value::R8(*(ptr as *const f64)),
+            Il2CppTypeEnum_IL2CPP_TYPE_I => Value::I(*(ptr as *const isize)),
+            Il2CppTypeEnum_IL2CPP_TYPE_U => Value::U(*(ptr as *const usize)),
+            Il2CppTypeEnum_IL2CPP_TYPE_VALUETYPE => {
+                let class = type_.class();
+                if class.is_enum() {
+                    Self::from_ffi_value(ptr, class.field(c"value__").unwrap().type_())?
+                } else {
+                    Value::ValueType(ValueType::new_unchecked(ptr as *mut c_void, type_))
+                }
+            }
+            Il2CppTypeEnum_IL2CPP_TYPE_STRING => super::String::new(*(ptr as *const _))
+                .map(|v| Value::String(v))
+                .unwrap_or(Value::NULL),
+            Il2CppTypeEnum_IL2CPP_TYPE_PTR => Value::Pointer(Pointer::new(*(ptr as *const _), type_)),
+            Il2CppTypeEnum_IL2CPP_TYPE_FNPTR => Value::Pointer(Pointer::new(*(ptr as *const _), type_)),
+            Il2CppTypeEnum_IL2CPP_TYPE_BYREF => Reference::new(*(ptr as *const _), type_)
+                .map(|v| Value::Reference(v))
+                .unwrap_or(Value::NULL),
+            Il2CppTypeEnum_IL2CPP_TYPE_ARRAY => Array::new(*(ptr as *const _))
+                .map(|v| Value::Array(v))
+                .unwrap_or(Value::NULL),
+            Il2CppTypeEnum_IL2CPP_TYPE_SZARRAY => Array::new(*(ptr as *const _))
+                .map(|v| Value::SzArray(v))
+                .unwrap_or(Value::NULL),
+            Il2CppTypeEnum_IL2CPP_TYPE_OBJECT => Object::new(*(ptr as *const _))
+                .map(|v| Value::Object(v))
+                .unwrap_or(Value::NULL),
+            Il2CppTypeEnum_IL2CPP_TYPE_CLASS => Object::new(*(ptr as *const _))
+                .map(|v| Value::Class(v))
+                .unwrap_or(Value::NULL),
+            Il2CppTypeEnum_IL2CPP_TYPE_GENERICINST => Object::new(*(ptr as *const _))
+                .map(|v| Value::GenericInstance(v))
+                .unwrap_or(Value::NULL),
+            t => Err(Error::UnknownType(t))?,
+        })
+    }
 }
 
 impl IntoLua for Value {
@@ -209,9 +404,11 @@ impl IntoLua for Value {
             Value::I4(i) => mlua::Value::Integer(i as _),
             Value::U4(u) => mlua::Value::Integer(u as _),
             Value::I8(i) => mlua::Value::Integer(i),
-            Value::U8(u) => mlua::Value::Integer(u as _),
+            Value::U8(u) => mlua::Value::Number(u as _),
             Value::R4(f) => mlua::Value::Number(f as _),
             Value::R8(f) => mlua::Value::Number(f),
+            Value::I(i) => mlua::Value::Integer(i as _),
+            Value::U(u) => mlua::Value::Integer(u as _),
             Value::String(s) => mlua::Value::UserData(lua.create_userdata(s)?),
             Value::Pointer(p) => mlua::Value::UserData(lua.create_userdata(p)?),
             Value::Reference(r) => mlua::Value::UserData(lua.create_userdata(r)?),

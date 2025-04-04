@@ -6,7 +6,7 @@ use once_cell::sync::Lazy;
 
 use crate::il2cpp::{api::*, types::*};
 
-use super::{Field, UnboundField, UnboundMethod};
+use super::{Field, Type, UnboundField, UnboundMethod};
 
 static CLASS_CACHES: Lazy<Mutex<FnvHashMap<usize, ClassCache>>> = Lazy::new(|| Mutex::default());
 
@@ -159,8 +159,27 @@ impl Class {
             .is_some_and(|f| f.type_().type_enum() == type_enum)
     }
 
+    pub fn name(&self) -> &CStr {
+        unsafe { CStr::from_ptr((*self.0).name) }
+    }
+
     pub fn field(&self, name: &CStr) -> Option<UnboundField> {
         UnboundField::new(il2cpp_class_get_field_from_name(self.0, name.as_ptr()))
+    }
+
+    pub fn fields(&self) -> Vec<UnboundField> {
+        let field_count = self.field_count() as usize;
+        let mut fields = Vec::with_capacity(field_count);
+        let p = unsafe { (*self.0).fields };
+        for i in 0..field_count {
+            fields.push(unsafe { UnboundField::new_unchecked(p.add(i)) });
+        }
+
+        fields
+    }
+
+    pub fn field_count(&self) -> u16 {
+        unsafe { (*self.0).field_count }
     }
 
     pub fn instance_size(&self) -> i32 {
@@ -169,6 +188,10 @@ impl Class {
 
     pub fn value_size(&self) -> i32 {
         self.instance_size() - std::mem::size_of::<Il2CppObject>() as i32
+    }
+
+    pub fn type_(&self) -> Type {
+        unsafe { Type::new_unchecked(&(*self.0).byval_arg) }
     }
 }
 
