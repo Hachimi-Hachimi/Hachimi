@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{ffi::{CStr, CString}, fmt::Display};
 
 use mlua::{MetaMethod, UserData, UserDataFields, UserDataMethods};
 use widestring::{Utf16Str, Utf16String};
@@ -71,5 +71,17 @@ impl From<&Utf16Str> for String {
 impl From<Utf16String> for String {
     fn from(value: Utf16String) -> Self {
         value.as_utfstr().into()
+    }
+}
+
+impl From<&CStr> for String {
+    fn from(value: &CStr) -> Self {
+        Self(il2cpp_string_new(value.as_ptr()))
+    }
+}
+
+impl From<CString> for String {
+    fn from(value: CString) -> Self {
+        value.as_c_str().into()
     }
 }

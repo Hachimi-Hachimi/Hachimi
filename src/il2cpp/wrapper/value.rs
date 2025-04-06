@@ -301,8 +301,10 @@ impl Value {
                 }
             }
             Il2CppTypeEnum_IL2CPP_TYPE_STRING => {
-                if let mlua::Value::UserData(ud) = value {
-                    return Some(Value::String(*ud.borrow::<super::String>().ok()?))
+                match value {
+                    mlua::Value::UserData(ud) => return Some(Value::String(*ud.borrow::<super::String>().ok()?)),
+                    mlua::Value::String(s) => return Some(Value::String(s.to_string_lossy().into())),
+                    _ => ()
                 }
             }
             Il2CppTypeEnum_IL2CPP_TYPE_PTR | Il2CppTypeEnum_IL2CPP_TYPE_FNPTR => {
