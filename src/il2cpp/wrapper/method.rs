@@ -1,11 +1,11 @@
 use std::{os::raw::c_void, sync::{Arc, Weak}};
 
 use libffi::{middle::{Cif, Type as FfiType}, raw::ffi_cif};
-use mlua::{AnyUserData, Lua, MetaMethod, MultiValue, UserData, UserDataFields, UserDataMethods};
+use mlua::{AnyUserData, Lua, MetaMethod, UserData, UserDataFields, UserDataMethods};
 
 use crate::{core::{interceptor::{FfiHookFn, FfiNext, FfiUserData}, Hachimi}, il2cpp::{api::{il2cpp_method_is_generic, il2cpp_method_is_inflated, il2cpp_method_is_instance, il2cpp_runtime_invoke}, types::*, Error}};
 
-use super::{value::InvokerParam, Class, Exception, GetRaw, NativePointer, Object, Type, Value};
+use super::{Class, Exception, GetRaw, NativePointer, Object, Type, Value};
 
 pub trait Method: GetRaw<*const MethodInfo> {
     fn raw_object(&self) -> *mut c_void;
@@ -76,7 +76,10 @@ pub trait Method: GetRaw<*const MethodInfo> {
         else {
             // extra "this" parameter
             params = Vec::with_capacity(raw_params.len() + 1);
-            params.push(FfiType::pointer());
+            params.push(
+                self.class().type_().to_ffi_type()
+                    .ok_or_else(|| Error::UnknownType(self.class().type_().type_enum()))?
+            );
         }
         let conv_iter = raw_params
             .iter()
@@ -118,11 +121,11 @@ pub trait Method: GetRaw<*const MethodInfo> {
 }
 
 trait MethodUserData: Method {
-    fn lua_invoke(&self, args: MultiValue) -> mlua::Result<Value> {
-        Ok(self.invoke(&self.lua_args_to_values(args)?)?)
+    fn lua_invoke(&self, args: mlua::Variadic<mlua::Value>) -> mlua::Result<Value> {
+        Ok(self.invoke(&self.lua_args_to_values(&args)?)?)
     }
 
-    fn lua_args_to_values(&self, args: MultiValue) -> mlua::Result<Vec<Value>> {
+    fn lua_args_to_values(&self, args: &[mlua::Value]) -> mlua::Result<Vec<Value>> {
         let params = self.parameters();
         if params.len() != args.len() {
             Err(Error::InvalidArgumentCount {
@@ -131,7 +134,6 @@ trait MethodUserData: Method {
             })?;
         }
 
-        #[allow(non_upper_case_globals)]
         Ok(params.iter()
             .zip(args.into_iter())
             .enumerate()
@@ -140,24 +142,6 @@ trait MethodUserData: Method {
             })
             .collect::<Result<Vec<Value>, mlua::Error>>()?
         )
-    }
-
-    fn add_method_methods<M: UserDataMethods<Self>>(methods: &mut M) where Self: Sized {
-        methods.add_method("invoke", |_, this, args| this.lua_invoke(args));
-        methods.add_meta_method(MetaMethod::Call, |_, this, args| this.lua_invoke(args));
-
-        methods.add_method("hook", |lua, this, callback: mlua::Function| {
-            // TODO: return a hook handle that can be used to unhook
-            this.hook_ffi(Self::ffi_hook_callback, LuaHookUserData {
-                method: UnboundMethod(this.raw()),
-                lua: lua.app_data_ref::<Weak<Lua>>()
-                    .ok_or_else(|| mlua::Error::external("Failed to obtain weak reference to Lua"))?
-                    .clone(),
-                callback,
-                orig_addr: this.method_pointer()
-            })?;
-            Ok(())
-        });
     }
 
     fn ffi_hook_callback(
@@ -249,7 +233,7 @@ trait MethodUserData: Method {
         let ret_type = hook_data.method.return_type();
         let ret_type_enum = ret_type.type_enum();
 
-        if let Some(ret_val) = Value::from_lua(lua_ret_val, ret_type) {
+        if let Some(ret_val) = Value::from_lua(&lua_ret_val, ret_type) {
             if ret_type_enum == Il2CppTypeEnum_IL2CPP_TYPE_VOID {
                 // Do nothing, we're just here for the type check
                 return Ok(());
@@ -290,6 +274,23 @@ trait MethodUserData: Method {
         }
 
         Ok(())
+    }
+
+    fn add_method_methods<M: UserDataMethods<Self>>(methods: &mut M) where Self: Sized {
+        methods.add_method("invoke", |_, this, args| this.lua_invoke(args));
+        methods.add_meta_method(MetaMethod::Call, |_, this, args| this.lua_invoke(args));
+
+        methods.add_method("hook", |lua, this, callback: mlua::Function| {
+            this.hook_ffi(Self::ffi_hook_callback, LuaHookUserData {
+                method: UnboundMethod(this.raw()),
+                lua: lua.app_data_ref::<Weak<Lua>>()
+                    .ok_or_else(|| mlua::Error::external("Failed to obtain weak reference to Lua"))?
+                    .clone(),
+                callback,
+                orig_addr: this.method_pointer()
+            })?;
+            Ok(())
+        });
     }
 
     fn add_method_fields<F: UserDataFields<Self>>(_fields: &mut F) where Self: Sized {}
@@ -333,20 +334,46 @@ struct FfiNextWrapper {
 
 impl UserData for FfiNextWrapper {
     fn add_methods<M: UserDataMethods<Self>>(methods: &mut M) {
-        methods.add_meta_method_mut(MetaMethod::Call, |_, this, args: MultiValue| {
+        methods.add_meta_method_mut(MetaMethod::Call, |_, this, args: mlua::Variadic<mlua::Value>| {
             if this.invalidated {
                 return Err(mlua::Error::external("Attempted to call invalidated next method"));
             }
 
-            let arg_values = this.method.lua_args_to_values(args)?;
-            let ffi_args: Vec<InvokerParam> = arg_values.iter()
+            let params = this.method.parameters();
+            let arg_values: Vec<Value>;
+            let this_value: Value;
+            let mut ffi_args = if this.method.is_static() {
+                arg_values = this.method.lua_args_to_values(&args)?;
+                Vec::with_capacity(params.len())
+            }
+            else {
+                arg_values = this.method.lua_args_to_values(
+                    args.get(1..).ok_or_else(|| Error::InvalidArgumentCount {
+                        expected: params.len() as _,
+                        got: args.len() as _
+                    })?
+                )?;
+
+                let this_type = this.method.class().type_();
+                this_value = Value::from_lua(&args[0], this_type)
+                    .ok_or_else(|| Error::invalid_argument(0 as _, "invalid \"this\" object type".to_owned()))?;
+
+                let mut vec = Vec::with_capacity(params.len() + 1);
+                vec.push(unsafe { this_value.to_ffi_arg(this_type).unwrap() });
+                vec
+            };
+
+            let conv_iter = arg_values.iter()
                 .zip(this.method.parameters())
                 .enumerate()
                 .map(|(i, (v, type_))| unsafe {
-                    v.to_invoker_param(*type_)
+                    v.to_ffi_arg(*type_)
                         .ok_or(Error::invalid_argument(i as _, "incompatible value type".to_owned()))
-                })
-                .collect::<Result<Vec<_>, _>>()?;
+                });
+
+            for res in conv_iter {
+                ffi_args.push(res?);
+            }
 
             unsafe { (*this.next).call(&*this.cif, &mut *this.result, ffi_args.as_ptr() as _); }
             this.called = true;

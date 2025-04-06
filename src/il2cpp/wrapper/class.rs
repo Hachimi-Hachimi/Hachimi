@@ -168,11 +168,18 @@ impl Class {
     }
 
     pub fn fields(&self) -> Vec<UnboundField> {
-        let field_count = self.field_count() as usize;
-        let mut fields = Vec::with_capacity(field_count);
-        let p = unsafe { (*self.0).fields };
-        for i in 0..field_count {
-            fields.push(unsafe { UnboundField::new_unchecked(p.add(i)) });
+        let mut iter = 0 as _;
+        let mut field = il2cpp_class_get_fields(self.0, &mut iter);
+
+        let mut fields = Vec::new();
+        loop {
+            if let Some(f) = UnboundField::new(field) {
+                fields.push(f);
+            }
+            else {
+                break;
+            }
+            field = il2cpp_class_get_fields(self.0, &mut iter);
         }
 
         fields

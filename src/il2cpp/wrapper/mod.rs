@@ -66,7 +66,7 @@ pub use image::Image;
 pub use class::Class;
 pub use method::{Method, UnboundMethod, BoundMethod};
 pub use field::{Field, FieldAttribute, UnboundField, BoundField};
-pub use value::Value;
+pub use value::{Value, InvokerParam, FfiArg};
 pub use object::Object;
 pub use array::Array;
 pub use string::String;

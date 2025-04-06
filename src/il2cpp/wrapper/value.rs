@@ -193,7 +193,45 @@ impl Value {
         self.to_invoker_param_raw(type_).map(|ptr| InvokerParam::new(ptr, self))
     }
 
-    pub fn from_lua(value: mlua::Value, type_: Type) -> Option<Self> {
+    pub unsafe fn to_ffi_arg(&self, type_: Type) -> Option<FfiArg> {
+        let type_enum = type_.type_enum();
+
+        #[allow(non_upper_case_globals)]
+        match self {
+            // these types are passed by reference or a raw pointer value
+            Value::String(string) => if type_enum == Il2CppTypeEnum_IL2CPP_TYPE_STRING {
+                return Some(FfiArg::new(string as *const _ as _, self))
+            },
+            Value::Pointer(pointer) => match type_enum {
+                Il2CppTypeEnum_IL2CPP_TYPE_PTR |
+                Il2CppTypeEnum_IL2CPP_TYPE_FNPTR =>
+                    return Some(FfiArg::new(pointer as *const _ as _, self)),
+                _ => ()
+            },
+            Value::Reference(reference) => if type_enum == Il2CppTypeEnum_IL2CPP_TYPE_BYREF {
+                return Some(FfiArg::new(reference as *const _ as _, self))
+            },
+            Value::Object(object) | Value::Class(object) | Value::GenericInstance(object) => match type_enum {
+                Il2CppTypeEnum_IL2CPP_TYPE_OBJECT |
+                Il2CppTypeEnum_IL2CPP_TYPE_CLASS |
+                Il2CppTypeEnum_IL2CPP_TYPE_GENERICINST =>
+                    return Some(FfiArg::new(object as *const _ as _, self)),
+                _ => (),
+            },
+            Value::Array(array) | Value::SzArray(array) => match type_enum {
+                Il2CppTypeEnum_IL2CPP_TYPE_ARRAY |
+                Il2CppTypeEnum_IL2CPP_TYPE_SZARRAY =>
+                    return Some(FfiArg::new(array as *const _ as _, self)),
+                _ => (),
+            }
+            // all other types has the same representation as invoker param
+            _ => return self.to_invoker_param_raw(type_).map(|ptr| FfiArg::new(ptr, self))
+        }
+
+        None
+    }
+
+    pub fn from_lua(value: &mlua::Value, type_: Type) -> Option<Self> {
         // All value types are allowed to be null
         if value.is_nil() {
             return Some(Value::NULL);
@@ -204,62 +242,62 @@ impl Value {
             Il2CppTypeEnum_IL2CPP_TYPE_VOID => (),
             Il2CppTypeEnum_IL2CPP_TYPE_BOOLEAN => {
                 if let mlua::Value::Boolean(b) = value {
-                    return Some(Value::Boolean(b))
+                    return Some(Value::Boolean(*b))
                 }
             }
             Il2CppTypeEnum_IL2CPP_TYPE_CHAR => {
                 if let mlua::Value::Integer(i) = value {
-                    return Some(Value::Char(i.try_into().ok()?))
+                    return Some(Value::Char((*i).try_into().ok()?))
                 }
             }
             Il2CppTypeEnum_IL2CPP_TYPE_I1 => {
                 if let mlua::Value::Integer(i) = value {
-                    return Some(Value::I1(i.try_into().ok()?))
+                    return Some(Value::I1((*i).try_into().ok()?))
                 }
             }
             Il2CppTypeEnum_IL2CPP_TYPE_U1 => {
                 if let mlua::Value::Integer(i) = value {
-                    return Some(Value::U1(i.try_into().ok()?))
+                    return Some(Value::U1((*i).try_into().ok()?))
                 }
             }
             Il2CppTypeEnum_IL2CPP_TYPE_I2 => {
                 if let mlua::Value::Integer(i) = value {
-                    return Some(Value::I2(i.try_into().ok()?))
+                    return Some(Value::I2((*i).try_into().ok()?))
                 }
             }
             Il2CppTypeEnum_IL2CPP_TYPE_U2 => {
                 if let mlua::Value::Integer(i) = value {
-                    return Some(Value::U2(i.try_into().ok()?))
+                    return Some(Value::U2((*i).try_into().ok()?))
                 }
             }
             Il2CppTypeEnum_IL2CPP_TYPE_I4 => {
                 if let mlua::Value::Integer(i) = value {
-                    return Some(Value::I4(i.try_into().ok()?))
+                    return Some(Value::I4((*i).try_into().ok()?))
                 }
             }
             Il2CppTypeEnum_IL2CPP_TYPE_U4 => {
                 if let mlua::Value::Integer(i) = value {
-                    return Some(Value::U4(i.try_into().ok()?))
+                    return Some(Value::U4((*i).try_into().ok()?))
                 }
             }
             Il2CppTypeEnum_IL2CPP_TYPE_I8 => {
                 if let mlua::Value::Integer(i) = value {
-                    return Some(Value::I8(i))
+                    return Some(Value::I8(*i))
                 }
             }
             Il2CppTypeEnum_IL2CPP_TYPE_U8 => {
                 if let mlua::Value::Integer(i) = value {
-                    return Some(Value::U8(i as u64))
+                    return Some(Value::U8(*i as u64))
                 }
             }
             Il2CppTypeEnum_IL2CPP_TYPE_R4 => {
                 if let mlua::Value::Number(v) = value {
-                    return Some(Value::R4(v as f32))
+                    return Some(Value::R4(*v as f32))
                 }
             }
             Il2CppTypeEnum_IL2CPP_TYPE_R8 => {
                 if let mlua::Value::Number(v) = value {
-                    return Some(Value::R8(v))
+                    return Some(Value::R8(*v))
                 }
             }
             Il2CppTypeEnum_IL2CPP_TYPE_STRING => {
@@ -286,15 +324,15 @@ impl Value {
                         if class.is_enum() {
                             if let Some(field) = class.field(c"value__") {
                                 match field.type_().type_enum() {
-                                    Il2CppTypeEnum_IL2CPP_TYPE_I1 => return Some(Value::I1(i.try_into().ok()?)),
-                                    Il2CppTypeEnum_IL2CPP_TYPE_U1 => return Some(Value::U1(i.try_into().ok()?)),
-                                    Il2CppTypeEnum_IL2CPP_TYPE_I2 => return Some(Value::I2(i.try_into().ok()?)),
-                                    Il2CppTypeEnum_IL2CPP_TYPE_U2 => return Some(Value::U2(i.try_into().ok()?)),
-                                    Il2CppTypeEnum_IL2CPP_TYPE_I4 => return Some(Value::I4(i.try_into().ok()?)),
-                                    Il2CppTypeEnum_IL2CPP_TYPE_U4 => return Some(Value::U4(i.try_into().ok()?)),
-                                    Il2CppTypeEnum_IL2CPP_TYPE_I8 => return Some(Value::I8(i)),
-                                    Il2CppTypeEnum_IL2CPP_TYPE_U8 => return Some(Value::U8(i as u64)),
-                                    Il2CppTypeEnum_IL2CPP_TYPE_CHAR => return Some(Value::Char(i.try_into().ok()?)),
+                                    Il2CppTypeEnum_IL2CPP_TYPE_I1 => return Some(Value::I1((*i).try_into().ok()?)),
+                                    Il2CppTypeEnum_IL2CPP_TYPE_U1 => return Some(Value::U1((*i).try_into().ok()?)),
+                                    Il2CppTypeEnum_IL2CPP_TYPE_I2 => return Some(Value::I2((*i).try_into().ok()?)),
+                                    Il2CppTypeEnum_IL2CPP_TYPE_U2 => return Some(Value::U2((*i).try_into().ok()?)),
+                                    Il2CppTypeEnum_IL2CPP_TYPE_I4 => return Some(Value::I4((*i).try_into().ok()?)),
+                                    Il2CppTypeEnum_IL2CPP_TYPE_U4 => return Some(Value::U4((*i).try_into().ok()?)),
+                                    Il2CppTypeEnum_IL2CPP_TYPE_I8 => return Some(Value::I8(*i)),
+                                    Il2CppTypeEnum_IL2CPP_TYPE_U8 => return Some(Value::U8(*i as u64)),
+                                    Il2CppTypeEnum_IL2CPP_TYPE_CHAR => return Some(Value::Char((*i).try_into().ok()?)),
                                     _ => ()
                                 }
                             }
@@ -530,6 +568,7 @@ impl From<Object> for Value {
     }
 }
 
+#[derive(Debug)]
 #[repr(transparent)]
 pub struct InvokerParam<'a> {
     ptr: *const c_void,
@@ -539,6 +578,27 @@ pub struct InvokerParam<'a> {
 impl<'a> InvokerParam<'a> {
     fn new(ptr: *const c_void, _value: &'a Value) -> InvokerParam {
         InvokerParam {
+            ptr,
+            _lifetime: PhantomData
+        }
+    }
+
+    pub fn get(&self) -> *const c_void {
+        self.ptr
+    }
+}
+
+
+#[derive(Debug)]
+#[repr(transparent)]
+pub struct FfiArg<'a> {
+    ptr: *const c_void,
+    _lifetime: PhantomData<&'a Value>
+}
+
+impl<'a> FfiArg<'a> {
+    fn new(ptr: *const c_void, _value: &'a Value) -> FfiArg {
+        FfiArg {
             ptr,
             _lifetime: PhantomData
         }
