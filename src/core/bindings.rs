@@ -8,7 +8,8 @@ pub fn init(print_tag: impl Into<String>) -> Result<Arc<Lua>> {
     let print_tag = print_tag.into();
     let lua = Arc::new(Lua::new());
     lua.set_app_data(Arc::downgrade(&lua));
-    lua.globals().set("print", lua.create_function(move |_, values: MultiValue| {
+
+    fn get_print_message(values: &MultiValue) -> Result<String> {
         let mut message = String::new();
         let mut iter = values.iter();
 
@@ -23,7 +24,23 @@ pub fn init(print_tag: impl Into<String>) -> Result<Arc<Lua>> {
             message += &arg.to_string()?;
         }
 
-        info!(target: "[lua]", "[{}] {}", print_tag, message);
+        Ok(message)
+    }
+
+    let globals = lua.globals();
+
+    {
+        let print_tag = print_tag.clone();
+        globals.set("print", lua.create_function(move |_, values: MultiValue| {
+            let message = get_print_message(&values)?;
+            info!(target: "[lua]", "[{}] {}", print_tag, message);
+            Ok(())
+        })?)?;
+    }
+
+    globals.set("warn", lua.create_function(move |_, values: MultiValue| {
+        let message = get_print_message(&values)?;
+        warn!(target: "[lua]", "[{}] {}", print_tag, message);
         Ok(())
     })?)?;
 
