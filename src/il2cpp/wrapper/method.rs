@@ -5,10 +5,10 @@ use mlua::{AnyUserData, Lua, MetaMethod, UserData, UserDataFields, UserDataMetho
 
 use crate::{core::{interceptor::{FfiHookFn, FfiNext, FfiUserData}, Hachimi}, il2cpp::{api::{il2cpp_method_is_generic, il2cpp_method_is_inflated, il2cpp_method_is_instance, il2cpp_runtime_invoke}, types::*, Error}};
 
-use super::{Class, Exception, GetRaw, NativePointer, Object, Type, Value};
+use super::{BoundValue, Class, Exception, GetRaw, NativePointer, Type, Value};
 
 pub trait Method: GetRaw<*const MethodInfo> {
-    fn raw_object(&self) -> *mut c_void;
+    unsafe fn raw_object(&self) -> *mut c_void;
 
     fn parameters(&self) -> &'static [Type] {
         unsafe { std::slice::from_raw_parts((*self.raw()).parameters as _, (*self.raw()).parameters_count as _) }
@@ -23,7 +23,7 @@ pub trait Method: GetRaw<*const MethodInfo> {
     }
 
     fn invoke(&self, args: &[Value]) -> Result<Value, Error> {
-        let obj = self.raw_object();
+        let obj = unsafe { self.raw_object() };
         if !self.is_static() && obj.is_null() {
             return Err(Error::InvokeUnboundInstanceMethod);
         }
@@ -385,13 +385,13 @@ impl UserData for FfiNextWrapper {
 wrapper_struct!(UnboundMethod, *const MethodInfo);
 
 impl UnboundMethod {
-    pub fn bind(&self, obj: Object) -> BoundMethod {
-        BoundMethod(self.0, obj)
+    pub fn bind(&self, value: impl Into<BoundValue>) -> BoundMethod {
+        BoundMethod(self.0, value.into())
     }
 }
 
 impl Method for UnboundMethod {
-    fn raw_object(&self) -> *mut c_void {
+    unsafe fn raw_object(&self) -> *mut c_void {
         0 as _
     }
 }
@@ -410,24 +410,24 @@ impl UserData for UnboundMethod {
 }
 
 
-#[derive(Debug, Copy, Clone)]
-pub struct BoundMethod(*const MethodInfo, Object); // TODO: Allow valuetype to be bound
+#[derive(Debug, Clone)]
+pub struct BoundMethod(*const MethodInfo, BoundValue);
 
 impl BoundMethod {
-    pub fn new(p: *const MethodInfo, obj: Object) -> Option<Self> {
-        if p.is_null() { None } else { Some(Self(p, obj)) }
+    pub fn new(p: *const MethodInfo, value: BoundValue) -> Option<Self> {
+        if p.is_null() { None } else { Some(Self(p, value)) }
     }
 
-    pub unsafe fn new_unchecked(p: *const MethodInfo, obj: Object) -> Self {
-        Self(p, obj)
+    pub unsafe fn new_unchecked(p: *const MethodInfo, value: BoundValue) -> Self {
+        Self(p, value)
     }
 
     fn add_raw_field<F: mlua::UserDataFields<Self>>(fields: &mut F) {
         fields.add_field_method_get("raw", |_, v| Ok(NativePointer::Raw(v.0 as _)));
     }
 
-    pub fn object(&self) -> Object {
-        self.1
+    pub fn bound_value(&self) -> &BoundValue {
+        &self.1
     }
 }
 
@@ -438,8 +438,11 @@ impl GetRaw<*const MethodInfo> for BoundMethod {
 }
 
 impl Method for BoundMethod {
-    fn raw_object(&self) -> *mut c_void {
-        self.1.raw() as _
+    unsafe fn raw_object(&self) -> *mut c_void {
+        match &self.1 {
+            BoundValue::Object(object) => object.raw() as _,
+            BoundValue::ValueType(value_type) => value_type.ptr().get(),
+        }
     }
 }
 

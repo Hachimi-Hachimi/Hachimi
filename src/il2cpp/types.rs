@@ -1191,7 +1191,7 @@ pub struct MemberInfo {
     _unused: [u8; 0],
 }
 #[repr(C)]
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct FieldInfo {
     pub name: *const ::std::os::raw::c_char,
     pub type_: *const Il2CppType,

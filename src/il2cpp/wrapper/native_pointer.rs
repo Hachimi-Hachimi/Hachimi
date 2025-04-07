@@ -1,16 +1,16 @@
-use std::{ffi::CStr, os::raw::c_void};
+use std::{ffi::CStr, os::raw::c_void, rc::Rc};
 
 use mlua::{FromLua, Lua, MetaMethod, UserData, UserDataMethods};
 
 #[derive(Debug, Clone)]
 pub enum NativePointer {
     Raw(*mut c_void),
-    Owned(Vec<u8>)
+    Owned(Rc<Vec<u8>>)
 }
 
 impl NativePointer {
     pub fn alloc(size: usize) -> Self {
-        Self::Owned(vec![0; size])
+        Self::Owned(Rc::new(vec![0; size]))
     }
 
     pub fn get(&self) -> *mut c_void {

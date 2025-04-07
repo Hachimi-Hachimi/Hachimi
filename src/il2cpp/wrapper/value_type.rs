@@ -1,6 +1,6 @@
-use mlua::UserData;
+use mlua::{UserData, UserDataFields, UserDataMethods};
 
-use super::{NativePointer, Type};
+use super::{BindableValue, Class, NativePointer, Type};
 
 #[derive(Debug, Clone)]
 pub struct ValueType {
@@ -18,6 +18,10 @@ impl ValueType {
         Self { ptr: ptr.into(), type_ }
     }
 
+    fn add_raw_field<F: mlua::UserDataFields<Self>>(fields: &mut F) {
+        fields.add_field_method_get("raw", |_, v| Ok(v.clone()));
+    }
+
     pub fn ptr(&self) -> &NativePointer {
         &self.ptr
     }
@@ -27,6 +31,19 @@ impl ValueType {
     }
 }
 
+impl BindableValue for ValueType {
+    fn class(&self) -> Class {
+        self.type_().class()
+    }
+}
+
 impl UserData for ValueType {
     // TODO
+    fn add_methods<M: UserDataMethods<Self>>(methods: &mut M) {
+        Self::add_bindable_value_methods(methods);
+    }
+
+    fn add_fields<F: UserDataFields<Self>>(fields: &mut F) {
+        Self::add_raw_field(fields);
+    }
 }

@@ -4,7 +4,7 @@ use mlua::IntoLua;
 
 use crate::il2cpp::{types::*, wrapper::GetRaw, Error};
 
-use super::{Array, Field, Object, Pointer, Reference, Type, ValueType};
+use super::{Array, BoundValue, Field, Object, Pointer, Reference, Type, ValueType};
 
 #[derive(Debug, Clone)]
 pub enum Value {
@@ -567,6 +567,15 @@ impl From<Array> for Value {
 impl From<Object> for Value {
     fn from(value: Object) -> Self {
         Self::Object(value)
+    }
+}
+
+impl From<BoundValue> for Value {
+    fn from(value: BoundValue) -> Self {
+        match value {
+            BoundValue::Object(o) => Value::Object(o),
+            BoundValue::ValueType(v) => Value::ValueType(v)
+        }
     }
 }
 

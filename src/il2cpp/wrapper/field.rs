@@ -5,7 +5,7 @@ use std::{ffi::CStr, mem::MaybeUninit, os::raw::c_void};
 
 use crate::il2cpp::{api::{il2cpp_field_get_flags, il2cpp_field_get_value, il2cpp_field_static_get_value}, types::*, Error};
 
-use super::{Array, Class, GetRaw, NativePointer, Object, Pointer, Reference, Type, Value, ValueType};
+use super::{Array, BoundValue, Class, GetRaw, NativePointer, Object, Pointer, Reference, Type, Value, ValueType};
 
 pub trait Field: GetRaw<*mut FieldInfo> {
     fn name(&self) -> &'static CStr {
@@ -156,8 +156,8 @@ trait FieldUserData: Field {
 wrapper_struct!(UnboundField, *mut FieldInfo);
 
 impl UnboundField {
-    pub fn bind(&self, obj: Object) -> BoundField {
-        BoundField(self.0, obj)
+    pub fn bind(&self, value: impl Into<BoundValue>) -> BoundField {
+        BoundField(self.0, value.into())
     }
 }
 
@@ -186,24 +186,24 @@ impl UserData for UnboundField {
 }
 
 
-#[derive(Debug, Copy, Clone)]
-pub struct BoundField(*mut FieldInfo, Object); // TODO: Allow valuetype to be bound
+#[derive(Debug, Clone)]
+pub struct BoundField(*mut FieldInfo, BoundValue);
 
 impl BoundField {
-    pub fn new(p: *mut FieldInfo, obj: Object) -> Option<Self> {
-        if p.is_null() { None } else { Some(Self(p, obj)) }
+    pub fn new(p: *mut FieldInfo, value: BoundValue) -> Option<Self> {
+        if p.is_null() { None } else { Some(Self(p, value)) }
     }
 
-    pub unsafe fn new_unchecked(p: *mut FieldInfo, obj: Object) -> Self {
-        Self(p, obj)
+    pub unsafe fn new_unchecked(p: *mut FieldInfo, value: BoundValue) -> Self {
+        Self(p, value)
     }
 
     fn add_raw_field<F: mlua::UserDataFields<Self>>(fields: &mut F) {
         fields.add_field_method_get("raw", |_, v| Ok(NativePointer::Raw(v.0 as _)));
     }
 
-    pub fn object(&self) -> Object {
-        self.1
+    pub fn bound_value(&self) -> &BoundValue {
+        &self.1
     }
 }
 
@@ -219,7 +219,18 @@ impl Field for BoundField {
             il2cpp_field_static_get_value(self.0, ptr);
         }
         else {
-            il2cpp_field_get_value(self.1.raw(), self.0, ptr);
+            match &self.1 {
+                BoundValue::Object(object) => il2cpp_field_get_value(object.raw(), self.0, ptr),
+                BoundValue::ValueType(value_type) => {
+                    // we do a little trolling: create a fake fieldinfo with the correct offset
+                    let offset = self.offset() - std::mem::size_of::<Il2CppObject>() as i32;
+                    let mut field = *self.0;
+                    field.offset = offset;
+
+                    // and use the built in get value api
+                    il2cpp_field_get_value(value_type.ptr().get() as _, &mut field, ptr)
+                },
+            }
         }
         Ok(())
     }
