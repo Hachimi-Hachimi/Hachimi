@@ -174,7 +174,6 @@ impl Interceptor {
         }
     }
 
-    /// Returns an id (determined by the userdata arc) to unhook it
     pub fn hook_ffi<T: 'static + Send + Sync>(
         &mut self,
         orig: impl Into<HookOrig>,
@@ -379,7 +378,7 @@ impl Interceptor {
         }
     }
 
-    pub fn unhook_ffi(&mut self, orig: impl Into<HookOrig>, id: usize) -> Option<(FfiHookFn, Arc<dyn Any + Send + Sync>)> {
+    pub fn unhook_ffi(&mut self, orig: impl Into<HookOrig>, id: usize) -> Option<(FfiHookFn, FfiUserData)> {
         let orig_addr = orig.into().addr();
         match self.ffi_hooks.entry(orig_addr) {
             hash_map::Entry::Occupied(mut e) => {
