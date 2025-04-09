@@ -39,7 +39,9 @@ pub fn on_hooking_finished(hachimi: &Hachimi) {
     }
 
     // Apply auto full screen
-    Screen::apply_auto_full_screen(Screen::get_width(), Screen::get_height());
+    if hachimi.config.load().windows.auto_full_screen {
+        Screen::apply_auto_full_screen(Screen::get_width(), Screen::get_height());
+    }
 
     // Clean up the update installer
     _ = std::fs::remove_file(utils::get_tmp_installer_path());
