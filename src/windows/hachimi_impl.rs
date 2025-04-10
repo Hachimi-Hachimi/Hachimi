@@ -8,8 +8,7 @@ use crate::{
         hook::UnityEngine_CoreModule::{
             FullScreenMode_ExclusiveFullScreen, FullScreenMode_FullScreenWindow,
             QualitySettings, Screen
-        },
-        types::Resolution
+        }, symbols::Thread, types::Resolution
     }
 };
 
@@ -39,7 +38,14 @@ pub fn on_hooking_finished(hachimi: &Hachimi) {
     }
 
     // Apply auto full screen
-    Screen::apply_auto_full_screen(Screen::get_width(), Screen::get_height());
+    if hachimi.config.load().windows.auto_full_screen {
+        std::thread::spawn(|| {
+            std::thread::sleep(std::time::Duration::from_secs(2));
+            Thread::main_thread().schedule(|| {
+                Screen::apply_auto_full_screen(Screen::get_width(), Screen::get_height());
+            });
+        });
+    }
 
     // Clean up the update installer
     _ = std::fs::remove_file(utils::get_tmp_installer_path());
