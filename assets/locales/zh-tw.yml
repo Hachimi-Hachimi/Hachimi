@@ -139,8 +139,8 @@ update_prompt_dialog:
   title: "有可用的更新"
   content: |
     目前有可用的更新 (%{version})，是否要安裝？
-    遊戲將重新啟動以應用更新內容。
+    遊戲將重新啟動以套用更新內容。
 
 updating_dialog:
   title: "更新中"
-  content: "正在下載更新，遊戲將會短暫重啟…"
+  content: "正在下載更新，遊戲將會在稍後重啟…"
