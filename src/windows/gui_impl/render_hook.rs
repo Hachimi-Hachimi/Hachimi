@@ -54,7 +54,7 @@ extern "C" fn IDXGISwapChain_Present(this: *mut c_void, sync_interval: c_uint, f
         return orig_fn(this, sync_interval, flags);
     }
 
-    let mut gui = Gui::instance_or_init("Right arrow").lock().unwrap();
+    let mut gui = Gui::instance_or_init("windows.menu_open_key").lock().unwrap();
     let painter_mutex = match init_painter(this) {
         Ok(v) => v,
         Err(e) => {

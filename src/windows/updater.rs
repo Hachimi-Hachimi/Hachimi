@@ -1,6 +1,7 @@
 use std::{fs::File, sync::{atomic::{self, AtomicBool}, Arc, Mutex}};
 
 use arc_swap::ArcSwap;
+use rust_i18n::t;
 use serde::Deserialize;
 use widestring::Utf16Str;
 use windows::{
@@ -40,7 +41,7 @@ impl Updater {
         };
 
         if let Some(mutex) = Gui::instance() {
-            mutex.lock().unwrap().show_notification("Checking for updates...");
+            mutex.lock().unwrap().show_notification(&t!("notification.checking_for_updates"));
         }
 
         let latest: Release = http::get_json(&format!("https://api.github.com/repos/{}/releases/latest", REPO_PATH))?;
@@ -57,9 +58,8 @@ impl Updater {
                 self.new_update.store(Arc::new(installer_asset));
                 if let Some(mutex) = Gui::instance() {
                     mutex.lock().unwrap().show_window(Box::new(SimpleYesNoDialog::new(
-                        "New update available",
-                        &format!("A new Hachimi update is available ({}). Do you want to install it?\n\
-                                  The game will be restarted in order to apply the update.", latest.tag_name),
+                        &t!("update_prompt_dialog.title"),
+                        &t!("update_prompt_dialog.content", version = latest.tag_name),
                         |ok| {
                             if !ok { return; }
                             Hachimi::instance().updater.clone().run();
@@ -70,7 +70,7 @@ impl Updater {
             }
         }
         else if let Some(mutex) = Gui::instance() {
-            mutex.lock().unwrap().show_notification("No updates available.");
+            mutex.lock().unwrap().show_notification(&t!("notification.no_updates"));
         }
 
         Ok(false)
@@ -81,8 +81,8 @@ impl Updater {
             let dialog_show = Arc::new(AtomicBool::new(true));
             if let Some(mutex) = Gui::instance() {
                 mutex.lock().unwrap().show_window(Box::new(PersistentMessageWindow::new(
-                    "Updating",
-                    "Downloading update, the game will restart shortly...",
+                    &t!("updating_dialog.title"),
+                    &t!("updating_dialog.content"),
                     dialog_show.clone()
                 )));
             }
@@ -90,7 +90,7 @@ impl Updater {
             if let Err(e) = self.clone().run_internal() {
                 error!("{}", e);
                 if let Some(mutex) = Gui::instance() {
-                    mutex.lock().unwrap().show_notification(&("Update failed: ".to_owned() + &e.to_string()));
+                    mutex.lock().unwrap().show_notification(&t!("notification.update_failed", reason = e.to_string()));
                 }
             }
 
