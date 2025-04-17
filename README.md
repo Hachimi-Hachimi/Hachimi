@@ -2,7 +2,7 @@
 
 # Hachimi
 
-English | [简体中文](README-zh_cn.md)
+English | [简体中文](README-zh_cn.md) | [繁體中文](README-zh_tw.md)
 
 [![Discord server](https://dcbadge.limes.pink/api/server/https://discord.gg/BVEt5FcxEn)](https://discord.gg/BVEt5FcxEn)
 
