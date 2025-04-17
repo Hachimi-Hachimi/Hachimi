@@ -1,0 +1,146 @@
+hachimi: "Hachimi"
+
+windows:
+  menu_open_key: "右方向鍵"
+
+android:
+  menu_open_key: "提高音量鍵 + 降低音量鍵"
+
+splash_sub: "🏠 按下 %{open_key_str} 來打開選單。"
+loading_label: "載入中"
+cancel: "取消"
+save: "存檔"
+done: "完成"
+next: "下一步"
+previous: "上一步"
+yes: "是"
+no: "否"
+ok: "OK"
+retry: "重試"
+default: "預設"
+off: "關閉"
+on: "開啟"
+enable: "啟用"
+warning: "警告"
+confirm_dialog_title: "確認"
+soft_restart_confirm_content: "您是否想要軟重啟本遊戲？"
+in_game_browser_confirm_content: "您是否想要開啟遊戲內瀏覽器？"
+browser_dialog_title: "瀏覽器"
+
+menu:
+  fps_text: "FPS: %{fps}"
+  close_menu: "🗙 關閉選單"
+  stats_heading: "🗊 狀態"
+  localize_dict_entries: "localize_dict 載入數量: %{count}"
+  hashed_dict_entries: "hashed_dict 載入數量: %{count}"
+  config_heading: "🛠 設置"
+  open_config_editor: "✏ 開啟設置編輯器"
+  reload_config: "⟳ 重新載入設置"
+  open_first_time_setup: "🚀 開啟首次安裝器"
+  graphics_heading: "🖼 圖像"
+  fps_label: "FPS"
+  vsync_label: "VSync"
+  stay_on_top: "保持在最上層"
+  translation_heading: "📖 翻譯"
+  reload_localized_data: "⟳ 重新載入翻譯數據"
+  check_for_updates: "⮉ 檢查更新"
+  dump_localize_dict: "導出 localize dict"
+  danger_zone_heading: "⚠ 危險區域"
+  danger_zone_warning: "這些選項可能會導致遊戲異常，請小心使用！"
+  soft_restart: "⟳ 軟重啟"
+  open_in_game_browser: "🌐 開啟遊戲內瀏覽器"
+  toggle_game_ui: "👁 切換遊戲 UI"
+
+notification:
+  saved_localize_dump: "保存至 localize_dump.json"
+  config_reloaded: "已重新載入設置。"
+  config_saved: "已保存設置。"
+  localized_data_reloaded: "已重新載入翻譯資料。"
+  checking_for_tl_updates: "檢查翻譯更新"
+  no_tl_updates: "沒有可用的翻譯更新。"
+  update_failed: "更新失敗: %{reason}"
+  update_completed: "更新完成。"
+  errors_during_update: "更新時發生 %{count} 個錯誤，請確認日誌以獲取更多資訊。"
+  checking_for_updates: "檢查更新"
+  no_updates: "無可用的更新。"
+
+first_time_setup:
+  title: "首次安裝器"
+  welcome_heading: "歡迎"
+  welcome_content: |
+    歡迎來到 Hachimi！這是首次安裝器，將幫助您設置翻譯和其他選項。
+    您可以隨時在設置編輯器中更改這些選項。
+  translation_repo_heading: "翻譯資料庫"
+  select_translation_repo: "選擇一個翻譯資料庫："
+  complete_heading: "全部完成！"
+  complete_content: >
+    已設置翻譯資料庫。
+    點擊完成後，配置將被保存並執行更新檢查，這將提示您下載新的翻譯數據。
+
+about:
+  title: "關於"
+  copyright: "Copyright (c) 2024 LeadRDRK and contributors"
+  view_license: "查看許可證"
+  check_for_updates: "檢查更新"
+
+license:
+  title: "許可證"
+
+tl_updater:
+  title: "更新中"
+  warning: |
+    在進行更新時，
+    將無法使用翻譯功能。
+
+config_editor:
+  title: "設置編輯器"
+  general_tab: "⛭ 一般"
+  graphics_tab: "🖼 圖像"
+  gameplay_tab: "🎮 遊玩"
+  disable_overlay: "禁用覆蓋 (GUI)"
+  disable_overlay_warning: |
+    此選項會在您重新啟動遊戲後關閉 Hachimi 覆蓋，
+    這意味著您將無法訪問設置編輯器。
+    如果是不小心誤觸此選項，請關閉此對話框並禁用該選項。
+  debug_mode: "除錯模式"
+  translator_mode: "翻譯者模式"
+  skip_first_time_setup: "跳過首次安裝器"
+  disable_auto_update_check: "禁用自動更新檢查"
+  disable_translations: "禁用翻譯"
+  enable_ipc: "啟用 IPC"
+  ipc_listen_all: "監聽所有 IPC"
+  auto_translate_stories: "自動翻譯故事"
+  auto_translate_ui: "自動翻譯 UI (可能會導致UI錯誤)"
+  target_fps: "目標 FPS"
+  virtual_resolution_multiplier: "虛擬解析度倍率"
+  ui_scale: "UI 比例"
+  graphics_quality: "圖像品質"
+  vsync: "VSync"
+  auto_full_screen: "自動全螢幕"
+  full_screen_mode: "全螢幕模式"
+  full_screen_mode_exclusive: "獨佔 (Exclusive)"
+  full_screen_mode_borderless: "無邊界 (Borderless)"
+  block_minimize_in_full_screen: "阻止全螢幕最小化"
+  resolution_scaling: "解析度縮放"
+  resolution_scaling_default: "預設 (1080p)"
+  resolution_scaling_ssize: "縮放至螢幕大小"
+  resolution_scaling_wsize: "縮放至視窗大小"
+  window_always_on_top: "視窗保持在最上層"
+  story_choice_auto_select_delay: "故事選項自動選擇延遲"
+  story_text_speed_multiplier: "故事文字速度倍率"
+  force_allow_dynamic_camera: "強制允許動態相機"
+  live_theater_allow_same_chara: "演唱會劇場中允許設置相同角色"
+
+tl_update_dialog:
+  title: "有可用的更新"
+  content: "有可用的更新 (%{size})，是否要下載？"
+
+update_prompt_dialog:
+  title: "有可用的更新"
+  content: |
+    目前有可用的更新 (%{version})，是否要安裝？
+    遊戲將重新啟動以應用更新內容。
+
+updating_dialog:
+  title: "更新中"
+  content: "正在下載更新，遊戲將會短暫重啟…"
