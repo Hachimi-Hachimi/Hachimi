@@ -1,3 +1,5 @@
+_font: "GenYoGothic2TW-B.otf"
+
 hachimi: "Hachimi"
 
 windows:
@@ -75,7 +77,8 @@ first_time_setup:
   complete_heading: "全部完成！"
   complete_content: >
     已設置翻譯資料庫。
-    點擊完成後，配置將被保存並執行更新檢查，這將提示您下載新的翻譯數據。
+    點擊完成後，配置將被保存並檢查更新，
+    這將提示您下載新的翻譯數據。
 
 about:
   title: "關於"
@@ -97,6 +100,10 @@ config_editor:
   general_tab: "⛭ 一般"
   graphics_tab: "🖼 圖像"
   gameplay_tab: "🎮 遊玩"
+  language: "語言"
+  language_english: "英文"
+  language_tchinese: "繁體中文"
+  language_schinese: "簡體中文"
   disable_overlay: "禁用覆蓋 (GUI)"
   disable_overlay_warning: |
     此選項會在您重新啟動遊戲後關閉 Hachimi 覆蓋，
