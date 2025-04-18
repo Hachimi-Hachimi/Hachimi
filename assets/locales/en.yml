@@ -1,3 +1,5 @@
+_font: "Ubuntu-Light.ttf"
+
 hachimi: "Hachimi"
 
 windows:
@@ -98,6 +100,10 @@ config_editor:
   general_tab: "⛭ General"
   graphics_tab: "🖼 Graphics"
   gameplay_tab: "🎮 Gameplay"
+  language: "Language"
+  language_english: "English"
+  language_tchinese: "Traditional Chinese"
+  language_schinese: "Simplified Chinese"
   disable_overlay: "Disable overlay (GUI)"
   disable_overlay_warning: |
     This option will disable the Hachimi overlay after you restart the game,

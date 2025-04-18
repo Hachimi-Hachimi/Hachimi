@@ -4,13 +4,13 @@ use fnv::FnvHashSet;
 use once_cell::sync::OnceCell;
 use rust_i18n::t;
 
-use crate::il2cpp::{
+use crate::{il2cpp::{
     hook::{
         umamusume::{GameSystem, GraphicSettings::GraphicsQuality, Localize},
         UnityEngine_CoreModule::Application
     },
     symbols::Thread
-};
+}, ASSET_MAP};
 
 #[cfg(not(target_os = "windows"))]
 use crate::il2cpp::hook::umamusume::WebViewManager;
@@ -18,7 +18,7 @@ use crate::il2cpp::hook::umamusume::WebViewManager;
 #[cfg(target_os = "windows")]
 use crate::il2cpp::hook::UnityEngine_CoreModule::QualitySettings;
 
-use super::{hachimi, http::AsyncRequest, tl_repo::{self, RepoInfo}, utils, Hachimi};
+use super::{hachimi::{self, Language}, http::AsyncRequest, tl_repo::{self, RepoInfo}, utils, Hachimi};
 
 type BoxedWindow = Box<dyn Window + Send + Sync>;
 pub struct Gui {
@@ -65,22 +65,13 @@ impl Gui {
             return instance;
         }
 
+        let hachimi = Hachimi::instance();
+        let config = hachimi.config.load();
+
         let context = egui::Context::default();
         egui_extras::install_image_loaders(&context);
 
-        let mut fonts = egui::FontDefinitions::default();
-        fonts.font_data.insert("noto_sans".to_owned(),
-            egui::FontData::from_static(include_bytes!("../../assets/fonts/NotoSansCJK-Regular.ttf"))
-        );
-        fonts.font_data.insert("emoji_icon".to_owned(),
-            egui::FontData::from_static(include_bytes!("../../assets/fonts/emoji-icon-font.ttf"))
-        );
-
-        let proportional_fonts = fonts.families.get_mut(&egui::FontFamily::Proportional).unwrap();
-        proportional_fonts.push("noto_sans".to_owned());
-        proportional_fonts.push("emoji_icon".to_owned());
-
-        context.set_fonts(fonts);
+        context.set_fonts(Self::get_font_definitions());
 
         let mut style = egui::Style::default();
         style.spacing.button_padding = egui::Vec2::new(8.0, 6.0);
@@ -92,8 +83,6 @@ impl Gui {
         visuals.widgets.noninteractive.fg_stroke = egui::Stroke::new(1.0, TEXT_COLOR);
         context.set_visuals(visuals);
 
-        let hachimi = Hachimi::instance();
-        let config = hachimi.config.load();
         let mut fps_value = hachimi.target_fps.load(atomic::Ordering::Relaxed);
         if fps_value == -1 {
             fps_value = 30;
@@ -144,6 +133,30 @@ impl Gui {
 
     pub fn instance() -> Option<&'static Mutex<Gui>> {
         INSTANCE.get()
+    }
+
+    fn get_font_definitions() -> egui::FontDefinitions {
+        let mut fonts = egui::FontDefinitions::default();
+        let proportional_fonts = fonts.families.get_mut(&egui::FontFamily::Proportional).unwrap();
+
+        let font_path = t!("_font");
+        if let Some(asset) = ASSET_MAP.get(font_path.as_ref()) {
+            let key = font_path.into_owned();
+            fonts.font_data.insert(key.clone(),
+                egui::FontData::from_static(asset.contents_bytes)
+            );
+            proportional_fonts.push(key);
+        }
+        else {
+            error!("Font doesn't exist: {}", font_path);
+        }
+
+        fonts.font_data.insert("emoji_icon".to_owned(),
+            egui::FontData::from_static(include_bytes!("../../assets/fonts/emoji-icon-font.ttf"))
+        );
+        proportional_fonts.push("emoji_icon".to_owned());
+
+        fonts
     }
 
     pub fn set_screen_size(&mut self, width: i32, height: i32) {
@@ -365,7 +378,7 @@ impl Gui {
                         })));
                     }
                     #[cfg(not(target_os = "windows"))]
-                    if ui.button("🌐 Open in-game browser").clicked() {
+                    if ui.button(t!("menu.open_in_game_browser")).clicked() {
                         show_window = Some(Box::new(SimpleYesNoDialog::new(&t!("confirm_dialog_title"), &t!("in_game_browser_confirm_content"), |ok| {
                             if !ok { return; }
                             Thread::main_thread().schedule(|| {
@@ -455,7 +468,12 @@ impl Gui {
         ]);
     }
 
-    fn run_combo<T: PartialEq + Copy>(ui: &mut egui::Ui, id_child: impl std::hash::Hash, value: &mut T, choices: &[(T, &str)]) {
+    fn run_combo<T: PartialEq + Copy>(
+        ui: &mut egui::Ui,
+        id_child: impl std::hash::Hash,
+        value: &mut T,
+        choices: &[(T, &str)]
+    ) -> bool {
         let mut selected = "Unknown";
         for choice in choices.iter() {
             if *value == choice.0 {
@@ -463,13 +481,16 @@ impl Gui {
             }
         }
 
+        let mut changed = false;
         egui::ComboBox::new(ui.id().with(id_child), "")
         .selected_text(selected)
         .show_ui(ui, |ui| {
             for choice in choices.iter() {
-                ui.selectable_value(value, choice.0, choice.1);
+                changed |= ui.selectable_value(value, choice.0, choice.1).changed();
             }
         });
+
+        changed
     }
 
     fn run_update_progress(&mut self) {
@@ -891,9 +912,21 @@ impl ConfigEditor {
         }
     }
 
-    fn run_options_grid(config: &mut hachimi::Config, ui: &mut egui::Ui, tab: ConfigEditorTab) {
+    fn run_options_grid(config: &mut hachimi::Config, ctx: &egui::Context, ui: &mut egui::Ui, tab: ConfigEditorTab) {
         match tab {
             ConfigEditorTab::General => {
+                ui.label(t!("config_editor.language"));
+                let lang_changed = Gui::run_combo(ui, "language", &mut config.language, &[
+                    (Language::English, &t!("config_editor.language_english")),
+                    (Language::TChinese, &t!("config_editor.language_tchinese")),
+                    (Language::SChinese, &t!("config_editor.language_schinese"))
+                ]);
+                if lang_changed {
+                    config.language.set_locale();
+                    ctx.set_fonts(Gui::get_font_definitions());
+                }
+                ui.end_row();
+
                 ui.label(t!("config_editor.disable_overlay"));
                 if ui.checkbox(&mut config.disable_gui, "").clicked() {
                     if config.disable_gui {
@@ -1077,7 +1110,7 @@ impl Window for ConfigEditor {
                             .num_columns(2)
                             .spacing([40.0, 4.0])
                             .show(ui, |ui| {
-                                Self::run_options_grid(&mut config, ui, self.current_tab);
+                                Self::run_options_grid(&mut config, ctx, ui, self.current_tab);
                             });
                         });
                     });
@@ -1095,7 +1128,17 @@ impl Window for ConfigEditor {
         });
 
         self.config = config;
-        open && open2
+
+        open &= open2;
+        if !open {
+            let config_locale = Hachimi::instance().config.load().language.locale_str();
+            if config_locale != &*rust_i18n::locale() {
+                rust_i18n::set_locale(config_locale);
+                ctx.set_fonts(Gui::get_font_definitions());
+            }
+        }
+
+        open
     }
 }
 
