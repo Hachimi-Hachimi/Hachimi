@@ -117,7 +117,7 @@ config_editor:
   enable_ipc: "啟用 IPC"
   ipc_listen_all: "監聽所有 IPC"
   auto_translate_stories: "自動翻譯故事"
-  auto_translate_ui: "自動翻譯 UI (可能會導致UI錯誤)"
+  auto_translate_ui: "自動翻譯 UI\n(可能會導致UI錯誤)"
   target_fps: "目標 FPS"
   virtual_resolution_multiplier: "虛擬解析度倍率"
   ui_scale: "UI 比例"
