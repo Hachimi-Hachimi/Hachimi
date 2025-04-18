@@ -38,6 +38,7 @@ zip = { version = "0.6", default-features = false, features = ["deflate"] }
 unicode-width = "0.1"
 tiny_http = "0.12"
 rust-i18n = "3.1"
+iftree = "1.0"
 
 [target.'cfg(target_os = "android")'.dependencies]
 libc = "0.2"
