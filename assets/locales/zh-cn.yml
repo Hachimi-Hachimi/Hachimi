@@ -98,6 +98,10 @@ config_editor:
   general_tab: "⛭ 常规"
   graphics_tab: "🖼 图形"
   gameplay_tab: "🎮 游戏玩法"
+  language: "语言"
+  language_english: "英语"
+  language_tchinese: "繁体中文"
+  language_schinese: "简体中文"
   disable_overlay: "禁用覆盖层(GUI)"
   disable_overlay_warning: |
     此选项将在重启游戏后禁用Hachimi覆盖层，
