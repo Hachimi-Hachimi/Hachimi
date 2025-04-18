@@ -1,3 +1,5 @@
+_font: "HanYiQiHei-55S.ttf"
+
 hachimi: "Hachimi"
 
 windows:
@@ -23,7 +25,7 @@ on: "开启"
 enable: "启用"
 warning: "警告"
 confirm_dialog_title: "确认"
-soft_restart_confirm_content: "确定要软重启游戏吗？"
+soft_restart_confirm_content: "确定要在不关闭游戏的情况下重启游戏吗？"
 in_game_browser_confirm_content: "确定要打开游戏内浏览器吗？"
 browser_dialog_title: "浏览器"
 
@@ -31,8 +33,8 @@ menu:
   fps_text: "帧率: %{fps}"
   close_menu: "🗙 关闭菜单"
   stats_heading: "🗊 统计信息"
-  localize_dict_entries: "本地化字典条目: %{count}"
-  hashed_dict_entries: "哈希字典条目: %{count}"
+  localize_dict_entries: "localize_dict 条目: %{count}"
+  hashed_dict_entries: "hashed_dict 条目: %{count}"
   config_heading: "🛠 配置"
   open_config_editor: "✏ 打开配置编辑器"
   reload_config: "⟳ 重新加载配置"
