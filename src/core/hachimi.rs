@@ -68,6 +68,10 @@ impl Hachimi {
         }).clone()
     }
 
+    pub fn is_initialized() -> bool {
+        INSTANCE.get().is_some()
+    }
+
     fn new() -> Result<Hachimi, Error> {
         let game = Game::init();
         let config = Self::load_config(&game.data_dir)?;
