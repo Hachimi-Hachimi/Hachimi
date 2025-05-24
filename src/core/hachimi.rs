@@ -119,6 +119,8 @@ impl Hachimi {
                 return;
             }
         };
+
+        new_config.language.set_locale();
         self.config.store(Arc::new(new_config));
     }
 
@@ -127,6 +129,7 @@ impl Hachimi {
         let config_path = self.get_data_path("config.json");
         utils::write_json_file(&config, &config_path)?;
 
+        config.language.set_locale();
         self.config.store(Arc::new(config));
         Ok(())
     }
@@ -314,11 +317,17 @@ pub enum Language {
 }
 
 impl Language {
+    pub const CHOICES: &[(Self, &'static str)] = &[
+        Self::English.choice(),
+        Self::TChinese.choice(),
+        Self::SChinese.choice()
+    ];
+
     pub fn set_locale(&self) {
         rust_i18n::set_locale(self.locale_str());
     }
 
-    pub fn locale_str(&self) -> &'static str {
+    pub const fn locale_str(&self) -> &'static str {
         match self {
             Language::English => "en",
             Language::TChinese => "zh-tw",
@@ -326,7 +335,7 @@ impl Language {
         }
     }
 
-    pub fn name(&self) -> &'static str {
+    pub const fn name(&self) -> &'static str {
         match self {
             Language::English => "English",
             Language::TChinese => "繁體中文",
@@ -334,7 +343,7 @@ impl Language {
         }
     }
 
-    pub fn choice(self) -> (Self, &'static str) {
+    pub const fn choice(self) -> (Self, &'static str) {
         (self, self.name())
     }
 }

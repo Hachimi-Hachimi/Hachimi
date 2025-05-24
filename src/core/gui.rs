@@ -913,11 +913,7 @@ impl ConfigEditor {
         match tab {
             ConfigEditorTab::General => {
                 ui.label(t!("config_editor.language"));
-                let lang_changed = Gui::run_combo(ui, "language", &mut config.language, &[
-                    Language::English.choice(),
-                    Language::TChinese.choice(),
-                    Language::SChinese.choice()
-                ]);
+                let lang_changed = Gui::run_combo(ui, "language", &mut config.language, Language::CHOICES);
                 if lang_changed {
                     config.language.set_locale();
                 }
@@ -1185,6 +1181,20 @@ impl Window for FirstTimeSetupWindow {
                         ui.heading(t!("first_time_setup.welcome_heading"));
                         ui.separator();
                         ui.label(t!("first_time_setup.welcome_content"));
+                        ui.add_space(4.0);
+                        ui.horizontal(|ui| {
+                            ui.label(t!("config_editor.language"));
+
+                            let hachimi = Hachimi::instance();
+                            let config = &**hachimi.config.load();
+                            let mut language = config.language;
+                            let lang_changed = Gui::run_combo(ui, "language", &mut language, Language::CHOICES);
+                            if lang_changed {
+                                let mut config = config.clone();
+                                config.language = language;
+                                save_and_reload_config(config);
+                            }   
+                        });
                         true
                     }
                     1 => {
