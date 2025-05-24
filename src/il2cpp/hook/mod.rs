@@ -5,7 +5,7 @@ macro_rules! new_hook {
     ($orig:ident, $hook:ident) => (
         info!("new_hook!: {}", stringify!($hook));
         if ($orig != 0) {
-            let res = crate::core::Hachimi::instance().interceptor().hook($orig as usize, $hook as usize);
+            let res = crate::core::Hachimi::instance().interceptor.hook($orig as usize, $hook as usize);
             if let Err(e) = res {
                 error!("{}", e);
             }

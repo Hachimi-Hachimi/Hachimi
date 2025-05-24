@@ -37,9 +37,6 @@ threadpool = "1.8"
 zip = { version = "0.6", default-features = false, features = ["deflate"] }
 unicode-width = "0.1"
 tiny_http = "0.12"
-mlua = { version = "0.10", features = ["lua54", "vendored"] }
-bitflags = "2.9"
-libffi = { git = "https://github.com/LeadRDRK/libffi-rs.git", rev = "5c732a3844b7ed65692b65b224e7ed9ab519d3b7" }
 
 [target.'cfg(target_os = "android")'.dependencies]
 libc = "0.2"

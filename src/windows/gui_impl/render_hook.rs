@@ -62,8 +62,7 @@ extern "C" fn IDXGISwapChain_Present(this: *mut c_void, sync_interval: c_uint, f
             info!("Unhooking IDXGISwapChain hooks");
 
             let res = orig_fn(this, sync_interval, flags);
-            let hachimi = Hachimi::instance();
-            let mut interceptor = hachimi.interceptor();
+            let interceptor = &Hachimi::instance().interceptor;
             interceptor.unhook(IDXGISwapChain_Present as usize);
             interceptor.unhook(IDXGISwapChain_ResizeBuffers as usize);
             return res;
@@ -122,8 +121,7 @@ extern "C" fn IDXGISwapChain_ResizeBuffers(
             error!("{}", e);
             info!("Unhooking IDXGISwapChain hooks");
 
-            let hachimi = Hachimi::instance();
-            let mut interceptor = hachimi.interceptor();
+            let interceptor = &Hachimi::instance().interceptor;
             interceptor.unhook(IDXGISwapChain_Present as usize);
             interceptor.unhook(IDXGISwapChain_ResizeBuffers as usize);
             return orig_fn(this, buffer_count, width, height, new_format, swap_chain_flags);
@@ -214,15 +212,14 @@ fn get_swap_chain_vtable() -> Result<*mut usize, Error> {
 
 fn init_internal() -> Result<(), Error> {
     let swap_chain_vtable = get_swap_chain_vtable()?;
-    let hachimi = Hachimi::instance();
-    let mut interceptor = hachimi.interceptor();
+    let interceptor = &Hachimi::instance().interceptor;
 
     unsafe {
         info!("Hooking IDXGISwapChain::Present");
-        PRESENT_ADDR = interceptor.hook((swap_chain_vtable, 8), IDXGISwapChain_Present as usize)?;
+        PRESENT_ADDR = interceptor.hook_vtable(swap_chain_vtable, 8, IDXGISwapChain_Present as usize)?;
 
         info!("Hooking IDXGISwapChain::ResizeBuffers");
-        RESIZEBUFFERS_ADDR = interceptor.hook((swap_chain_vtable, 13), IDXGISwapChain_ResizeBuffers as usize)?;
+        RESIZEBUFFERS_ADDR = interceptor.hook_vtable(swap_chain_vtable, 13, IDXGISwapChain_ResizeBuffers as usize)?;
     }
 
     Ok(())

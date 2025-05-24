@@ -10,7 +10,7 @@ type LoadLibraryWFn = extern "C" fn(filename: PCWSTR) -> HMODULE;
 extern "C" fn LoadLibraryW(filename: PCWSTR) -> HMODULE {
     let hachimi = Hachimi::instance();
     let orig_fn: LoadLibraryWFn = unsafe {
-        std::mem::transmute(hachimi.interceptor().get_trampoline_addr(LoadLibraryW as usize))
+        std::mem::transmute(hachimi.interceptor.get_trampoline_addr(LoadLibraryW as usize))
     };
 
     let handle = orig_fn(filename);
@@ -22,7 +22,7 @@ extern "C" fn LoadLibraryW(filename: PCWSTR) -> HMODULE {
     }
 
     if hachimi.on_dlopen(&filename_str, handle.0 as usize) {
-        hachimi.interceptor().unhook(LoadLibraryW as usize);
+        hachimi.interceptor.unhook(LoadLibraryW as usize);
     }
     handle
 }
@@ -43,7 +43,7 @@ fn init_internal() -> Result<(), Error> {
         proxy::unityplayer::init();
 
         info!("Hooking LoadLibraryW");
-        hachimi.interceptor().hook(ffi::LoadLibraryW as usize, LoadLibraryW as usize)?;   
+        hachimi.interceptor.hook(ffi::LoadLibraryW as usize, LoadLibraryW as usize)?;   
     }
 
     Ok(())

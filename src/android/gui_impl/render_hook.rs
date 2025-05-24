@@ -47,7 +47,7 @@ extern "C" fn eglSwapBuffers(display: EGLDisplay, surface: EGLSurface) -> EGLBoo
             info!("Unhooking eglSwapBuffers");
 
             let res = orig_fn(display, surface);
-            Hachimi::instance().interceptor().unhook(eglSwapBuffers as usize);
+            Hachimi::instance().interceptor.unhook(eglSwapBuffers as usize);
             return res;
         }
     };
@@ -146,9 +146,7 @@ fn init_internal() -> Result<(), Error> {
     let eglSwapBuffers_addr = unsafe { libc::dlsym(egl_handle, c"eglSwapBuffers".as_ptr()) };
 
     unsafe {
-        EGLSWAPBUFFERS_ADDR = Hachimi::instance().interceptor().hook(
-            eglSwapBuffers_addr as usize, eglSwapBuffers as usize
-        )?;
+        EGLSWAPBUFFERS_ADDR = Hachimi::instance().interceptor.hook(eglSwapBuffers_addr as usize, eglSwapBuffers as usize)?;
         EGLGETPROCADDRESS_ADDR = libc::dlsym(egl_handle, c"eglGetProcAddress".as_ptr()) as usize;
         EGLQUERYSURFACE_ADDR = libc::dlsym(egl_handle, c"eglQuerySurface".as_ptr()) as usize
     }
