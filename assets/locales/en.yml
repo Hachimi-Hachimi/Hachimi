@@ -46,6 +46,7 @@ menu:
   translation_heading: "\uf02d Translation"
   reload_localized_data: "\uf021 Reload localized data"
   check_for_updates: "\uf0aa Check for updates"
+  check_for_updates_pedantic: "\uf0aa Check for updates (pedantic)"
   dump_localize_dict: "Dump localize dict"
   danger_zone_heading: "\uf071 Danger Zone"
   danger_zone_warning: "These options might have unintended effects on the game. Use with caution!"

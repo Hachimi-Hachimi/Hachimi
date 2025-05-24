@@ -132,15 +132,15 @@ impl DownloadJob {
 }
 
 impl Updater {
-    pub fn check_for_updates(self: Arc<Self>) {
+    pub fn check_for_updates(self: Arc<Self>, pedantic: bool) {
         std::thread::spawn(move || {
-            if let Err(e) = self.check_for_updates_internal() {
+            if let Err(e) = self.check_for_updates_internal(pedantic) {
                 error!("{}", e);
             }
         });
     }
 
-    fn check_for_updates_internal(&self) -> Result<(), Error> {
+    fn check_for_updates_internal(&self, pedantic: bool) -> Result<(), Error> {
         // Prevent multiple update checks running at the same time
         let Ok(_guard) = self.update_check_mutex.try_lock() else {
             return Ok(());
@@ -184,8 +184,8 @@ impl Updater {
             }
             else if let Some(hash) = repo_cache.files.get(&file.path) {
                 if hash == &file.hash {
-                    // download if the file doesn't actually exist on disk
-                    ld_dir_path.as_ref().map(|p| !p.join(&file.path).is_file()).unwrap_or(true)
+                    // download if the file doesn't actually exist on disk (in pedantic mode)
+                    pedantic && ld_dir_path.as_ref().map(|p| !p.join(&file.path).is_file()).unwrap_or(true)
                 }
                 else {
                     true

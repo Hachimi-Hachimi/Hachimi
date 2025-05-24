@@ -345,7 +345,10 @@ impl Gui {
                         show_notification = Some(t!("notification.localized_data_reloaded"));
                     }
                     if ui.button(t!("menu.check_for_updates")).clicked() {
-                        hachimi.tl_updater.clone().check_for_updates();
+                        hachimi.tl_updater.clone().check_for_updates(false);
+                    }
+                    if ui.button(t!("menu.check_for_updates_pedantic")).clicked() {
+                        hachimi.tl_updater.clone().check_for_updates(true);
                     }
                     if hachimi.config.load().translator_mode {
                         if ui.button(t!("menu.dump_localize_dict")).clicked() {
@@ -1254,7 +1257,7 @@ impl Window for FirstTimeSetupWindow {
             save_and_reload_config(config);
 
             if !page_open {
-                hachimi.tl_updater.clone().check_for_updates();
+                hachimi.tl_updater.clone().check_for_updates(false);
             }
         }
 

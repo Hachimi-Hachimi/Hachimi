@@ -196,14 +196,14 @@ impl Hachimi {
     pub fn run_auto_update_check(&self) {
         if !self.config.load().disable_auto_update_check {
             #[cfg(not(target_os = "windows"))]
-            self.tl_updater.clone().check_for_updates();
+            self.tl_updater.clone().check_for_updates(false);
 
             // Check for hachimi updates first, then translations
             // Don't auto check for tl updates if it's not up to date
             #[cfg(target_os = "windows")]
             self.updater.clone().check_for_updates(|new_update| {
                 if !new_update {
-                    Hachimi::instance().tl_updater.clone().check_for_updates();
+                    Hachimi::instance().tl_updater.clone().check_for_updates(false);
                 }
             });
         }
