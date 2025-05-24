@@ -260,6 +260,8 @@ pub struct Config {
     pub auto_translate_localize: bool,
     #[serde(default)]
     pub language: Language,
+    #[serde(default = "Config::default_meta_index_url")]
+    pub meta_index_url: String,
 
     #[cfg(target_os = "windows")]
     #[serde(flatten)]
@@ -276,6 +278,7 @@ impl Config {
     fn default_ui_scale() -> f32 { 1.0 }
     fn default_story_choice_auto_select_delay() -> f32 { 0.75 }
     fn default_story_tcps_multiplier() -> f32 { 1.0 }
+    fn default_meta_index_url() -> String { "https://files.leadrdrk.com/hachimi/meta/index.json".to_owned() }
 }
 
 impl Default for Config {

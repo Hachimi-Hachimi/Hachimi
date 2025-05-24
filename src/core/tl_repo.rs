@@ -15,9 +15,9 @@ pub struct RepoInfo {
     pub index: String
 }
 
-const META_INDEX_URL: &str = "https://raw.githubusercontent.com/Hachimi-Hachimi/meta/main/index.json";
 pub fn new_meta_index_request() -> AsyncRequest<Vec<RepoInfo>> {
-    AsyncRequest::with_json_response(ureq::get(META_INDEX_URL))
+    let meta_index_url = &Hachimi::instance().config.load().meta_index_url;
+    AsyncRequest::with_json_response(ureq::get(meta_index_url))
 }
 
 #[derive(Deserialize)]
