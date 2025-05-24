@@ -1,0 +1,145 @@
+hachimi: "Hachimi"
+
+windows:
+  menu_open_key: "右方向键"
+
+android:
+  menu_open_key: "「音量+」键 + 「音量-」键"
+
+splash_sub: "\uf015 按 %{open_key_str} 打开菜单"
+loading_label: "加载中..."
+cancel: "取消"
+save: "保存"
+done: "完成"
+next: "下一步"
+previous: "上一步"
+yes: "是"
+no: "否"
+ok: "确定"
+retry: "重试"
+default: "默认"
+off: "关闭"
+on: "开启"
+enable: "启用"
+warning: "警告"
+confirm_dialog_title: "确认"
+soft_restart_confirm_content: "确定要软重启游戏吗？"
+in_game_browser_confirm_content: "确定要打开游戏内浏览器吗？"
+browser_dialog_title: "浏览器"
+
+menu:
+  fps_text: "帧率: %{fps}"
+  close_menu: "\uf00d 关闭菜单"
+  stats_heading: "\uf022 统计数据"
+  localize_dict_entries: "localize_dict 条目: %{count}"
+  hashed_dict_entries: "hashed_dict 条目: %{count}"
+  config_heading: "\uf0ad 配置"
+  open_config_editor: "\uf040 打开配置编辑器"
+  reload_config: "\uf021 重新加载配置"
+  open_first_time_setup: "\uf135 打开初始化设置"
+  graphics_heading: "\uf03e 图形设置"
+  fps_label: "帧率限制"
+  vsync_label: "垂直同步"
+  stay_on_top: "窗口置顶"
+  translation_heading: "\uf02d 翻译"
+  reload_localized_data: "\uf021 重新加载本地化数据"
+  check_for_updates: "\uf0aa 检查更新"
+  dump_localize_dict: "导出本地化字典"
+  danger_zone_heading: "\uf071 危险操作"
+  danger_zone_warning: "这些选项可能会对游戏产生异常影响，请谨慎使用！"
+  soft_restart: "\uf021 软重启"
+  open_in_game_browser: "\uf0ac 打开游戏内浏览器"
+  toggle_game_ui: "\uf06e 切换游戏界面显示"
+
+notification:
+  saved_localize_dump: "已保存到 localize_dump.json"
+  config_reloaded: "配置已重新加载"
+  config_saved: "配置已保存"
+  localized_data_reloaded: "本地化数据已重新加载"
+  checking_for_tl_updates: "正在检查翻译更新..."
+  no_tl_updates: "无可用翻译更新"
+  update_failed: "更新失败: %{reason}"
+  update_completed: "更新完成"
+  errors_during_update: "更新过程中出现 %{count} 个错误，详情请参阅日志"
+  checking_for_updates: "正在检查更新..."
+  no_updates: "无可用更新"
+
+first_time_setup:
+  title: "初始化设置"
+  welcome_heading: "欢迎"
+  welcome_content: |
+    Hachimi 已安装成功！本向导将引导您完成初始设置。
+    如果您不需要使用翻译功能，可以直接关闭此窗口跳过设置。
+  translation_repo_heading: "翻译仓库"
+  select_translation_repo: "选择翻译仓库："
+  complete_heading: "全部完成！"
+  complete_content: >
+    翻译仓库已设置完成。点击"完成"后，配置将被保存，
+    系统将自动检查更新并提示您下载最新的翻译数据。
+
+about:
+  title: "关于"
+  copyright: "© 2024-2025 LeadRDRK 及贡献者"
+  view_license: "查看许可证"
+  check_for_updates: "检查更新"
+
+license:
+  title: "许可证"
+
+tl_updater:
+  title: "更新中..."
+  warning: "翻译功能在更新期间\n将暂时不可用"
+
+config_editor:
+  title: "配置编辑器"
+  general_tab: "\uf013 常规"
+  graphics_tab: "\uf03e 图形"
+  gameplay_tab: "\uf11b 游戏玩法"
+  language: "语言"
+  disable_overlay: "禁用覆盖层(GUI)"
+  disable_overlay_warning: |
+    此选项将在游戏重启后禁用Hachimi的GUI，
+    您将无法再访问配置编辑器。
+    如非本意，请关闭此窗口并禁用此选项。
+  debug_mode: "调试模式"
+  translator_mode: "翻译者模式"
+  skip_first_time_setup: "跳过初始化设置"
+  disable_auto_update_check: "禁用自动更新检查"
+  disable_translations: "禁用翻译功能"
+  enable_ipc: "启用 IPC"
+  ipc_listen_all: "IPC 监听所有地址"
+  auto_translate_stories: "自动翻译剧情"
+  auto_translate_ui: "自动翻译游戏界面\n(可能导致游戏界面异常)"
+  target_fps: "目标帧率"
+  virtual_resolution_multiplier: "分辨率缩放倍数"
+  ui_scale: "界面缩放比例"
+  graphics_quality: "图形质量"
+  vsync: "垂直同步"
+  auto_full_screen: "自动全屏"
+  full_screen_mode: "全屏模式"
+  full_screen_mode_exclusive: "独占全屏"
+  full_screen_mode_borderless: "无边框窗口"
+  block_minimize_in_full_screen: "全屏时阻止最小化"
+  resolution_scaling: "分辨率缩放"
+  resolution_scaling_default: "默认(1080p)"
+  resolution_scaling_ssize: "适应屏幕尺寸"
+  resolution_scaling_wsize: "适应窗口尺寸"
+  window_always_on_top: "窗口置顶"
+  story_choice_auto_select_delay: "剧情选项自动选择延迟"
+  story_text_speed_multiplier: "剧情文本速度倍率"
+  force_allow_dynamic_camera: "强制启用动态镜头"
+  live_theater_allow_same_chara: "在 LIVE 剧场中允许设置多个相同角色"
+
+tl_update_dialog:
+  title: "新翻译更新可用"
+  content: "新的翻译更新可用 (%{size})，是否下载？"
+
+update_prompt_dialog:
+  title: "新版本可用"
+  content: |
+    发现新的Hachimi更新 (%{version})，是否立即安装？
+    安装完成后游戏将自动重启。
+
+updating_dialog:
+  title: "更新中"
+  content: "正在下载更新，游戏即将重启..."

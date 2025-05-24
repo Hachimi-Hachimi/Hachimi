@@ -2,6 +2,7 @@ use std::{fs, io::{Read, Write}, path::{Path, PathBuf}, sync::{atomic::{self, At
 
 use arc_swap::ArcSwap;
 use fnv::FnvHashMap;
+use rust_i18n::t;
 use serde::{Deserialize, Serialize};
 use size::Size;
 use threadpool::ThreadPool;
@@ -153,7 +154,7 @@ impl Updater {
         let ld_dir_path = config.localized_data_dir.as_ref().map(|p| hachimi.get_data_path(p));
 
         if let Some(mutex) = Gui::instance() {
-            mutex.lock().unwrap().show_notification("Checking for translation updates...");
+            mutex.lock().unwrap().show_notification(&t!("notification.checking_for_tl_updates"));
         }
 
         let index: RepoIndex = http::get_json(index_url)?;
@@ -215,8 +216,8 @@ impl Updater {
             })));
             if let Some(mutex) = Gui::instance() {
                 mutex.lock().unwrap().show_window(Box::new(SimpleYesNoDialog::new(
-                    "New update available",
-                    &format!("A new translation update is available ({}). Do you want to download it?", Size::from_bytes(update_size)),
+                    &t!("tl_update_dialog.title"),
+                    &t!("tl_update_dialog.content", size = Size::from_bytes(update_size)),
                     |ok| {
                         if !ok { return; }
                         Hachimi::instance().tl_updater.clone().run();
@@ -225,7 +226,7 @@ impl Updater {
             }
         }
         else if let Some(mutex) = Gui::instance() {
-            mutex.lock().unwrap().show_notification("No translation updates available.");
+            mutex.lock().unwrap().show_notification(&t!("notification.no_tl_updates"));
         }
         
         Ok(())
@@ -237,7 +238,7 @@ impl Updater {
                 error!("{}", e);
                 self.progress.store(Arc::new(None));
                 if let Some(mutex) = Gui::instance() {
-                    mutex.lock().unwrap().show_notification(&("Update failed: ".to_owned() + &e.to_string()));
+                    mutex.lock().unwrap().show_notification(&t!("notification.update_failed", reason = e.to_string()));
                 }
             }
         });
@@ -305,9 +306,9 @@ impl Updater {
 
         if let Some(mutex) = Gui::instance() {
             let mut gui = mutex.lock().unwrap();
-            gui.show_notification("Update completed.");
+            gui.show_notification(&t!("notification.update_completed"));
             if error_count > 0 {
-                gui.show_notification(&(error_count.to_string() + " errors occurred during update. Check logs for more info."));
+                gui.show_notification(&t!("notification.errors_during_update", count = error_count));
             }
         }
         Ok(())

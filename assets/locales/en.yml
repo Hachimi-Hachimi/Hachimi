@@ -1,0 +1,148 @@
+_font: "AlibabaPuHuiTi-3-45-Light.otf"
+
+hachimi: "Hachimi"
+
+windows:
+  menu_open_key: "Right arrow"
+
+android:
+  menu_open_key: "Vol Up + Vol Down"
+
+splash_sub: "\uf015 Press %{open_key_str} to open menu."
+loading_label: "Loading..."
+cancel: "Cancel"
+save: "Save"
+done: "Done"
+next: "Next"
+previous: "Previous"
+yes: "Yes"
+no: "No"
+ok: "OK"
+retry: "Retry"
+default: "Default"
+off: "Off"
+on: "On"
+enable: "Enable"
+warning: "Warning"
+confirm_dialog_title: "Confirm"
+soft_restart_confirm_content: "Are you sure you want to soft restart the game?"
+in_game_browser_confirm_content: "Are you sure you want to open the in-game browser?"
+browser_dialog_title: "Browser"
+
+menu:
+  fps_text: "FPS: %{fps}"
+  close_menu: "\uf00d Close menu"
+  stats_heading: "\uf022 Stats"
+  localize_dict_entries: "localize_dict entries: %{count}"
+  hashed_dict_entries: "hashed_dict entries: %{count}"
+  config_heading: "\uf0ad Config"
+  open_config_editor: "\uf040 Open config editor"
+  reload_config: "\uf021 Reload config"
+  open_first_time_setup: "\uf135 Open first time setup"
+  graphics_heading: "\uf03e Graphics"
+  fps_label: "FPS"
+  vsync_label: "VSync"
+  stay_on_top: "Stay on top"
+  translation_heading: "\uf02d Translation"
+  reload_localized_data: "\uf021 Reload localized data"
+  check_for_updates: "\uf0aa Check for updates"
+  dump_localize_dict: "Dump localize dict"
+  danger_zone_heading: "\uf071 Danger Zone"
+  danger_zone_warning: "These options might have unintended effects on the game. Use with caution!"
+  soft_restart: "\uf021 Soft restart"
+  open_in_game_browser: "\uf0ac Open in-game browser"
+  toggle_game_ui: "\uf06e Toggle game UI"
+
+notification:
+  saved_localize_dump: "Saved to localize_dump.json"
+  config_reloaded: "Config reloaded."
+  config_saved: "Config saved."
+  localized_data_reloaded: "Localized data reloaded."
+  checking_for_tl_updates: "Checking for translation updates..."
+  no_tl_updates: "No translation updates available."
+  update_failed: "Update failed: %{reason}"
+  update_completed: "Update completed."
+  errors_during_update: "%{count} errors occurred during update. Check logs for more info."
+  checking_for_updates: "Checking for updates..."
+  no_updates: "No updates available."
+
+first_time_setup:
+  title: "First Time Setup"
+  welcome_heading: "Welcome"
+  welcome_content: |
+    Hachimi has been installed! This will guide you through the initial setup process.
+    If you're not interested in using the translation features, you may skip it by closing this dialog.
+  translation_repo_heading: "Translation repo"
+  select_translation_repo: "Select a translation repo:"
+  complete_heading: "All done!"
+  complete_content: >
+    The translation repo has been set. Once you click on Done, the configuration will
+    be saved and an update check will be performed, which will prompt you to download the
+    new translation data.
+
+about:
+  title: "About"
+  copyright: "© 2024-2025 LeadRDRK and contributors"
+  view_license: "View license"
+  check_for_updates: "Check for updates"
+
+license:
+  title: "License"
+
+tl_updater:
+  title: "Updating..."
+  warning: "Translations will not work\nwhile update is in progress"
+
+config_editor:
+  title: "Config Editor"
+  general_tab: "\uf013 General"
+  graphics_tab: "\uf03e Graphics"
+  gameplay_tab: "\uf11b Gameplay"
+  language: "Language"
+  disable_overlay: "Disable overlay (GUI)"
+  disable_overlay_warning: |
+    This option will disable the Hachimi overlay after you restart the game,
+    which means that you will NOT be able to access the Config Editor after this.
+    If this was not intentional, close this dialog and DISABLE the option.
+  debug_mode: "Debug mode"
+  translator_mode: "Translator mode"
+  skip_first_time_setup: "Skip first time setup"
+  disable_auto_update_check: "Disable auto update\ncheck"
+  disable_translations: "Disable translations"
+  enable_ipc: "Enable IPC"
+  ipc_listen_all: "IPC listen all"
+  auto_translate_stories: "Auto translate\nstories"
+  auto_translate_ui: "Auto translate UI\n(MIGHT BREAK UIs)"
+  target_fps: "Target FPS"
+  virtual_resolution_multiplier: "Virtual resolution\nmultiplier"
+  ui_scale: "UI scale"
+  graphics_quality: "Graphics quality"
+  vsync: "VSync"
+  auto_full_screen: "Auto full screen"
+  full_screen_mode: "Full screen mode"
+  full_screen_mode_exclusive: "Exclusive"
+  full_screen_mode_borderless: "Borderless"
+  block_minimize_in_full_screen: "Block minimize in\nfull screen"
+  resolution_scaling: "Resolution scaling"
+  resolution_scaling_default: "Default (1080p)"
+  resolution_scaling_ssize: "Scale to screen size"
+  resolution_scaling_wsize: "Scale to window size"
+  window_always_on_top: "Window always on top"
+  story_choice_auto_select_delay: "Story choice auto\nselect delay"
+  story_text_speed_multiplier: "Story text speed\nmultiplier"
+  force_allow_dynamic_camera: "Force allow\ndynamic camera"
+  live_theater_allow_same_chara: "Live theater\nallow same chara"
+
+tl_update_dialog:
+  title: "New update available"
+  content: "A new translation update is available (%{size}). Do you want to download it?"
+
+update_prompt_dialog:
+  title: "New update available"
+  content: |
+    A new Hachimi update is available (%{version}). Do you want to install it?
+    The game will be restarted in order to apply the update.
+
+updating_dialog:
+  title: "Updating"
+  content: "Downloading update, the game will restart shortly..."

@@ -38,7 +38,7 @@ static mut EGLSWAPBUFFERS_ADDR: usize = 0;
 type EGLSwapBuffersFn = extern "C" fn(display: EGLDisplay, surface: EGLSurface) -> EGLBoolean;
 extern "C" fn eglSwapBuffers(display: EGLDisplay, surface: EGLSurface) -> EGLBoolean {
     let orig_fn: EGLSwapBuffersFn = unsafe { std::mem::transmute(EGLSWAPBUFFERS_ADDR) };
-    let mut gui = Gui::instance_or_init("Vol Up + Vol Down").lock().unwrap();
+    let mut gui = Gui::instance_or_init("android.menu_open_key").lock().unwrap();
     // Big fat state destroyer, initialize it as soon as possible
     let painter = match init_painter() {
         Ok(v) => v,

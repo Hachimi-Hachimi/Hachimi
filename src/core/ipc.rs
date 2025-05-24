@@ -1,5 +1,6 @@
 use std::sync::{Condvar, Mutex};
 
+use rust_i18n::t;
 use serde::{Deserialize, Serialize};
 use tiny_http::{Header, Method, Request, Response, Server};
 
@@ -148,7 +149,7 @@ fn on_http_request(request: &mut Request) -> Result<CommandResponse, Error> {
         Command::ReloadLocalizedData => {
             Hachimi::instance().load_localized_data();
             if let Some(mutex) = Gui::instance() {
-                mutex.lock().unwrap().show_notification("Localized data reloaded.");
+                mutex.lock().unwrap().show_notification(&t!("notification.localized_data_reloaded"));
             }
         }
     }

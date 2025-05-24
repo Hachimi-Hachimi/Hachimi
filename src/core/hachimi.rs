@@ -72,6 +72,8 @@ impl Hachimi {
         let game = Game::init();
         let config = Self::load_config(&game.data_dir)?;
 
+        config.language.set_locale();
+
         Ok(Hachimi {
             interceptor: Interceptor::default(),
             hooking_finished: AtomicBool::new(false),
@@ -253,6 +255,8 @@ pub struct Config {
     pub auto_translate_stories: bool,
     #[serde(default)]
     pub auto_translate_localize: bool,
+    #[serde(default)]
+    pub language: Language,
 
     #[cfg(target_os = "windows")]
     #[serde(flatten)]
@@ -293,6 +297,45 @@ impl<T> OsOption<T> {
 
         #[cfg(target_os = "windows")]
         return self.windows.as_ref();
+    }
+}
+
+#[derive(Default, Copy, Clone, Eq, PartialEq, Deserialize, Serialize)]
+#[allow(non_camel_case_types)]
+pub enum Language {
+    #[serde(rename = "en")]
+    #[default] English,
+
+    #[serde(rename = "zh-tw")]
+    TChinese,
+
+    #[serde(rename = "zh-cn")]
+    SChinese
+}
+
+impl Language {
+    pub fn set_locale(&self) {
+        rust_i18n::set_locale(self.locale_str());
+    }
+
+    pub fn locale_str(&self) -> &'static str {
+        match self {
+            Language::English => "en",
+            Language::TChinese => "zh-tw",
+            Language::SChinese => "zh-cn"
+        }
+    }
+
+    pub fn name(&self) -> &'static str {
+        match self {
+            Language::English => "English",
+            Language::TChinese => "繁體中文",
+            Language::SChinese => "简体中文"
+        }
+    }
+
+    pub fn choice(self) -> (Self, &'static str) {
+        (self, self.name())
     }
 }
 
