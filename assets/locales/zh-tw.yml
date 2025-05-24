@@ -44,6 +44,7 @@ menu:
   translation_heading: "\uf02d 翻譯"
   reload_localized_data: "\uf021 重新載入翻譯數據"
   check_for_updates: "\uf0aa 檢查更新"
+  check_for_updates_pedantic: "\uf0aa 檢查更新（深度模式）"
   dump_localize_dict: "導出 localize dict"
   danger_zone_heading: "\uf071 危險區域"
   danger_zone_warning: "這些選項可能會導致遊戲異常，請小心使用！"

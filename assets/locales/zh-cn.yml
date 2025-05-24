@@ -44,6 +44,7 @@ menu:
   translation_heading: "\uf02d 翻译"
   reload_localized_data: "\uf021 重新加载本地化数据"
   check_for_updates: "\uf0aa 检查更新"
+  check_for_updates_pedantic: "\uf0aa 检查更新（详细）"
   dump_localize_dict: "导出本地化字典"
   danger_zone_heading: "\uf071 危险操作"
   danger_zone_warning: "这些选项可能会对游戏产生异常影响，请谨慎使用！"
