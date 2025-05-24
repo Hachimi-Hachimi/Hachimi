@@ -623,7 +623,6 @@ dependencies = [
  "egui_glow",
  "fnv",
  "glow",
- "iftree",
  "image",
  "jni",
  "libc",
@@ -705,21 +704,6 @@ checksum = "634d9b1461af396cad843f47fdba5597a4f9e6ddd4bfb6ff5d85028c25cb12f6"
 dependencies = [
  "unicode-bidi",
  "unicode-normalization",
-]
-
-[[package]]
-name = "iftree"
-version = "1.0.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8751c930aba7aba2693aa6ae87db9554ee2541c6874e87c2b7b830acd6d71c60"
-dependencies = [
- "ignore",
- "proc-macro2",
- "quote",
- "serde",
- "syn 2.0.49",
- "toml 0.8.14",
- "unicode-xid",
 ]
 
 [[package]]
@@ -1606,12 +1590,6 @@ name = "unicode-width"
 version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e51733f11c9c4f72aa0c160008246859e340b00807569a0da0e7a1079b27ba85"
-
-[[package]]
-name = "unicode-xid"
-version = "0.2.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ebc1c04c71510c7f702b52b7c350734c9ff1295c464a03335b00bb84fc54f853"
 
 [[package]]
 name = "unsafe-libyaml"

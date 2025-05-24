@@ -3,22 +3,6 @@
 
 rust_i18n::i18n!("assets/locales", fallback = "en");
 
-#[iftree::include_file_tree("
-    base_folder = 'assets/fonts'
-    paths = '*.{ttf,otf}'
-")]
-pub struct Asset {
-    relative_path: &'static str,
-    contents_bytes: &'static [u8]
-}
-
-static ASSET_MAP: std::sync::LazyLock<std::collections::HashMap<&str, &Asset>> = std::sync::LazyLock::new(|| {
-    ASSETS
-        .iter()
-        .map(|asset| (asset.relative_path, asset))
-        .collect()
-});
-
 #[macro_use] pub mod core;
 pub mod il2cpp;
 

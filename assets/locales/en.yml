@@ -1,4 +1,4 @@
-_font: "Ubuntu-Light.ttf"
+_font: "AlibabaPuHuiTi-3-45-Light.otf"
 
 hachimi: "Hachimi"
 
@@ -8,7 +8,7 @@ windows:
 android:
   menu_open_key: "Vol Up + Vol Down"
 
-splash_sub: "🏠 Press %{open_key_str} to open menu."
+splash_sub: "\uf015 Press %{open_key_str} to open menu."
 loading_label: "Loading..."
 cancel: "Cancel"
 save: "Save"
@@ -31,27 +31,27 @@ browser_dialog_title: "Browser"
 
 menu:
   fps_text: "FPS: %{fps}"
-  close_menu: "🗙 Close menu"
-  stats_heading: "🗊 Stats"
+  close_menu: "\uf00d Close menu"
+  stats_heading: "\uf022 Stats"
   localize_dict_entries: "localize_dict entries: %{count}"
   hashed_dict_entries: "hashed_dict entries: %{count}"
-  config_heading: "🛠 Config"
-  open_config_editor: "✏ Open config editor"
-  reload_config: "⟳ Reload config"
-  open_first_time_setup: "🚀 Open first time setup"
-  graphics_heading: "🖼 Graphics"
+  config_heading: "\uf0ad Config"
+  open_config_editor: "\uf040 Open config editor"
+  reload_config: "\uf021 Reload config"
+  open_first_time_setup: "\uf135 Open first time setup"
+  graphics_heading: "\uf03e Graphics"
   fps_label: "FPS"
   vsync_label: "VSync"
   stay_on_top: "Stay on top"
-  translation_heading: "📖 Translation"
-  reload_localized_data: "⟳ Reload localized data"
-  check_for_updates: "⮉ Check for updates"
+  translation_heading: "\uf02d Translation"
+  reload_localized_data: "\uf021 Reload localized data"
+  check_for_updates: "\uf0aa Check for updates"
   dump_localize_dict: "Dump localize dict"
-  danger_zone_heading: "⚠ Danger Zone"
+  danger_zone_heading: "\uf071 Danger Zone"
   danger_zone_warning: "These options might have unintended effects on the game. Use with caution!"
-  soft_restart: "⟳ Soft restart"
-  open_in_game_browser: "🌐 Open in-game browser"
-  toggle_game_ui: "👁 Toggle game UI"
+  soft_restart: "\uf021 Soft restart"
+  open_in_game_browser: "\uf0ac Open in-game browser"
+  toggle_game_ui: "\uf06e Toggle game UI"
 
 notification:
   saved_localize_dump: "Saved to localize_dump.json"
@@ -82,7 +82,7 @@ first_time_setup:
 
 about:
   title: "About"
-  copyright: "Copyright (c) 2024 LeadRDRK and contributors"
+  copyright: "© 2024-2025 LeadRDRK and contributors"
   view_license: "View license"
   check_for_updates: "Check for updates"
 
@@ -91,19 +91,14 @@ license:
 
 tl_updater:
   title: "Updating..."
-  warning: |
-    Translations will not work
-    while update is in progress
+  warning: "Translations will not work\nwhile update is in progress"
 
 config_editor:
   title: "Config Editor"
-  general_tab: "⛭ General"
-  graphics_tab: "🖼 Graphics"
-  gameplay_tab: "🎮 Gameplay"
+  general_tab: "\uf013 General"
+  graphics_tab: "\uf03e Graphics"
+  gameplay_tab: "\uf11b Gameplay"
   language: "Language"
-  language_english: "English"
-  language_tchinese: "Traditional Chinese"
-  language_schinese: "Simplified Chinese"
   disable_overlay: "Disable overlay (GUI)"
   disable_overlay_warning: |
     This option will disable the Hachimi overlay after you restart the game,

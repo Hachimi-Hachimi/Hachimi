@@ -321,6 +321,18 @@ impl Language {
             Language::SChinese => "zh-cn"
         }
     }
+
+    pub fn name(&self) -> &'static str {
+        match self {
+            Language::English => "English",
+            Language::TChinese => "繁體中文",
+            Language::SChinese => "简体中文"
+        }
+    }
+
+    pub fn choice(self) -> (Self, &'static str) {
+        (self, self.name())
+    }
 }
 
 #[derive(Default)]

@@ -4,13 +4,13 @@ use fnv::FnvHashSet;
 use once_cell::sync::OnceCell;
 use rust_i18n::t;
 
-use crate::{il2cpp::{
+use crate::il2cpp::{
     hook::{
         umamusume::{GameSystem, GraphicSettings::GraphicsQuality, Localize},
         UnityEngine_CoreModule::Application
     },
     symbols::Thread
-}, ASSET_MAP};
+};
 
 #[cfg(not(target_os = "windows"))]
 use crate::il2cpp::hook::umamusume::WebViewManager;
@@ -19,6 +19,16 @@ use crate::il2cpp::hook::umamusume::WebViewManager;
 use crate::il2cpp::hook::UnityEngine_CoreModule::QualitySettings;
 
 use super::{hachimi::{self, Language}, http::AsyncRequest, tl_repo::{self, RepoInfo}, utils, Hachimi};
+
+macro_rules! add_font {
+    ($fonts:expr, $family_fonts:expr, $filename:literal) => {
+        $fonts.font_data.insert(
+            $filename.to_owned(),
+            egui::FontData::from_static(include_bytes!(concat!("../../assets/fonts/", $filename)))
+        );
+        $family_fonts.push($filename.to_owned());
+    };
+}
 
 type BoxedWindow = Box<dyn Window + Send + Sync>;
 pub struct Gui {
@@ -74,7 +84,7 @@ impl Gui {
         context.set_fonts(Self::get_font_definitions());
 
         let mut style = egui::Style::default();
-        style.spacing.button_padding = egui::Vec2::new(8.0, 6.0);
+        style.spacing.button_padding = egui::Vec2::new(8.0, 5.0);
         style.interaction.selectable_labels = false;
         context.set_style(style);
 
@@ -139,22 +149,9 @@ impl Gui {
         let mut fonts = egui::FontDefinitions::default();
         let proportional_fonts = fonts.families.get_mut(&egui::FontFamily::Proportional).unwrap();
 
-        let font_path = t!("_font");
-        if let Some(asset) = ASSET_MAP.get(font_path.as_ref()) {
-            let key = font_path.into_owned();
-            fonts.font_data.insert(key.clone(),
-                egui::FontData::from_static(asset.contents_bytes)
-            );
-            proportional_fonts.push(key);
-        }
-        else {
-            error!("Font doesn't exist: {}", font_path);
-        }
-
-        fonts.font_data.insert("emoji_icon".to_owned(),
-            egui::FontData::from_static(include_bytes!("../../assets/fonts/emoji-icon-font.ttf"))
-        );
-        proportional_fonts.push("emoji_icon".to_owned());
+        add_font!(fonts, proportional_fonts, "AlibabaPuHuiTi-3-45-Light.otf");
+        add_font!(fonts, proportional_fonts, "NotoSans-Light.ttf");
+        add_font!(fonts, proportional_fonts, "FontAwesome.otf");
 
         fonts
     }
@@ -260,14 +257,14 @@ impl Gui {
         let localize_dict_count = localized_data.localize_dict.len().to_string();
         let hashed_dict_count = localized_data.hashed_dict.len().to_string();
 
-        let mut show_notification: Option<&str> = None;
+        let mut show_notification: Option<Cow<'_, str>> = None;
         let mut show_window: Option<BoxedWindow> = None;
         egui::SidePanel::left("hachimi_menu").show_animated(ctx, self.show_menu, |ui| {
             ui.with_layout(egui::Layout::top_down_justified(egui::Align::TOP), |ui| {
                 ui.horizontal(|ui| {
                     ui.add(Self::icon());
                     ui.heading(t!("hachimi"));
-                    if ui.button("？").clicked() {
+                    if ui.button(" \u{f29c} ").clicked() {
                         show_window = Some(Box::new(AboutWindow::new()));
                     }
                 });
@@ -291,7 +288,7 @@ impl Gui {
                     }
                     if ui.button(t!("menu.reload_config")).clicked() {
                         hachimi.reload_config();
-                        show_notification = Some("Config reloaded.");
+                        show_notification = Some(t!("notification.config_reloaded"));
                     }
                     if ui.button(t!("menu.open_first_time_setup")).clicked() {
                         show_window = Some(Box::new(FirstTimeSetupWindow::new()));
@@ -345,7 +342,7 @@ impl Gui {
                     ui.heading(t!("menu.translation_heading"));
                     if ui.button(t!("menu.reload_localized_data")).clicked() {
                         hachimi.load_localized_data();
-                        show_notification = Some("Localized data reloaded.");
+                        show_notification = Some(t!("notification.localized_data_reloaded"));
                     }
                     if ui.button(t!("menu.check_for_updates")).clicked() {
                         hachimi.tl_updater.clone().check_for_updates();
@@ -369,7 +366,7 @@ impl Gui {
 
                     ui.heading(t!("menu.danger_zone_heading"));
                     ui.label(t!("menu.danger_zone_warning"));
-                    if ui.button("⟳ Soft restart").clicked() {
+                    if ui.button(t!("menu.soft_restart")).clicked() {
                         show_window = Some(Box::new(SimpleYesNoDialog::new(&t!("confirm_dialog_title"), &t!("soft_restart_confirm_content"), |ok| {
                             if !ok { return; }
                             Thread::main_thread().schedule(|| {
@@ -405,7 +402,7 @@ impl Gui {
         }
 
         if let Some(content) = show_notification {
-            self.show_notification(content);
+            self.show_notification(content.as_ref());
         }
 
         if let Some(window) = show_window {
@@ -917,13 +914,12 @@ impl ConfigEditor {
             ConfigEditorTab::General => {
                 ui.label(t!("config_editor.language"));
                 let lang_changed = Gui::run_combo(ui, "language", &mut config.language, &[
-                    (Language::English, &t!("config_editor.language_english")),
-                    (Language::TChinese, &t!("config_editor.language_tchinese")),
-                    (Language::SChinese, &t!("config_editor.language_schinese"))
+                    Language::English.choice(),
+                    Language::TChinese.choice(),
+                    Language::SChinese.choice()
                 ]);
                 if lang_changed {
                     config.language.set_locale();
-                    ctx.set_fonts(Gui::get_font_definitions());
                 }
                 ui.end_row();
 
@@ -1134,7 +1130,6 @@ impl Window for ConfigEditor {
             let config_locale = Hachimi::instance().config.load().language.locale_str();
             if config_locale != &*rust_i18n::locale() {
                 rust_i18n::set_locale(config_locale);
-                ctx.set_fonts(Gui::get_font_definitions());
             }
         }
 
