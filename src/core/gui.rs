@@ -909,7 +909,7 @@ impl ConfigEditor {
         }
     }
 
-    fn run_options_grid(config: &mut hachimi::Config, ctx: &egui::Context, ui: &mut egui::Ui, tab: ConfigEditorTab) {
+    fn run_options_grid(config: &mut hachimi::Config, ui: &mut egui::Ui, tab: ConfigEditorTab) {
         match tab {
             ConfigEditorTab::General => {
                 ui.label(t!("config_editor.language"));
@@ -1106,7 +1106,7 @@ impl Window for ConfigEditor {
                             .num_columns(2)
                             .spacing([40.0, 4.0])
                             .show(ui, |ui| {
-                                Self::run_options_grid(&mut config, ctx, ui, self.current_tab);
+                                Self::run_options_grid(&mut config, ui, self.current_tab);
                             });
                         });
                     });
