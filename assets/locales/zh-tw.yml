@@ -133,6 +133,7 @@ config_editor:
   story_text_speed_multiplier: "劇情文字速度倍率"
   force_allow_dynamic_camera: "強制允許動態相機"
   live_theater_allow_same_chara: "演唱會劇場中\n允許設置相同角色"
+  physics_update_mode: "物理運算模式"
 
 tl_update_dialog:
   title: "有可用的更新"
