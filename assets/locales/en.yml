@@ -70,13 +70,13 @@ notification:
 first_time_setup:
   title: "First Time Setup"
   welcome_heading: "Welcome"
-  welcome_content: |
+  welcome_content: >-
     Hachimi has been installed! This will guide you through the initial setup process.
     If you're not interested in using the translation features, you may skip it by closing this dialog.
   translation_repo_heading: "Translation repo"
   select_translation_repo: "Select a translation repo:"
   complete_heading: "All done!"
-  complete_content: >
+  complete_content: >-
     The translation repo has been set. Once you click on Done, the configuration will
     be saved and an update check will be performed, which will prompt you to download the
     new translation data.
@@ -101,7 +101,7 @@ config_editor:
   gameplay_tab: "\uf11b Gameplay"
   language: "Language"
   disable_overlay: "Disable overlay (GUI)"
-  disable_overlay_warning: |
+  disable_overlay_warning: >-
     This option will disable the Hachimi overlay after you restart the game,
     which means that you will NOT be able to access the Config Editor after this.
     If this was not intentional, close this dialog and DISABLE the option.

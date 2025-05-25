@@ -68,13 +68,13 @@ notification:
 first_time_setup:
   title: "首次安裝器"
   welcome_heading: "歡迎"
-  welcome_content: |
+  welcome_content: >-
     歡迎來到 Hachimi！這是首次安裝器，將幫助您設置翻譯和其他選項。
     您可以隨時在設置編輯器中更改這些選項。
   translation_repo_heading: "翻譯資料庫"
   select_translation_repo: "選擇一個翻譯資料庫："
   complete_heading: "全部完成！"
-  complete_content: >
+  complete_content: >-
     已設置翻譯資料庫。
     點擊完成後，配置將被保存並檢查更新，
     這將提示您下載新的翻譯數據。
@@ -101,7 +101,7 @@ config_editor:
   gameplay_tab: "\uf11b 遊玩"
   language: "語言"
   disable_overlay: "禁用覆蓋 (GUI)"
-  disable_overlay_warning: |
+  disable_overlay_warning: >-
     此選項會在您重新啟動遊戲後關閉 Hachimi 覆蓋，
     這意味著您將無法訪問設置編輯器。
     如果是不小心誤觸此選項，請關閉此對話框並禁用該選項。

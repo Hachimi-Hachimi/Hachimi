@@ -68,13 +68,13 @@ notification:
 first_time_setup:
   title: "初始化设置"
   welcome_heading: "欢迎"
-  welcome_content: |
+  welcome_content: >-
     Hachimi 已安装成功！本向导将引导您完成初始设置。
     如果您不需要使用翻译功能，可以直接关闭此窗口跳过设置。
   translation_repo_heading: "翻译仓库"
   select_translation_repo: "选择翻译仓库："
   complete_heading: "全部完成！"
-  complete_content: >
+  complete_content: >-
     翻译仓库已设置完成。点击"完成"后，配置将被保存，
     系统将自动检查更新并提示您下载最新的翻译数据。
 
@@ -98,7 +98,7 @@ config_editor:
   gameplay_tab: "\uf11b 游戏玩法"
   language: "语言"
   disable_overlay: "禁用覆盖层(GUI)"
-  disable_overlay_warning: |
+  disable_overlay_warning: >-
     此选项将在游戏重启后禁用Hachimi的GUI，
     您将无法再访问配置编辑器。
     如非本意，请关闭此窗口并禁用此选项。
