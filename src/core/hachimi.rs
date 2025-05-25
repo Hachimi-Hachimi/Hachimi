@@ -321,14 +321,18 @@ pub enum Language {
     TChinese,
 
     #[serde(rename = "zh-cn")]
-    SChinese
+    SChinese,
+
+    #[serde(rename = "vi")]
+    Vietnamese
 }
 
 impl Language {
     pub const CHOICES: &[(Self, &'static str)] = &[
         Self::English.choice(),
         Self::TChinese.choice(),
-        Self::SChinese.choice()
+        Self::SChinese.choice(),
+        Self::Vietnamese.choice()
     ];
 
     pub fn set_locale(&self) {
@@ -339,7 +343,8 @@ impl Language {
         match self {
             Language::English => "en",
             Language::TChinese => "zh-tw",
-            Language::SChinese => "zh-cn"
+            Language::SChinese => "zh-cn",
+            Language::Vietnamese => "vi"
         }
     }
 
@@ -347,7 +352,8 @@ impl Language {
         match self {
             Language::English => "English",
             Language::TChinese => "繁體中文",
-            Language::SChinese => "简体中文"
+            Language::SChinese => "简体中文",
+            Language::Vietnamese => "Tiếng Việt"
         }
     }
 
