@@ -133,6 +133,7 @@ config_editor:
   story_text_speed_multiplier: "Story text speed\nmultiplier"
   force_allow_dynamic_camera: "Force allow\ndynamic camera"
   live_theater_allow_same_chara: "Live theater\nallow same chara"
+  physics_update_mode: "Physics update\nmode"
 
 tl_update_dialog:
   title: "New update available"

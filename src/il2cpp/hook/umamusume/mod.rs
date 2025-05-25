@@ -51,6 +51,7 @@ mod SaveDataManager;
 mod ApplicationSettingSaveLoader;
 mod LiveTheaterCharaSelect;
 mod LiveTheaterViewController;
+pub mod CySpringController;
 
 #[cfg(target_os = "windows")]
 pub mod SceneManager;
@@ -110,6 +111,7 @@ pub fn init() {
     ApplicationSettingSaveLoader::init(image);
     LiveTheaterCharaSelect::init(image);
     LiveTheaterViewController::init(image);
+    CySpringController::init(image);
 
     #[cfg(target_os = "windows")]
     SceneManager::init(image);

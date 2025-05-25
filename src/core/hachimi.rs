@@ -4,7 +4,7 @@ use fnv::FnvHashMap;
 use once_cell::sync::OnceCell;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
-use crate::{gui_impl, hachimi_impl, il2cpp::{self, hook::umamusume::GameSystem}};
+use crate::{gui_impl, hachimi_impl, il2cpp::{self, hook::umamusume::{CySpringController::SpringUpdateMode, GameSystem}}};
 
 use super::{game::Game, ipc, plurals, template, template_filters, tl_repo, utils, Error, Interceptor};
 
@@ -266,6 +266,7 @@ pub struct Config {
     pub language: Language,
     #[serde(default = "Config::default_meta_index_url")]
     pub meta_index_url: String,
+    pub physics_update_mode: Option<SpringUpdateMode>,
 
     #[cfg(target_os = "windows")]
     #[serde(flatten)]

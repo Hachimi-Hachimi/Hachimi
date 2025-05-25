@@ -6,7 +6,7 @@ use rust_i18n::t;
 
 use crate::il2cpp::{
     hook::{
-        umamusume::{GameSystem, GraphicSettings::GraphicsQuality, Localize},
+        umamusume::{CySpringController::SpringUpdateMode, GameSystem, GraphicSettings::GraphicsQuality, Localize},
         UnityEngine_CoreModule::Application
     },
     symbols::Thread
@@ -1035,6 +1035,16 @@ impl ConfigEditor {
             },
 
             ConfigEditorTab::Gameplay => {
+                ui.label(t!("config_editor.physics_update_mode"));
+                Gui::run_combo(ui, "physics_update_mode", &mut config.physics_update_mode, &[
+                    (None, &t!("default")),
+                    (SpringUpdateMode::ModeNormal.into(), "ModeNormal"),
+                    (SpringUpdateMode::Mode60FPS.into(), "Mode60FPS"),
+                    (SpringUpdateMode::SkipFrame.into(), "SkipFrame"),
+                    (SpringUpdateMode::SkipFramePostAlways.into(), "SkipFramePostAlways")
+                ]);
+                ui.end_row();
+
                 ui.label(t!("config_editor.story_choice_auto_select_delay"));
                 ui.add(egui::Slider::new(&mut config.story_choice_auto_select_delay, 0.1..=10.0).step_by(0.05));
                 ui.end_row();
