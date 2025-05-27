@@ -102,9 +102,11 @@ fn init_internal(env: *mut jni::sys::JNIEnv) -> Result<(), Error> {
 
     let hachimi = Hachimi::instance();
 
-    if std::fs::metadata("/vendor/waydroid.prop").ok().is_some_and(|m| m.is_file()) {
+    if hachimi.config.load().android.hook_libc_dlopen ||
+        std::fs::metadata("/vendor/waydroid.prop").ok().is_some_and(|m| m.is_file())
+    {
         let dlopen_addr = libc::dlopen as usize;
-        info!("Hello Waydroid! Hooking dlopen: {}", dlopen_addr);
+        info!("Hooking dlopen: {}", dlopen_addr);
         hachimi.interceptor.hook(dlopen_addr, dlopen as usize)?;
     }
     // A11
