@@ -1,6 +1,6 @@
 [package]
 name = "hachimi"
-version = "0.13.7"
+version = "0.14.0"
 rust-version = "1.77"
 edition = "2021"
 
