@@ -39,7 +39,7 @@ menu:
   open_first_time_setup: "\uf135 開啟首次安裝器"
   graphics_heading: "\uf03e 圖像"
   fps_label: "FPS"
-  vsync_label: "VSync"
+  vsync_label: "垂直同步"
   stay_on_top: "保持在最上層"
   translation_heading: "\uf02d 翻譯"
   reload_localized_data: "\uf021 重新載入翻譯數據"
