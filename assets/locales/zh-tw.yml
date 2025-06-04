@@ -9,7 +9,7 @@ android:
 splash_sub: "\uf015 按下 %{open_key_str} 來打開選單。"
 loading_label: "載入中"
 cancel: "取消"
-save: "保存"
+save: "儲存"
 done: "完成"
 next: "下一步"
 previous: "上一步"
@@ -36,7 +36,7 @@ menu:
   config_heading: "\uf0ad 設置"
   open_config_editor: "\uf040 開啟設置編輯器"
   reload_config: "\uf021 重新載入設置"
-  open_first_time_setup: "\uf135 開啟首次設定"
+  open_first_time_setup: "\uf135 開啟設定精靈"
   graphics_heading: "\uf03e 圖像"
   fps_label: "FPS"
   vsync_label: "垂直同步"
@@ -66,11 +66,12 @@ notification:
   no_updates: "無可用的更新。"
 
 first_time_setup:
-  title: "首次設定"
+  title: "設定精靈"
   welcome_heading: "歡迎"
   welcome_content: >-
-    歡迎使用 Hachimi！此設定將會引導您完成翻譯器的初始化。
+    歡迎使用 Hachimi！此設定精靈將會引導您完成翻譯器的初始化。
     如果您不需要使用翻譯功能，您可以關閉此對話框。
+    您也可以隨時在設置編輯器中更改這些選項。
   translation_repo_heading: "翻譯資料庫"
   select_translation_repo: "選擇一個翻譯資料庫："
   complete_heading: "全部完成！"
