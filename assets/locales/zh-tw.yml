@@ -9,7 +9,7 @@ android:
 splash_sub: "\uf015 按下 %{open_key_str} 來打開選單。"
 loading_label: "載入中"
 cancel: "取消"
-save: "存檔"
+save: "儲存"
 done: "完成"
 next: "下一步"
 previous: "上一步"
@@ -36,10 +36,10 @@ menu:
   config_heading: "\uf0ad 設置"
   open_config_editor: "\uf040 開啟設置編輯器"
   reload_config: "\uf021 重新載入設置"
-  open_first_time_setup: "\uf135 開啟首次安裝器"
+  open_first_time_setup: "\uf135 開啟設定精靈"
   graphics_heading: "\uf03e 圖像"
   fps_label: "FPS"
-  vsync_label: "VSync"
+  vsync_label: "垂直同步"
   stay_on_top: "保持在最上層"
   translation_heading: "\uf02d 翻譯"
   reload_localized_data: "\uf021 重新載入翻譯數據"
@@ -47,10 +47,10 @@ menu:
   check_for_updates_pedantic: "\uf0aa 檢查更新（深度模式）"
   dump_localize_dict: "導出 localize dict"
   danger_zone_heading: "\uf071 危險區域"
-  danger_zone_warning: "這些選項可能會導致遊戲異常，請小心使用！"
+  danger_zone_warning: "更改這些選項可能會導致遊戲異常，請小心使用！"
   soft_restart: "\uf021 軟重啟"
   open_in_game_browser: "\uf0ac 開啟遊戲內瀏覽器"
-  toggle_game_ui: "\uf06e 切換遊戲 UI"
+  toggle_game_ui: "\uf06e 開啟/關閉遊戲 UI"
 
 notification:
   saved_localize_dump: "保存至 localize_dump.json"
@@ -66,11 +66,12 @@ notification:
   no_updates: "無可用的更新。"
 
 first_time_setup:
-  title: "首次安裝器"
+  title: "設定精靈"
   welcome_heading: "歡迎"
   welcome_content: >-
-    歡迎來到 Hachimi！這是首次安裝器，將幫助您設置翻譯和其他選項。
-    您可以隨時在設置編輯器中更改這些選項。
+    歡迎使用 Hachimi！此設定精靈將會引導您完成翻譯器的初始化。
+    如果您不需要使用翻譯功能，您可以關閉此對話框。
+    您也可以隨時在設置編輯器中更改這些選項。
   translation_repo_heading: "翻譯資料庫"
   select_translation_repo: "選擇一個翻譯資料庫："
   complete_heading: "全部完成！"
@@ -98,20 +99,20 @@ config_editor:
   title: "設置編輯器"
   general_tab: "\uf013 一般"
   graphics_tab: "\uf03e 圖像"
-  gameplay_tab: "\uf11b 遊玩"
+  gameplay_tab: "\uf11b 遊戲"
   language: "語言"
-  disable_overlay: "禁用覆蓋 (GUI)"
+  disable_overlay: "禁用覆蓋層 (GUI)"
   disable_overlay_warning: >-
-    此選項會在您重新啟動遊戲後關閉 Hachimi 覆蓋，
+    此選項會在您重新啟動遊戲後停用 Hachimi 覆蓋層，
     這意味著您將無法訪問設置編輯器。
     如果是不小心誤觸此選項，請關閉此對話框並禁用該選項。
   debug_mode: "除錯模式"
   translator_mode: "翻譯者模式"
-  skip_first_time_setup: "跳過首次安裝器"
+  skip_first_time_setup: "跳過首次設定"
   disable_auto_update_check: "禁用自動更新檢查"
   disable_translations: "禁用翻譯"
   enable_ipc: "啟用 IPC"
-  ipc_listen_all: "監聽所有 IPC"
+  ipc_listen_all: "監聽所有 IPC 地址"
   auto_translate_stories: "自動翻譯劇情"
   auto_translate_ui: "自動翻譯 UI\n(可能會導致UI錯誤)"
   target_fps: "目標 FPS"
@@ -124,7 +125,7 @@ config_editor:
   full_screen_mode_exclusive: "獨佔 (Exclusive)"
   full_screen_mode_borderless: "無邊界 (Borderless)"
   block_minimize_in_full_screen: "阻止全螢幕最小化"
-  resolution_scaling: "解析度縮放"
+  resolution_scaling: "解析度縮放模式"
   resolution_scaling_default: "預設 (1080p)"
   resolution_scaling_ssize: "縮放至螢幕大小"
   resolution_scaling_wsize: "縮放至視窗大小"
