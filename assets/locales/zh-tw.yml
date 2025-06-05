@@ -108,7 +108,7 @@ config_editor:
     如果是不小心誤觸此選項，請關閉此對話框並禁用該選項。
   debug_mode: "除錯模式"
   translator_mode: "翻譯者模式"
-  skip_first_time_setup: "跳過首次設定"
+  skip_first_time_setup: "跳過設定精靈"
   disable_auto_update_check: "禁用自動更新檢查"
   disable_translations: "禁用翻譯"
   enable_ipc: "啟用 IPC"
