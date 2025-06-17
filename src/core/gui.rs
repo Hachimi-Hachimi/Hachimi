@@ -986,6 +986,10 @@ impl ConfigEditor {
                 ui.add(egui::Slider::new(&mut config.ui_scale, 0.1..=10.0).step_by(0.05));
                 ui.end_row();
 
+                ui.label(t!("config_editor.ui_animation_scale"));
+                ui.add(egui::Slider::new(&mut config.ui_animation_scale, 0.1..=10.0).step_by(0.1));
+                ui.end_row();
+
                 ui.label(t!("config_editor.graphics_quality"));
                 Gui::run_combo(ui, "graphics_quality", &mut config.graphics_quality, &[
                     (GraphicsQuality::Default, &t!("default")),

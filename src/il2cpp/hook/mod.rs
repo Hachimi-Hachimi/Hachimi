@@ -76,6 +76,7 @@ pub mod umamusume;
 pub mod Cute_UI_Assembly;
 pub mod Plugins;
 mod Cute_Cri_Assembly;
+mod DOTween;
 
 #[cfg(target_os = "android")]
 mod Cute_Core_Assembly;
@@ -101,6 +102,7 @@ pub fn init() {
     Cute_UI_Assembly::init();
     Plugins::init();
     Cute_Cri_Assembly::init();
+    DOTween::init();
 
     #[cfg(target_os = "android")]
     Cute_Core_Assembly::init();

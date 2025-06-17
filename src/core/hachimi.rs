@@ -267,6 +267,8 @@ pub struct Config {
     #[serde(default = "Config::default_meta_index_url")]
     pub meta_index_url: String,
     pub physics_update_mode: Option<SpringUpdateMode>,
+    #[serde(default = "Config::default_ui_animation_scale")]
+    pub ui_animation_scale: f32,
 
     #[cfg(target_os = "windows")]
     #[serde(flatten)]
@@ -284,6 +286,7 @@ impl Config {
     fn default_story_choice_auto_select_delay() -> f32 { 0.75 }
     fn default_story_tcps_multiplier() -> f32 { 1.0 }
     fn default_meta_index_url() -> String { "https://files.leadrdrk.com/hachimi/meta/index.json".to_owned() }
+    fn default_ui_animation_scale() -> f32 { 1.0 }
 }
 
 impl Default for Config {

@@ -115,6 +115,7 @@ config_editor:
   target_fps: "Target FPS"
   virtual_resolution_multiplier: "Virtual resolution\nmultiplier"
   ui_scale: "UI scale"
+  ui_animation_scale: "UI animation scale"
   graphics_quality: "Graphics quality"
   vsync: "VSync"
   auto_full_screen: "Auto full screen"
