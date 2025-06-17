@@ -118,6 +118,7 @@ config_editor:
   target_fps: "目標 FPS"
   virtual_resolution_multiplier: "虛擬解析度倍率"
   ui_scale: "UI 比例"
+  ui_animation_scale: "UI 動畫速度"
   graphics_quality: "圖像品質"
   vsync: "VSync"
   auto_full_screen: "自動全螢幕"
