@@ -158,16 +158,6 @@ impl Il2CppStringExt for Il2CppString {
     }
 }
 
-pub trait MethodInfoExt {
-    fn method_pointer(&self) -> usize;
-}
-
-impl MethodInfoExt for MethodInfo {
-    fn method_pointer(&self) -> usize {
-        unsafe { std::mem::transmute(self.methodPointer) }
-    }
-}
-
 pub trait Il2CppObjectExt {
     fn klass(&self) -> *mut Il2CppClass;
 }
