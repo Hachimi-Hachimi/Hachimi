@@ -33,7 +33,10 @@ unsafe extern "C" fn pre_app_specialize(this: *mut Module, args: *mut AppSpecial
     let package_name = java_str.to_string_lossy();
     _ = PACKAGE_NAME.set(package_name.to_string());
 
-    (*this).is_game = game_impl::get_region(&package_name) != Region::Unknown;
+    (*this).is_game = match game_impl::get_region(&package_name) {
+        Region::Japan => true,
+        _ => false
+    };
 }
 
 unsafe extern "C" fn post_app_specialize(this: *mut Module, _args: *const AppSpecializeArgs) {
