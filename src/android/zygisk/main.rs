@@ -21,11 +21,17 @@ impl Module {
     }
 }
 
+static mut PACKAGE_NAME: OnceCell<String> = OnceCell::new();
+pub fn get_package_name() -> Option<&'static String> {
+    unsafe { PACKAGE_NAME.get() }
+}
+
 unsafe extern "C" fn pre_app_specialize(this: *mut Module, args: *mut AppSpecializeArgs) {
     let mut env = unsafe { JNIEnv::from_raw((*this).env).unwrap() };
     let jstr = JString::from_raw(*(*args).nice_name);
     let java_str = env.get_string(&jstr).unwrap();
     let package_name = java_str.to_string_lossy();
+    _ = PACKAGE_NAME.set(package_name.to_string());
 
     (*this).is_game = game_impl::get_region(&package_name) != Region::Unknown;
 }

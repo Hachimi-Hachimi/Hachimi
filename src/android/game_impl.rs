@@ -1,21 +1,26 @@
 use procfs::process::Process;
 use std::{path::{Path, PathBuf}, process};
 
-use crate::core::game::Region;
+use crate::{android::zygisk, core::game::Region};
 
 pub fn get_package_name() -> String {
-    let proc = Process::myself().unwrap_or_else(|_| {
-        error!("FATAL: Failed to read /proc/self");
-        process::exit(1);
-    });
-    let cmdline = proc.cmdline().unwrap_or_else(|_| {
-        error!("FATAL: Failed to read /proc/self/cmdline");
-        process::exit(1);
-    });
-    cmdline.get(0).unwrap_or_else(|| {
-        error!("FATAL: Invalid cmdline");
-        process::exit(1);
-    }).to_owned()
+    match zygisk::get_package_name() {
+        Some(name) => name.clone(),
+        None => {
+            let proc = Process::myself().unwrap_or_else(|_| {
+                error!("FATAL: Failed to read /proc/self");
+                process::exit(1);
+            });
+            let cmdline = proc.cmdline().unwrap_or_else(|_| {
+                error!("FATAL: Failed to read /proc/self/cmdline");
+                process::exit(1);
+            });
+            cmdline.get(0).unwrap_or_else(|| {
+                error!("FATAL: Invalid cmdline");
+                process::exit(1);
+            }).to_owned()
+        }
+    }
 }
 
 pub fn get_region(package_name: &str) -> Region {
@@ -23,6 +28,7 @@ pub fn get_region(package_name: &str) -> Region {
         "jp.co.cygames.umamusume" => Region::Japan,
         "com.komoe.kmumamusumegp" | "com.komoe.umamusumeofficial" => Region::Taiwan,
         "com.kakaogames.umamusume" => Region::Korea,
+        "com.bilibili.umamusu" => Region::China,
         _ => Region::Unknown
     }
 }

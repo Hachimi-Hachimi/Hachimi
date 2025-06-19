@@ -4,6 +4,8 @@
 mod internal;
 mod main;
 
+pub use main::get_package_name;
+
 use jni::sys::*;
 
 #[repr(C)]

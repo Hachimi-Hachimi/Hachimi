@@ -13,7 +13,8 @@ pub enum Region {
     Unknown,
     Japan,
     Taiwan,
-    Korea
+    Korea,
+    China
 }
 
 impl Game {
