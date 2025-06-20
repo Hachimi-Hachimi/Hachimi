@@ -12,7 +12,8 @@ use super::{gui::SimpleYesNoDialog, hachimi::LocalizedData, http::{self, AsyncRe
 #[derive(Deserialize)]
 pub struct RepoInfo {
     pub name: String,
-    pub index: String
+    pub index: String,
+    pub contributors: Option<String>
 }
 
 pub fn new_meta_index_request() -> AsyncRequest<Vec<RepoInfo>> {

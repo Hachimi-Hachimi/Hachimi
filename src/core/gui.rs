@@ -1229,6 +1229,12 @@ impl Window for FirstTimeSetupWindow {
                                 .show(ui, |ui| {
                                     for (i, repo) in repo_list.iter().enumerate() {
                                         ui.radio_value(&mut self.current_tl_repo, i, &repo.name);
+                                        if let Some(list) = &repo.contributors {
+                                            ui.label(
+                                                egui::RichText::new(t!("first_time_setup.contributors", list = list))
+                                                    .small()
+                                            );
+                                        }
                                     }
                                 });
                             });
