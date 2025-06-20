@@ -71,6 +71,11 @@ first_time_setup:
   welcome_content: >-
     Hachimi has been installed! This will guide you through the initial setup process.
     If you're not interested in using the translation features, you may skip it by closing this dialog.
+
+
+    DISCLAIMER: Hachimi is a community-driven project. All translations were made by various community contributors.
+    It is not developed or endorsed by Cygames, Inc., and violates the game's terms of service. By continuing,
+    you accept that you will be using it at your own risk.
   translation_repo_heading: "Translation repo"
   select_translation_repo: "Select a translation repo:"
   contributors: "Contributors: %{list}"

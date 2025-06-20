@@ -1197,8 +1197,6 @@ impl Window for FirstTimeSetupWindow {
                     0 => {
                         ui.heading(t!("first_time_setup.welcome_heading"));
                         ui.separator();
-                        ui.label(t!("first_time_setup.welcome_content"));
-                        ui.add_space(4.0);
                         ui.horizontal(|ui| {
                             ui.label(t!("config_editor.language"));
 
@@ -1212,6 +1210,7 @@ impl Window for FirstTimeSetupWindow {
                                 save_and_reload_config(config);
                             }   
                         });
+                        ui.label(t!("first_time_setup.welcome_content"));
                         true
                     }
                     1 => {
