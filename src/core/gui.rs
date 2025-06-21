@@ -1010,6 +1010,10 @@ impl ConfigEditor {
                 ui.label("Live theater\nallow same chara");
                 ui.checkbox(&mut config.live_theater_allow_same_chara, "");
                 ui.end_row();
+
+                ui.label("Disable skill\nname translation");
+                ui.checkbox(&mut config.disable_skill_name_translation, "");
+                ui.end_row();
             }
         }
 

@@ -2,11 +2,14 @@ use std::{fs, path::{Path, PathBuf}, process, sync::{atomic::{self, AtomicBool, 
 use arc_swap::ArcSwap;
 use fnv::FnvHashMap;
 use once_cell::sync::OnceCell;
+use once_cell::sync::Lazy;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 use crate::{gui_impl, hachimi_impl, il2cpp::{self, hook::umamusume::GameSystem}};
 
 use super::{game::Game, ipc, plurals, template, template_filters, tl_repo, utils, Error, Interceptor};
+
+pub static CONFIG: Lazy<Config> = Lazy::new(|| Config::default());
 
 pub struct Hachimi {
     // Hooking stuff
@@ -257,6 +260,8 @@ pub struct Config {
     pub auto_translate_stories: bool,
     #[serde(default)]
     pub auto_translate_localize: bool,
+    #[serde(default)]
+    pub disable_skill_name_translation: bool,
 
     #[cfg(target_os = "windows")]
     #[serde(flatten)]
