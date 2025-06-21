@@ -125,7 +125,7 @@ impl TextDataQuery {
 
     fn get_skill_name(index: i32) -> Option<*mut Il2CppString> {
         // Return None if skill name translation is disabled
-        if crate::core::hachimi::CONFIG.disable_skill_name_translation {
+        if Hachimi::instance().config.load().disable_skill_name_translation {
             return None;
         }
 
