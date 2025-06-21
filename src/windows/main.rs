@@ -43,11 +43,11 @@ pub extern "C" fn DllMain(hmodule: HMODULE, call_reason: c_ulong, _reserved: *mu
         hook::init();
         info!("Attach completed");
     }
-    else if call_reason == DLL_PROCESS_DETACH {
+    else if call_reason == DLL_PROCESS_DETACH && Hachimi::is_initialized() {
         wnd_hook::uninit();
 
         info!("Unhooking everything");
-        Hachimi::instance().interceptor().unhook_all();
+        Hachimi::instance().interceptor.unhook_all();
     }
     TRUE
 }

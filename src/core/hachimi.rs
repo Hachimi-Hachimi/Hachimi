@@ -1,11 +1,11 @@
-use std::{fs, path::{Path, PathBuf}, process, sync::{atomic::{self, AtomicBool, AtomicI32}, Arc, Mutex, MutexGuard}};
+use std::{fs, path::{Path, PathBuf}, process, sync::{atomic::{self, AtomicBool, AtomicI32}, Arc}};
 use arc_swap::ArcSwap;
 use fnv::FnvHashMap;
 use once_cell::sync::OnceCell;
 use once_cell::sync::Lazy;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
-use crate::{gui_impl, hachimi_impl, il2cpp::{self, hook::umamusume::GameSystem}};
+use crate::{gui_impl, hachimi_impl, il2cpp::{self, hook::umamusume::{CySpringController::SpringUpdateMode, GameSystem}}};
 
 use super::{game::Game, ipc, plurals, template, template_filters, tl_repo, utils, Error, Interceptor};
 
@@ -13,7 +13,7 @@ pub static CONFIG: Lazy<Config> = Lazy::new(|| Config::default());
 
 pub struct Hachimi {
     // Hooking stuff
-    pub interceptor: Mutex<Interceptor>,
+    pub interceptor: Interceptor,
     pub hooking_finished: AtomicBool,
 
     // Localized data
@@ -71,12 +71,18 @@ impl Hachimi {
         }).clone()
     }
 
+    pub fn is_initialized() -> bool {
+        INSTANCE.get().is_some()
+    }
+
     fn new() -> Result<Hachimi, Error> {
         let game = Game::init();
         let config = Self::load_config(&game.data_dir)?;
 
+        config.language.set_locale();
+
         Ok(Hachimi {
-            interceptor: Mutex::default(),
+            interceptor: Interceptor::default(),
             hooking_finished: AtomicBool::new(false),
 
             // Don't load localized data initially since it might fail, logging the error is not possible here
@@ -101,10 +107,6 @@ impl Hachimi {
         })
     }
 
-    pub fn interceptor(&self) -> MutexGuard<'_, Interceptor> {
-        self.interceptor.lock().unwrap()
-    }
-
     fn load_config(data_dir: &Path) -> Result<Config, Error> {
         let config_path = data_dir.join("config.json");
         if fs::metadata(&config_path).is_ok() {
@@ -124,6 +126,8 @@ impl Hachimi {
                 return;
             }
         };
+
+        new_config.language.set_locale();
         self.config.store(Arc::new(new_config));
     }
 
@@ -132,6 +136,7 @@ impl Hachimi {
         let config_path = self.get_data_path("config.json");
         utils::write_json_file(&config, &config_path)?;
 
+        config.language.set_locale();
         self.config.store(Arc::new(config));
         Ok(())
     }
@@ -198,14 +203,14 @@ impl Hachimi {
     pub fn run_auto_update_check(&self) {
         if !self.config.load().disable_auto_update_check {
             #[cfg(not(target_os = "windows"))]
-            self.tl_updater.clone().check_for_updates();
+            self.tl_updater.clone().check_for_updates(false);
 
             // Check for hachimi updates first, then translations
             // Don't auto check for tl updates if it's not up to date
             #[cfg(target_os = "windows")]
             self.updater.clone().check_for_updates(|new_update| {
                 if !new_update {
-                    Hachimi::instance().tl_updater.clone().check_for_updates();
+                    Hachimi::instance().tl_updater.clone().check_for_updates(false);
                 }
             });
         }
@@ -262,6 +267,13 @@ pub struct Config {
     pub auto_translate_localize: bool,
     #[serde(default)]
     pub disable_skill_name_translation: bool,
+    #[serde(default)]
+    pub language: Language,
+    #[serde(default = "Config::default_meta_index_url")]
+    pub meta_index_url: String,
+    pub physics_update_mode: Option<SpringUpdateMode>,
+    #[serde(default = "Config::default_ui_animation_scale")]
+    pub ui_animation_scale: f32,
 
     #[cfg(target_os = "windows")]
     #[serde(flatten)]
@@ -278,6 +290,8 @@ impl Config {
     fn default_ui_scale() -> f32 { 1.0 }
     fn default_story_choice_auto_select_delay() -> f32 { 0.75 }
     fn default_story_tcps_multiplier() -> f32 { 1.0 }
+    fn default_meta_index_url() -> String { "https://files.leadrdrk.com/hachimi/meta/index.json".to_owned() }
+    fn default_ui_animation_scale() -> f32 { 1.0 }
 }
 
 impl Default for Config {
@@ -302,6 +316,57 @@ impl<T> OsOption<T> {
 
         #[cfg(target_os = "windows")]
         return self.windows.as_ref();
+    }
+}
+
+#[derive(Default, Copy, Clone, Eq, PartialEq, Deserialize, Serialize)]
+#[allow(non_camel_case_types)]
+pub enum Language {
+    #[serde(rename = "en")]
+    #[default] English,
+
+    #[serde(rename = "zh-tw")]
+    TChinese,
+
+    #[serde(rename = "zh-cn")]
+    SChinese,
+
+    #[serde(rename = "vi")]
+    Vietnamese
+}
+
+impl Language {
+    pub const CHOICES: &[(Self, &'static str)] = &[
+        Self::English.choice(),
+        Self::TChinese.choice(),
+        Self::SChinese.choice(),
+        Self::Vietnamese.choice()
+    ];
+
+    pub fn set_locale(&self) {
+        rust_i18n::set_locale(self.locale_str());
+    }
+
+    pub const fn locale_str(&self) -> &'static str {
+        match self {
+            Language::English => "en",
+            Language::TChinese => "zh-tw",
+            Language::SChinese => "zh-cn",
+            Language::Vietnamese => "vi"
+        }
+    }
+
+    pub const fn name(&self) -> &'static str {
+        match self {
+            Language::English => "English",
+            Language::TChinese => "繁體中文",
+            Language::SChinese => "简体中文",
+            Language::Vietnamese => "Tiếng Việt"
+        }
+    }
+
+    pub const fn choice(self) -> (Self, &'static str) {
+        (self, self.name())
     }
 }
 

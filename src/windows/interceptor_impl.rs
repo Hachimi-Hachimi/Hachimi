@@ -5,17 +5,10 @@ use crate::core::{interceptor::{HookHandle, HookType}, Error};
 use minhook::MinHook;
 use windows::Win32::System::Memory::{VirtualProtect, PAGE_READWRITE};
 
-pub unsafe fn hook(orig_addr: usize, hook_addr: usize) -> Result<HookHandle, Error> {
+pub unsafe fn hook(orig_addr: usize, hook_addr: usize) -> Result<usize, Error> {
     let trampoline_addr = MinHook::create_hook(orig_addr as *mut c_void, hook_addr as *mut c_void)? as usize;
     MinHook::enable_hook(orig_addr as *mut c_void)?;
-    Ok(HookHandle {
-        orig_addr,
-        hook_addr,
-        trampoline_addr,
-        hook_type: HookType::Function,
-        is_ffi_root_hook: false,
-        orig_hook_addr: None
-    })
+    Ok(trampoline_addr)
 }
 
 impl From<minhook::MH_STATUS> for Error {
@@ -40,10 +33,6 @@ pub unsafe fn get_vtable_from_instance(instance_addr: usize) -> *mut usize {
     unsafe { *(instance_addr as *const *mut usize) }
 }
 
-pub unsafe fn get_vtable_entry(vtable: *mut usize, vtable_index: usize) -> usize {
-    unsafe { *vtable.add(vtable_index) }
-}
-
 pub unsafe fn hook_vtable(vtable: *mut usize, vtable_index: usize, hook_addr: usize) -> Result<HookHandle, Error> {
     let vtable_entry_addr = vtable.add(vtable_index);
     let trampoline_addr = *vtable_entry_addr;
@@ -59,11 +48,8 @@ pub unsafe fn hook_vtable(vtable: *mut usize, vtable_index: usize, hook_addr: us
 
         Ok(HookHandle {
             orig_addr: vtable_entry_addr as usize,
-            hook_addr,
             trampoline_addr,
-            hook_type: HookType::Vtable,
-            is_ffi_root_hook: false,
-            orig_hook_addr: None
+            hook_type: HookType::Vtable
         })
     }
     else {

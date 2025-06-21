@@ -58,8 +58,8 @@ extern "system" fn wnd_proc(hwnd: HWND, umsg: c_uint, wparam: WPARAM, lparam: LP
             }
         },
         WM_CLOSE => {
-            if let Some(orig_addr) = Hachimi::instance().interceptor().unhook(wnd_proc as _) {
-                unsafe { WNDPROC_RECALL = orig_addr; }
+            if let Some(hook) = Hachimi::instance().interceptor.unhook(wnd_proc as _) {
+                unsafe { WNDPROC_RECALL = hook.orig_addr; }
                 Thread::main_thread().schedule(|| {
                     unsafe {
                         let orig_fn = std::mem::transmute::<usize, WNDPROC>(WNDPROC_RECALL).unwrap();
@@ -134,7 +134,7 @@ pub fn init() {
 
         info!("Hooking WndProc");
         let wnd_proc_addr = GetWindowLongPtrW(hwnd, GWLP_WNDPROC);
-        match hachimi.interceptor().hook(wnd_proc_addr as usize, wnd_proc as _) {
+        match hachimi.interceptor.hook(wnd_proc_addr as _, wnd_proc as _) {
             Ok(trampoline_addr) => WNDPROC_ORIG = trampoline_addr as _,
             Err(e) => error!("Failed to hook WndProc: {}", e)
         }

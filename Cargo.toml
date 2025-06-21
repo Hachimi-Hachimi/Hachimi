@@ -1,6 +1,6 @@
 [package]
 name = "hachimi"
-version = "0.13.6"
+version = "0.14.0"
 rust-version = "1.77"
 edition = "2021"
 
@@ -23,7 +23,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 fnv = "1.0"
 widestring = "1.1"
-egui = "0.27"
+egui = { version = "0.27", default-features = false }
 egui_extras = { version = "0.27", default-features = false, features = ["image"] }
 image = { version = "0.24", default-features = false, features = ["png"] }
 png = "0.17"
@@ -37,9 +37,7 @@ threadpool = "1.8"
 zip = { version = "0.6", default-features = false, features = ["deflate"] }
 unicode-width = "0.1"
 tiny_http = "0.12"
-mlua = { version = "0.10", features = ["lua54", "vendored"] }
-bitflags = "2.9"
-libffi = { git = "https://github.com/LeadRDRK/libffi-rs.git", rev = "5c732a3844b7ed65692b65b224e7ed9ab519d3b7" }
+rust-i18n = "3.1"
 
 [target.'cfg(target_os = "android")'.dependencies]
 libc = "0.2"

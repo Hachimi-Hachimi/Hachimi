@@ -302,7 +302,7 @@ impl<T> IEnumerator<T> {
             return Err(Error::MethodNotFound("MoveNext".to_owned()));
         }
 
-        Hachimi::instance().interceptor().hook(move_next_addr, hook_fn as usize)
+        Hachimi::instance().interceptor.hook(move_next_addr, hook_fn as usize)
     }
 }
 

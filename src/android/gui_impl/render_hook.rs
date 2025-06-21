@@ -38,7 +38,7 @@ static mut EGLSWAPBUFFERS_ADDR: usize = 0;
 type EGLSwapBuffersFn = extern "C" fn(display: EGLDisplay, surface: EGLSurface) -> EGLBoolean;
 extern "C" fn eglSwapBuffers(display: EGLDisplay, surface: EGLSurface) -> EGLBoolean {
     let orig_fn: EGLSwapBuffersFn = unsafe { std::mem::transmute(EGLSWAPBUFFERS_ADDR) };
-    let mut gui = Gui::instance_or_init("Vol Up + Vol Down").lock().unwrap();
+    let mut gui = Gui::instance_or_init("android.menu_open_key").lock().unwrap();
     // Big fat state destroyer, initialize it as soon as possible
     let painter = match init_painter() {
         Ok(v) => v,
@@ -47,7 +47,7 @@ extern "C" fn eglSwapBuffers(display: EGLDisplay, surface: EGLSurface) -> EGLBoo
             info!("Unhooking eglSwapBuffers");
 
             let res = orig_fn(display, surface);
-            Hachimi::instance().interceptor().unhook(eglSwapBuffers as usize);
+            Hachimi::instance().interceptor.unhook(eglSwapBuffers as usize);
             return res;
         }
     };
@@ -146,9 +146,7 @@ fn init_internal() -> Result<(), Error> {
     let eglSwapBuffers_addr = unsafe { libc::dlsym(egl_handle, c"eglSwapBuffers".as_ptr()) };
 
     unsafe {
-        EGLSWAPBUFFERS_ADDR = Hachimi::instance().interceptor().hook(
-            eglSwapBuffers_addr as usize, eglSwapBuffers as usize
-        )?;
+        EGLSWAPBUFFERS_ADDR = Hachimi::instance().interceptor.hook(eglSwapBuffers_addr as usize, eglSwapBuffers as usize)?;
         EGLGETPROCADDRESS_ADDR = libc::dlsym(egl_handle, c"eglGetProcAddress".as_ptr()) as usize;
         EGLQUERYSURFACE_ADDR = libc::dlsym(egl_handle, c"eglQuerySurface".as_ptr()) as usize
     }

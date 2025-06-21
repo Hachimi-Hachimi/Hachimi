@@ -1,4 +1,5 @@
 mod main;
+mod zygisk;
 mod hook;
 mod utils;
 pub mod game_impl;

@@ -1,17 +1,9 @@
 use std::os::raw::c_void;
 
-use crate::core::{interceptor::{HookHandle, HookType}, Error};
+use crate::core::{interceptor::HookHandle, Error};
 
-pub unsafe fn hook(orig_addr: usize, hook_addr: usize) -> Result<HookHandle, Error> {
-    let trampoline_addr = dobby_rs::hook(orig_addr as *mut c_void, hook_addr as *mut c_void)? as usize;
-    Ok(HookHandle {
-        orig_addr,
-        hook_addr,
-        trampoline_addr,
-        hook_type: HookType::Function,
-        is_ffi_root_hook: false,
-        orig_hook_addr: None
-    })
+pub unsafe fn hook(orig_addr: usize, hook_addr: usize) -> Result<usize, Error> {
+    Ok(dobby_rs::hook(orig_addr as *mut c_void, hook_addr as *mut c_void)? as usize)
 }
 
 impl From<dobby_rs::DobbyHookError> for Error {
@@ -34,10 +26,6 @@ pub unsafe fn find_symbol_by_name(module: &str, symbol: &str) -> Result<usize, E
 // These are unused on Android
 
 pub unsafe fn get_vtable_from_instance(_instance_addr: usize) -> *mut usize {
-    unimplemented!();
-}
-
-pub unsafe fn get_vtable_entry(_vtable: *mut usize, _vtable_index: usize) -> usize {
     unimplemented!();
 }
 

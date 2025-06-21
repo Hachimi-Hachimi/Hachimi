@@ -248,9 +248,7 @@ fn init_internal() -> Result<(), Error> {
     let native_inject_event_addr = unsafe { NATIVE_INJECT_EVENT_ADDR };
     if native_inject_event_addr != 0 {
         info!("Hooking nativeInjectEvent");
-        Hachimi::instance().interceptor().hook(
-            unsafe { NATIVE_INJECT_EVENT_ADDR }, nativeInjectEvent as usize
-        )?;
+        Hachimi::instance().interceptor.hook(unsafe { NATIVE_INJECT_EVENT_ADDR }, nativeInjectEvent as usize)?;
     }
     else {
         error!("native_inject_event_addr is null");

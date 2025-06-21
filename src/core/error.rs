@@ -15,8 +15,7 @@ pub enum Error {
     OutOfDiskSpace,
     FileHashMismatch(String),
     ZipError(zip::result::ZipError),
-    RuntimeError(String),
-    AlreadyHooked
+    RuntimeError(String)
 }
 
 impl fmt::Display for Error {
@@ -63,9 +62,6 @@ impl fmt::Display for Error {
             },
             Error::RuntimeError(msg) => {
                 write!(f, "{}", msg)
-            },
-            Error::AlreadyHooked => {
-                write!(f, "Attempted to hook a method that's already hooked")
             }
         }
     }
@@ -93,7 +89,4 @@ impl From<zip::result::ZipError> for Error {
     fn from(e: zip::result::ZipError) -> Self {
         Error::ZipError(e)
     }
-}
-
-impl std::error::Error for Error {
 }

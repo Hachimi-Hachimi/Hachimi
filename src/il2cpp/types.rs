@@ -1191,7 +1191,7 @@ pub struct MemberInfo {
     _unused: [u8; 0],
 }
 #[repr(C)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug)]
 pub struct FieldInfo {
     pub name: *const ::std::os::raw::c_char,
     pub type_: *const Il2CppType,
@@ -1222,11 +1222,11 @@ pub struct EventInfo {
 }
 pub type InvokerMethod = ::std::option::Option<
     unsafe extern "C" fn(
-        method_ptr: Il2CppMethodPointer,
-        method: *const MethodInfo,
-        obj: *mut ::std::os::raw::c_void,
-        params: *mut *mut ::std::os::raw::c_void,
-        ret: *mut ::std::os::raw::c_void,
+        arg1: Il2CppMethodPointer,
+        arg2: *const MethodInfo,
+        arg3: *mut ::std::os::raw::c_void,
+        arg4: *mut *mut ::std::os::raw::c_void,
+        arg5: *mut ::std::os::raw::c_void,
     ),
 >;
 pub const MethodVariableKind_kMethodVariableKind_This: MethodVariableKind = 0;

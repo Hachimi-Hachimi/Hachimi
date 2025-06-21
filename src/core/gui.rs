@@ -1,11 +1,12 @@
-use std::{ops::RangeInclusive, sync::{atomic::{self, AtomicBool}, Arc, Mutex}, thread, time::Instant};
+use std::{borrow::Cow, ops::RangeInclusive, sync::{atomic::{self, AtomicBool}, Arc, Mutex}, thread, time::Instant};
 
 use fnv::FnvHashSet;
 use once_cell::sync::OnceCell;
+use rust_i18n::t;
 
 use crate::il2cpp::{
     hook::{
-        umamusume::{GameSystem, GraphicSettings::GraphicsQuality, Localize},
+        umamusume::{CySpringController::SpringUpdateMode, GameSystem, GraphicSettings::GraphicsQuality, Localize},
         UnityEngine_CoreModule::Application
     },
     symbols::Thread
@@ -17,7 +18,17 @@ use crate::il2cpp::hook::umamusume::WebViewManager;
 #[cfg(target_os = "windows")]
 use crate::il2cpp::hook::UnityEngine_CoreModule::QualitySettings;
 
-use super::{hachimi, http::AsyncRequest, tl_repo::{self, RepoInfo}, utils, Hachimi};
+use super::{hachimi::{self, Language}, http::AsyncRequest, tl_repo::{self, RepoInfo}, utils, Hachimi};
+
+macro_rules! add_font {
+    ($fonts:expr, $family_fonts:expr, $filename:literal) => {
+        $fonts.font_data.insert(
+            $filename.to_owned(),
+            egui::FontData::from_static(include_bytes!(concat!("../../assets/fonts/", $filename)))
+        );
+        $family_fonts.push($filename.to_owned());
+    };
+}
 
 type BoxedWindow = Box<dyn Window + Send + Sync>;
 pub struct Gui {
@@ -59,16 +70,21 @@ static mut DISABLED_GAME_UIS: once_cell::unsync::Lazy<FnvHashSet<*mut crate::il2
 
 impl Gui {
     // Call this from the render thread!
-    pub fn instance_or_init(open_key_str: &str) -> &Mutex<Gui> {
+    pub fn instance_or_init(open_key_id: &str) -> &Mutex<Gui> {
         if let Some(instance) = INSTANCE.get() {
             return instance;
         }
 
+        let hachimi = Hachimi::instance();
+        let config = hachimi.config.load();
+
         let context = egui::Context::default();
         egui_extras::install_image_loaders(&context);
 
+        context.set_fonts(Self::get_font_definitions());
+
         let mut style = egui::Style::default();
-        style.spacing.button_padding = egui::Vec2::new(8.0, 6.0);
+        style.spacing.button_padding = egui::Vec2::new(8.0, 5.0);
         style.interaction.selectable_labels = false;
         context.set_style(style);
 
@@ -77,8 +93,6 @@ impl Gui {
         visuals.widgets.noninteractive.fg_stroke = egui::Stroke::new(1.0, TEXT_COLOR);
         context.set_visuals(visuals);
 
-        let hachimi = Hachimi::instance();
-        let config = hachimi.config.load();
         let mut fps_value = hachimi.target_fps.load(atomic::Ordering::Relaxed);
         if fps_value == -1 {
             fps_value = 30;
@@ -103,7 +117,7 @@ impl Gui {
 
             splash_visible: true,
             splash_tween: TweenInOutWithDelay::new(0.8, 3.0, Easing::OutQuad),
-            splash_sub_str: format!("🏠 Press {} to open menu.", open_key_str),
+            splash_sub_str: t!("splash_sub", open_key_str = t!(open_key_id)).into_owned(),
 
             menu_visible: false,
             menu_anim_time: None,
@@ -131,6 +145,17 @@ impl Gui {
         INSTANCE.get()
     }
 
+    fn get_font_definitions() -> egui::FontDefinitions {
+        let mut fonts = egui::FontDefinitions::default();
+        let proportional_fonts = fonts.families.get_mut(&egui::FontFamily::Proportional).unwrap();
+
+        add_font!(fonts, proportional_fonts, "AlibabaPuHuiTi-3-45-Light.otf");
+        add_font!(fonts, proportional_fonts, "NotoSans-Light.ttf");
+        add_font!(fonts, proportional_fonts, "FontAwesome.otf");
+
+        fonts
+    }
+
     pub fn set_screen_size(&mut self, width: i32, height: i32) {
         let main_axis_size = if width < height { width } else { height };
         let pixels_per_point = main_axis_size as f32 * PIXELS_PER_POINT_RATIO;
@@ -156,7 +181,7 @@ impl Gui {
         let delta = self.last_fps_update.elapsed().as_secs_f64();
         if delta > 0.5 {
             let fps = (self.tmp_frame_count as f64 * (0.5 / delta) * 2.0).round();
-            self.fps_text = "FPS: ".to_owned() + &fps.to_string();
+            self.fps_text = t!("menu.fps_text", fps = fps).into_owned();
             self.tmp_frame_count = 1;
             self.last_fps_update = Instant::now();
         }
@@ -232,47 +257,47 @@ impl Gui {
         let localize_dict_count = localized_data.localize_dict.len().to_string();
         let hashed_dict_count = localized_data.hashed_dict.len().to_string();
 
-        let mut show_notification: Option<&str> = None;
+        let mut show_notification: Option<Cow<'_, str>> = None;
         let mut show_window: Option<BoxedWindow> = None;
         egui::SidePanel::left("hachimi_menu").show_animated(ctx, self.show_menu, |ui| {
             ui.with_layout(egui::Layout::top_down_justified(egui::Align::TOP), |ui| {
                 ui.horizontal(|ui| {
                     ui.add(Self::icon());
-                    ui.heading("Hachimi");
-                    if ui.button("？").clicked() {
+                    ui.heading(t!("hachimi"));
+                    if ui.button(" \u{f29c} ").clicked() {
                         show_window = Some(Box::new(AboutWindow::new()));
                     }
                 });
                 ui.label(env!("HACHIMI_DISPLAY_VERSION"));
-                if ui.button("🗙 Close menu").clicked() {
+                if ui.button(t!("menu.close_menu")).clicked() {
                     self.show_menu = false;
                     self.menu_anim_time = None;
                 }
                 ui.separator();
 
                 egui::ScrollArea::vertical().show(ui, |ui| {
-                    ui.heading("🗊 Stats");
+                    ui.heading(t!("menu.stats_heading"));
                     ui.label(&self.fps_text);
-                    ui.label("localize_dict entries: ".to_owned() + &localize_dict_count);
-                    ui.label("hashed_dict entries: ".to_owned() + &hashed_dict_count);
+                    ui.label(t!("menu.localize_dict_entries", count = localize_dict_count));
+                    ui.label(t!("menu.hashed_dict_entries", count = hashed_dict_count));
                     ui.separator();
 
-                    ui.heading("🛠 Config");
-                    if ui.button("✏ Open config editor").clicked() {
+                    ui.heading(t!("menu.config_heading"));
+                    if ui.button(t!("menu.open_config_editor")).clicked() {
                         show_window = Some(Box::new(ConfigEditor::new()));
                     }
-                    if ui.button("⟳ Reload config").clicked() {
+                    if ui.button(t!("menu.reload_config")).clicked() {
                         hachimi.reload_config();
-                        show_notification = Some("Config reloaded.");
+                        show_notification = Some(t!("notification.config_reloaded"));
                     }
-                    if ui.button("🚀 Open first time setup").clicked() {
+                    if ui.button(t!("menu.open_first_time_setup")).clicked() {
                         show_window = Some(Box::new(FirstTimeSetupWindow::new()));
                     }
                     ui.separator();
 
-                    ui.heading("🖼 Graphics");
+                    ui.heading(t!("menu.graphics_heading"));
                     ui.horizontal(|ui| {
-                        ui.label("FPS");
+                        ui.label(t!("menu.fps_label"));
                         let res = ui.add(egui::Slider::new(&mut self.menu_fps_value, 30..=240));
                         if res.lost_focus() || res.drag_stopped() {
                             hachimi.target_fps.store(self.menu_fps_value, atomic::Ordering::Relaxed);
@@ -289,7 +314,7 @@ impl Gui {
                         ui.horizontal(|ui| {
                             let prev_value = self.menu_vsync_value;
 
-                            ui.label("VSync");
+                            ui.label(t!("menu.vsync_label"));
                             Self::run_vsync_combo(ui, &mut self.menu_vsync_value);
 
                             if prev_value != self.menu_vsync_value {
@@ -302,7 +327,7 @@ impl Gui {
                         ui.horizontal(|ui| {
                             let mut value = hachimi.window_always_on_top.load(atomic::Ordering::Relaxed);
 
-                            ui.label("Stay on top");
+                            ui.label(t!("menu.stay_on_top"));
                             if ui.checkbox(&mut value, "").changed() {
                                 hachimi.window_always_on_top.store(value, atomic::Ordering::Relaxed);
                                 Thread::main_thread().schedule(|| {
@@ -314,16 +339,19 @@ impl Gui {
                     }
                     ui.separator();
 
-                    ui.heading("📖 Translation");
-                    if ui.button("⟳ Reload localized data").clicked() {
+                    ui.heading(t!("menu.translation_heading"));
+                    if ui.button(t!("menu.reload_localized_data")).clicked() {
                         hachimi.load_localized_data();
-                        show_notification = Some("Localized data reloaded.");
+                        show_notification = Some(t!("notification.localized_data_reloaded"));
                     }
-                    if ui.button("⮉ Check for updates").clicked() {
-                        hachimi.tl_updater.clone().check_for_updates();
+                    if ui.button(t!("menu.check_for_updates")).clicked() {
+                        hachimi.tl_updater.clone().check_for_updates(false);
+                    }
+                    if ui.button(t!("menu.check_for_updates_pedantic")).clicked() {
+                        hachimi.tl_updater.clone().check_for_updates(true);
                     }
                     if hachimi.config.load().translator_mode {
-                        if ui.button("Dump localize dict").clicked() {
+                        if ui.button(t!("menu.dump_localize_dict")).clicked() {
                             Thread::main_thread().schedule(|| {
                                 let data = Localize::dump_strings();
                                 let dict_path = Hachimi::instance().get_data_path("localize_dump.json");
@@ -332,17 +360,17 @@ impl Gui {
                                     gui.show_notification(&e.to_string())
                                 }
                                 else {
-                                    gui.show_notification("Saved to localize_dump.json")
+                                    gui.show_notification(&t!("notification.saved_localize_dump"))
                                 }
                             })
                         }
                     }
                     ui.separator();
 
-                    ui.heading("⚠ Danger Zone");
-                    ui.label("These options might have unintended effects on the game. Use with caution!");
-                    if ui.button("⟳ Soft restart").clicked() {
-                        show_window = Some(Box::new(SimpleYesNoDialog::new("Confirm", "Are you sure you want to soft restart the game?", |ok| {
+                    ui.heading(t!("menu.danger_zone_heading"));
+                    ui.label(t!("menu.danger_zone_warning"));
+                    if ui.button(t!("menu.soft_restart")).clicked() {
+                        show_window = Some(Box::new(SimpleYesNoDialog::new(&t!("confirm_dialog_title"), &t!("soft_restart_confirm_content"), |ok| {
                             if !ok { return; }
                             Thread::main_thread().schedule(|| {
                                 GameSystem::SoftwareReset(GameSystem::instance());
@@ -350,15 +378,15 @@ impl Gui {
                         })));
                     }
                     #[cfg(not(target_os = "windows"))]
-                    if ui.button("🌐 Open in-game browser").clicked() {
-                        show_window = Some(Box::new(SimpleYesNoDialog::new("Confirm", "Are you sure you want to open the in-game browser?", |ok| {
+                    if ui.button(t!("menu.open_in_game_browser")).clicked() {
+                        show_window = Some(Box::new(SimpleYesNoDialog::new(&t!("confirm_dialog_title"), &t!("in_game_browser_confirm_content"), |ok| {
                             if !ok { return; }
                             Thread::main_thread().schedule(|| {
-                                WebViewManager::quick_open("Browser", &Hachimi::instance().config.load().open_browser_url);
+                                WebViewManager::quick_open(&t!("browser_dialog_title"), &Hachimi::instance().config.load().open_browser_url);
                             });
                         })));
                     }
-                    if ui.button("👁 Toggle game UI").clicked() {
+                    if ui.button(t!("menu.toggle_game_ui")).clicked() {
                         Thread::main_thread().schedule(Self::toggle_game_ui);
                     }
                 });
@@ -377,7 +405,7 @@ impl Gui {
         }
 
         if let Some(content) = show_notification {
-            self.show_notification(content);
+            self.show_notification(content.as_ref());
         }
 
         if let Some(window) = show_window {
@@ -431,16 +459,21 @@ impl Gui {
     #[cfg(target_os = "windows")]
     fn run_vsync_combo(ui: &mut egui::Ui, value: &mut i32) {
         Self::run_combo(ui, "vsync_combo", value, &[
-            (-1, "Default"),
-            (0, "Off"),
-            (1, "On"),
+            (-1, &t!("default")),
+            (0, &t!("off")),
+            (1, &t!("on")),
             (2, "1/2"),
             (3, "1/3"),
             (4, "1/4")
         ]);
     }
 
-    fn run_combo<T: PartialEq + Copy>(ui: &mut egui::Ui, id_child: impl std::hash::Hash, value: &mut T, choices: &[(T, &str)]) {
+    fn run_combo<T: PartialEq + Copy>(
+        ui: &mut egui::Ui,
+        id_child: impl std::hash::Hash,
+        value: &mut T,
+        choices: &[(T, &str)]
+    ) -> bool {
         let mut selected = "Unknown";
         for choice in choices.iter() {
             if *value == choice.0 {
@@ -448,13 +481,16 @@ impl Gui {
             }
         }
 
+        let mut changed = false;
         egui::ComboBox::new(ui.id().with(id_child), "")
         .selected_text(selected)
         .show_ui(ui, |ui| {
             for choice in choices.iter() {
-                ui.selectable_value(value, choice.0, choice.1);
+                changed |= ui.selectable_value(value, choice.0, choice.1).changed();
             }
         });
+
+        changed
     }
 
     fn run_update_progress(&mut self) {
@@ -478,7 +514,7 @@ impl Gui {
             .rounding(4.0)
             .show(ui, |ui| {
                 ui.horizontal(|ui| {
-                    ui.label("Updating...");
+                    ui.label(t!("tl_updater.title"));
                     ui.add_space(26.0);
                     ui.label(format!("{:.2}%", ratio * 100.0));
                 });
@@ -488,10 +524,7 @@ impl Gui {
                     .desired_width(140.0)
                 );
                 ui.label(
-                    egui::RichText::new(
-                        "Translations will not work\n\
-                        while update is in progress"
-                    )
+                    egui::RichText::new(t!("tl_updater.warning"))
                     .font(egui::FontId::proportional(10.0))
                 );
             });
@@ -678,16 +711,16 @@ fn paginated_window_layout(ui: &mut egui::Ui, id: egui::Id, i: &mut usize, page_
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Min), |ui| {
             let mut open = true;
             if *i < page_count - 1 {
-                if allow_next && ui.button("Next").clicked() {
+                if allow_next && ui.button(t!("next")).clicked() {
                     *i += 1;
                 }
             }
             else {
-                if ui.button("Done").clicked() {
+                if ui.button(t!("done")).clicked() {
                     open = false;
                 }
             }
-            if *i > 0 && ui.button("Previous").clicked() {
+            if *i > 0 && ui.button(t!("previous")).clicked() {
                 *i -= 1;
             }
 
@@ -702,7 +735,7 @@ fn async_request_ui_content<T: Send + Sync + 'static>(ui: &mut egui::Ui, request
             request.call();
         }
         ui.centered_and_justified(|ui| {
-            ui.label("Loading...");
+            ui.label(t!("loading_label"));
         });
         return;
     };
@@ -712,7 +745,7 @@ fn async_request_ui_content<T: Send + Sync + 'static>(ui: &mut egui::Ui, request
         Err(e) => {
             ui.centered_and_justified(|ui| {
                 ui.label(e.to_string());
-                if ui.button("Retry").clicked() {
+                if ui.button(t!("retry")).clicked() {
                     request.call();
                 }
             });
@@ -755,10 +788,10 @@ impl Window for SimpleYesNoDialog {
                     });
                 },
                 |ui| {
-                    if ui.button("No").clicked() {
+                    if ui.button(t!("no")).clicked() {
                         open2 = false;
                     }
-                    if ui.button("Yes").clicked() {
+                    if ui.button(t!("yes")).clicked() {
                         result = true;
                         open2 = false;
                     }
@@ -810,7 +843,7 @@ impl Window for SimpleOkDialog {
                     });
                 },
                 |ui| {
-                    if ui.button("OK").clicked() {
+                    if ui.button(t!("ok")).clicked() {
                         open2 = false;
                     }
                 }
@@ -841,11 +874,13 @@ enum ConfigEditorTab {
 }
 
 impl ConfigEditorTab {
-    const DISPLAY: &[(ConfigEditorTab, &'static str)] = &[
-        (ConfigEditorTab::General, "⛭ General"),
-        (ConfigEditorTab::Graphics, "🖼 Graphics"),
-        (ConfigEditorTab::Gameplay, "🎮 Gameplay")
-    ];
+    fn display_list() -> [(ConfigEditorTab, Cow<'static, str>); 3] {
+        [
+            (ConfigEditorTab::General, t!("config_editor.general_tab")),
+            (ConfigEditorTab::Graphics, t!("config_editor.graphics_tab")),
+            (ConfigEditorTab::Gameplay, t!("config_editor.gameplay_tab"))
+        ]
+    }
 }
 
 impl ConfigEditor {
@@ -860,7 +895,7 @@ impl ConfigEditor {
     fn option_slider<Num: egui::emath::Numeric>(ui: &mut egui::Ui, label: &str, value: &mut Option<Num>, range: RangeInclusive<Num>) {
         let mut checked = value.is_some();
         ui.label(label);
-        ui.checkbox(&mut checked, "Enable");
+        ui.checkbox(&mut checked, t!("enable"));
         ui.end_row();
 
         if checked && value.is_none() {
@@ -880,17 +915,22 @@ impl ConfigEditor {
     fn run_options_grid(config: &mut hachimi::Config, ui: &mut egui::Ui, tab: ConfigEditorTab) {
         match tab {
             ConfigEditorTab::General => {
-                ui.label("Disable overlay (GUI)");
+                ui.label(t!("config_editor.language"));
+                let lang_changed = Gui::run_combo(ui, "language", &mut config.language, Language::CHOICES);
+                if lang_changed {
+                    config.language.set_locale();
+                }
+                ui.end_row();
+
+                ui.label(t!("config_editor.disable_overlay"));
                 if ui.checkbox(&mut config.disable_gui, "").clicked() {
                     if config.disable_gui {
                         thread::spawn(|| {
                             Gui::instance().unwrap()
                             .lock().unwrap()
                             .show_window(Box::new(SimpleOkDialog::new(
-                                "Warning",
-                                "This option will disable the Hachimi overlay after you restart the game, \
-                                which means that you will NOT be able to access the Config Editor after this. \
-                                If this was not intentional, close this dialog and DISABLE the option.",
+                                &t!("warning"),
+                                &t!("config_editor.disable_overlay_warning"),
                                 || {}
                             )));
                         });
@@ -898,57 +938,61 @@ impl ConfigEditor {
                 }
                 ui.end_row();
 
-                ui.label("Debug mode");
+                ui.label(t!("config_editor.debug_mode"));
                 ui.checkbox(&mut config.debug_mode, "");
                 ui.end_row();
 
-                ui.label("Translator mode");
+                ui.label(t!("config_editor.translator_mode"));
                 ui.checkbox(&mut config.translator_mode, "");
                 ui.end_row();
 
-                ui.label("Skip first time setup");
+                ui.label(t!("config_editor.skip_first_time_setup"));
                 ui.checkbox(&mut config.skip_first_time_setup, "");
                 ui.end_row();
 
-                ui.label("Disable auto update\ncheck");
+                ui.label(t!("config_editor.disable_auto_update_check"));
                 ui.checkbox(&mut config.disable_auto_update_check, "");
                 ui.end_row();
 
-                ui.label("Disable translations");
+                ui.label(t!("config_editor.disable_translations"));
                 ui.checkbox(&mut config.disable_translations, "");
                 ui.end_row();
 
-                ui.label("Enable IPC");
+                ui.label(t!("config_editor.enable_ipc"));
                 ui.checkbox(&mut config.enable_ipc, "");
                 ui.end_row();
 
-                ui.label("IPC listen all");
+                ui.label(t!("config_editor.ipc_listen_all"));
                 ui.checkbox(&mut config.ipc_listen_all, "");
                 ui.end_row();
 
-                ui.label("Auto translate\nstories");
+                ui.label(t!("config_editor.auto_translate_stories"));
                 ui.checkbox(&mut config.auto_translate_stories, "");
                 ui.end_row();
 
-                ui.label("Auto translate UI\n(MIGHT BREAK UIs)");
+                ui.label(t!("config_editor.auto_translate_ui"));
                 ui.checkbox(&mut config.auto_translate_localize, "");
                 ui.end_row();
             },
 
             ConfigEditorTab::Graphics => {
-                Self::option_slider(ui, "Target FPS", &mut config.target_fps, 30..=240);
+                Self::option_slider(ui, &t!("config_editor.target_fps"), &mut config.target_fps, 30..=240);
 
-                ui.label("Virtual resolution\nmultiplier");
+                ui.label(t!("config_editor.virtual_resolution_multiplier"));
                 ui.add(egui::Slider::new(&mut config.virtual_res_mult, 1.0..=4.0).step_by(0.1));
                 ui.end_row();
 
-                ui.label("UI scale");
+                ui.label(t!("config_editor.ui_scale"));
                 ui.add(egui::Slider::new(&mut config.ui_scale, 0.1..=10.0).step_by(0.05));
                 ui.end_row();
 
-                ui.label("Graphics quality");
+                ui.label(t!("config_editor.ui_animation_scale"));
+                ui.add(egui::Slider::new(&mut config.ui_animation_scale, 0.1..=10.0).step_by(0.1));
+                ui.end_row();
+
+                ui.label(t!("config_editor.graphics_quality"));
                 Gui::run_combo(ui, "graphics_quality", &mut config.graphics_quality, &[
-                    (GraphicsQuality::Default, "Default"),
+                    (GraphicsQuality::Default, &t!("default")),
                     (GraphicsQuality::Toon1280, "Toon1280"),
                     (GraphicsQuality::Toon1280x2, "Toon1280x2"),
                     (GraphicsQuality::Toon1280x4, "Toon1280x4"),
@@ -961,53 +1005,63 @@ impl ConfigEditor {
                 {
                     use crate::windows::hachimi_impl::{FullScreenMode, ResolutionScaling};
 
-                    ui.label("VSync");
+                    ui.label(t!("config_editor.vsync"));
                     Gui::run_vsync_combo(ui, &mut config.windows.vsync_count);
                     ui.end_row();
 
-                    ui.label("Auto full screen");
+                    ui.label(t!("config_editor.auto_full_screen"));
                     ui.checkbox(&mut config.windows.auto_full_screen, "");
                     ui.end_row();
 
-                    ui.label("Full screen mode");
+                    ui.label(t!("config_editor.full_screen_mode"));
                     Gui::run_combo(ui, "full_screen_mode", &mut config.windows.full_screen_mode, &[
-                        (FullScreenMode::ExclusiveFullScreen, "Exclusive"),
-                        (FullScreenMode::FullScreenWindow, "Borderless")
+                        (FullScreenMode::ExclusiveFullScreen, &t!("config_editor.full_screen_mode_exclusive")),
+                        (FullScreenMode::FullScreenWindow, &t!("config_editor.full_screen_mode_borderless"))
                     ]);
                     ui.end_row();
 
-                    ui.label("Block minimize in\nfull screen");
+                    ui.label(t!("config_editor.block_minimize_in_full_screen"));
                     ui.checkbox(&mut config.windows.block_minimize_in_full_screen, "");
                     ui.end_row();
 
-                    ui.label("Resolution scaling");
+                    ui.label(t!("config_editor.resolution_scaling"));
                     Gui::run_combo(ui, "resolution_scaling", &mut config.windows.resolution_scaling, &[
-                        (ResolutionScaling::Default, "Default (1080p)"),
-                        (ResolutionScaling::ScaleToScreenSize, "Scale to screen size"),
-                        (ResolutionScaling::ScaleToWindowSize, "Scale to window size")
+                        (ResolutionScaling::Default, &t!("config_editor.resolution_scaling_default")),
+                        (ResolutionScaling::ScaleToScreenSize, &t!("config_editor.resolution_scaling_ssize")),
+                        (ResolutionScaling::ScaleToWindowSize, &t!("config_editor.resolution_scaling_wsize"))
                     ]);
                     ui.end_row();
 
-                    ui.label("Window always on top");
+                    ui.label(t!("config_editor.window_always_on_top"));
                     ui.checkbox(&mut config.windows.window_always_on_top, "");
                     ui.end_row();
                 }
             },
 
             ConfigEditorTab::Gameplay => {
-                ui.label("Story choice auto\nselect delay");
+                ui.label(t!("config_editor.physics_update_mode"));
+                Gui::run_combo(ui, "physics_update_mode", &mut config.physics_update_mode, &[
+                    (None, &t!("default")),
+                    (SpringUpdateMode::ModeNormal.into(), "ModeNormal"),
+                    (SpringUpdateMode::Mode60FPS.into(), "Mode60FPS"),
+                    (SpringUpdateMode::SkipFrame.into(), "SkipFrame"),
+                    (SpringUpdateMode::SkipFramePostAlways.into(), "SkipFramePostAlways")
+                ]);
+                ui.end_row();
+
+                ui.label(t!("config_editor.story_choice_auto_select_delay"));
                 ui.add(egui::Slider::new(&mut config.story_choice_auto_select_delay, 0.1..=10.0).step_by(0.05));
                 ui.end_row();
 
-                ui.label("Story text speed\nmultiplier");
+                ui.label(t!("config_editor.story_text_speed_multiplier"));
                 ui.add(egui::Slider::new(&mut config.story_tcps_multiplier, 0.1..=10.0).step_by(0.1));
                 ui.end_row();
 
-                ui.label("Force allow\ndynamic camera");
+                ui.label(t!("config_editor.force_allow_dynamic_camera"));
                 ui.checkbox(&mut config.force_allow_dynamic_camera, "");
                 ui.end_row();
 
-                ui.label("Live theater\nallow same chara");
+                ui.label(t!("config_editor.live_theater_allow_same_chara"));
                 ui.checkbox(&mut config.live_theater_allow_same_chara, "");
                 ui.end_row();
 
@@ -1030,7 +1084,7 @@ impl Window for ConfigEditor {
         let mut open2 = true;
         let mut config = self.config.clone();
 
-        new_window(ctx, "Config Editor")
+        new_window(ctx, t!("config_editor.title"))
         .id(self.id)
         .open(&mut open)
         .show(ctx, |ui| {
@@ -1048,9 +1102,9 @@ impl Window for ConfigEditor {
                             widgets.hovered.rounding = egui::Rounding::ZERO;
                             widgets.active.rounding = egui::Rounding::ZERO;
 
-                            for (tab, label) in ConfigEditorTab::DISPLAY {
-                                if ui.selectable_label(self.current_tab == *tab, *label).clicked() {
-                                    self.current_tab = *tab;
+                            for (tab, label) in ConfigEditorTab::display_list() {
+                                if ui.selectable_label(self.current_tab == tab, label.as_ref()).clicked() {
+                                    self.current_tab = tab;
                                 }
                             }
                         });
@@ -1075,10 +1129,10 @@ impl Window for ConfigEditor {
                     });
                 },
                 |ui| {
-                    if ui.button("Cancel").clicked() {
+                    if ui.button(t!("cancel")).clicked() {
                         open2 = false;
                     }
-                    if ui.button("Save").clicked() {
+                    if ui.button(t!("save")).clicked() {
                         save_and_reload_config(self.config.clone());
                         open2 = false;
                     }
@@ -1087,13 +1141,22 @@ impl Window for ConfigEditor {
         });
 
         self.config = config;
-        open && open2
+
+        open &= open2;
+        if !open {
+            let config_locale = Hachimi::instance().config.load().language.locale_str();
+            if config_locale != &*rust_i18n::locale() {
+                rust_i18n::set_locale(config_locale);
+            }
+        }
+
+        open
     }
 }
 
 fn save_and_reload_config(config: hachimi::Config) {
     let notif = match Hachimi::instance().save_and_reload_config(config) {
-        Ok(_) => "Config saved.".to_owned(),
+        Ok(_) => t!("notification.config_saved").into_owned(),
         Err(e) => e.to_string()
     };
 
@@ -1129,23 +1192,35 @@ impl Window for FirstTimeSetupWindow {
         let mut open = true;
         let mut page_open = true;
 
-        new_window(ctx, "First Time Setup")
+        new_window(ctx, t!("first_time_setup.title"))
         .id(self.id)
         .open(&mut open)
         .show(ctx, |ui| {
             page_open = paginated_window_layout(ui, self.id, &mut self.current_page, 3, |ui, i| {
                 match i {
                     0 => {
-                        ui.heading("Welcome");
+                        ui.heading(t!("first_time_setup.welcome_heading"));
                         ui.separator();
-                        ui.label("Hachimi has been installed! This will guide you through the initial setup process.");
-                        ui.label("If you're not interested in using the translation features, you may skip it by closing this dialog.");
+                        ui.horizontal(|ui| {
+                            ui.label(t!("config_editor.language"));
+
+                            let hachimi = Hachimi::instance();
+                            let config = &**hachimi.config.load();
+                            let mut language = config.language;
+                            let lang_changed = Gui::run_combo(ui, "language", &mut language, Language::CHOICES);
+                            if lang_changed {
+                                let mut config = config.clone();
+                                config.language = language;
+                                save_and_reload_config(config);
+                            }   
+                        });
+                        ui.label(t!("first_time_setup.welcome_content"));
                         true
                     }
                     1 => {
-                        ui.heading("Translation repo");
+                        ui.heading(t!("first_time_setup.translation_repo_heading"));
                         ui.separator();
-                        ui.label("Select a translation repo:");
+                        ui.label(t!("first_time_setup.select_translation_repo"));
                         ui.add_space(4.0);
 
                         let mut selected = false;
@@ -1157,6 +1232,12 @@ impl Window for FirstTimeSetupWindow {
                                 .show(ui, |ui| {
                                     for (i, repo) in repo_list.iter().enumerate() {
                                         ui.radio_value(&mut self.current_tl_repo, i, &repo.name);
+                                        if let Some(list) = &repo.contributors {
+                                            ui.label(
+                                                egui::RichText::new(t!("first_time_setup.contributors", list = list))
+                                                    .small()
+                                            );
+                                        }
                                     }
                                 });
                             });
@@ -1164,11 +1245,9 @@ impl Window for FirstTimeSetupWindow {
                         selected
                     }
                     2 => {
-                        ui.heading("All done!");
+                        ui.heading(t!("first_time_setup.complete_heading"));
                         ui.separator();
-                        ui.label("The translation repo has been set. Once you click on Done, the configuration will \
-                                be saved and an update check will be performed, which will prompt you to download the \
-                                new translation data.");
+                        ui.label(t!("first_time_setup.complete_content"));
                         true
                     }
                     _ => false
@@ -1201,7 +1280,7 @@ impl Window for FirstTimeSetupWindow {
             save_and_reload_config(config);
 
             if !page_open {
-                hachimi.tl_updater.clone().check_for_updates();
+                hachimi.tl_updater.clone().check_for_updates(false);
             }
         }
 
@@ -1225,20 +1304,20 @@ impl Window for AboutWindow {
     fn run(&mut self, ctx: &egui::Context) -> bool {
         let mut open = true;
 
-        new_window(ctx, "About")
+        new_window(ctx, t!("about.title"))
         .id(self.id)
         .open(&mut open)
         .show(ctx, |ui| {
             ui.horizontal(|ui| {
                 ui.add(Gui::icon_2x());
                 ui.vertical(|ui| {
-                    ui.heading("Hachimi");
+                    ui.heading(t!("hachimi"));
                     ui.label(env!("HACHIMI_DISPLAY_VERSION"));
                 });
             });
-            ui.label("Copyright (c) 2024 LeadRDRK and contributors");
+            ui.label(t!("about.copyright"));
             ui.horizontal(|ui| {
-                if ui.button("View license").clicked() {
+                if ui.button(t!("about.view_license")).clicked() {
                     thread::spawn(|| {
                         Gui::instance().unwrap()
                         .lock().unwrap()
@@ -1246,7 +1325,7 @@ impl Window for AboutWindow {
                     });
                 }
                 #[cfg(target_os = "windows")]
-                if ui.button("Check for updates").clicked() {
+                if ui.button(t!("about.check_for_updates")).clicked() {
                     Hachimi::instance().updater.clone().check_for_updates(|_| {});
                 }
             });
@@ -1272,7 +1351,7 @@ impl Window for LicenseWindow {
     fn run(&mut self, ctx: &egui::Context) -> bool {
         let mut open = true;
 
-        new_window(ctx, "License")
+        new_window(ctx, t!("license.title"))
         .id(self.id)
         .open(&mut open)
         .show(ctx, |ui| {
