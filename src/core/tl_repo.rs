@@ -13,7 +13,7 @@ use super::{gui::SimpleYesNoDialog, hachimi::LocalizedData, http::{self, AsyncRe
 pub struct RepoInfo {
     pub name: String,
     pub index: String,
-    pub contributors: Option<String>
+    pub short_desc: Option<String>
 }
 
 pub fn new_meta_index_request() -> AsyncRequest<Vec<RepoInfo>> {

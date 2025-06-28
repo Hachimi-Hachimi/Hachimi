@@ -78,7 +78,6 @@ first_time_setup:
     you accept that you will be using it at your own risk.
   translation_repo_heading: "Translation repo"
   select_translation_repo: "Select a translation repo:"
-  contributors: "Contributors: %{list}"
   complete_heading: "All done!"
   complete_content: >-
     The translation repo has been set. Once you click on Done, the configuration will
