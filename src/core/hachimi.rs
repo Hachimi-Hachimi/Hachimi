@@ -56,6 +56,7 @@ impl Hachimi {
         super::log::init(instance.config.load().debug_mode);
 
         info!("Hachimi {}", env!("HACHIMI_DISPLAY_VERSION"));
+        info!("Game region: {}", instance.game.region);
         instance.load_localized_data();
 
         INSTANCE.set(Arc::new(instance)).is_ok()

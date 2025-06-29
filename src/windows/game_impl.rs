@@ -1,23 +1,34 @@
-use std::{path::PathBuf, process};
+use std::path::{Path, PathBuf};
 
 use crate::core::game::Region;
 
 use super::utils;
 
 pub fn get_package_name() -> String {
-    "".to_owned()
+    utils::get_exec_path()
+        .to_str()
+        .unwrap()
+        .to_owned()
 }
 
-pub fn get_region(_package_name: &str) -> Region {
-    Region::Japan
+pub fn get_region(package_name: &str) -> Region {
+    match Path::new(package_name)
+        .file_name()
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .to_ascii_lowercase()
+        .as_str()
+    {
+        "umamusume.exe" | "umamusumeprettyderby_jpn.exe" => Region::Japan,
+        "umamusumeprettyderby.exe" => Region::Global,
+        _ => Region::Unknown
+    }
 }
 
-pub fn get_data_dir(_package_name: &str) -> PathBuf {
-    if let Some(game_dir) = utils::get_game_dir() {
-        game_dir.join("hachimi")
-    }
-    else {
-        error!("FATAL: Failed to get the directory of the current executable");
-        process::exit(1);
-    }
+pub fn get_data_dir(package_name: &str) -> PathBuf {
+    Path::new(package_name)
+        .parent()
+        .unwrap()
+        .join("hachimi")
 }
