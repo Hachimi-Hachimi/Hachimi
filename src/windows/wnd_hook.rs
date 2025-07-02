@@ -11,7 +11,7 @@ use windows::{core::w, Win32::{
     }
 }};
 
-use crate::{core::{Gui, Hachimi}, il2cpp::{hook::{umamusume::SceneManager, UnityEngine_CoreModule}, symbols::Thread}, windows::utils};
+use crate::{core::{game::Region, Gui, Hachimi}, il2cpp::{hook::{umamusume::SceneManager, UnityEngine_CoreModule}, symbols::Thread}, windows::utils};
 
 use super::gui_impl::input;
 
@@ -124,8 +124,18 @@ extern "system" fn cbt_proc(ncode: i32, wparam: WPARAM, lparam: LPARAM) -> LRESU
 pub fn init() {
     unsafe {
         let hachimi = Hachimi::instance();
+        let game = &hachimi.game;
 
-        let hwnd = FindWindowW(w!("UnityWndClass"), w!("umamusume"));
+        let window_name = if game.is_steam_release() && game.region == Region::Japan {
+            // lmao
+            w!("UmamusumePrettyDerby_Jpn")
+        }
+        else {
+            // global technically has "Umamusume" as its title but this api
+            // is case insensitive so it works. why am i surprised
+            w!("umamusume")
+        };
+        let hwnd = FindWindowW(w!("UnityWndClass"), window_name);
         if hwnd.0 == 0 {
             error!("Failed to find game window");
             return;

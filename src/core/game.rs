@@ -43,4 +43,19 @@ impl Game {
             data_dir
         }
     }
+
+    #[cfg(target_os = "windows")]
+    pub fn is_steam_release(&self) -> bool {
+        match std::path::Path::new(&self.package_name)
+            .file_name()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_ascii_lowercase()
+            .as_str()
+        {
+            "umamusumeprettyderby_jpn.exe" | "umamusumeprettyderby.exe" => true,
+            _ => false
+        }
+    }
 }
