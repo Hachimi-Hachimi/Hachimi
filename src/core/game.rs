@@ -5,7 +5,10 @@ use crate::game_impl;
 pub struct Game {
     pub package_name: String,
     pub region: Region,
-    pub data_dir: PathBuf
+    pub data_dir: PathBuf,
+
+    #[cfg(target_os = "windows")]
+    pub is_steam_release: bool
 }
 
 #[derive(PartialEq, Eq)]
@@ -37,25 +40,16 @@ impl Game {
         let region = game_impl::get_region(&package_name);
         let data_dir = game_impl::get_data_dir(&package_name);
 
+        #[cfg(target_os = "windows")]
+        let is_steam_release = game_impl::is_steam_release(&package_name);
+
         Game {
             package_name,
             region,
-            data_dir
-        }
-    }
+            data_dir,
 
-    #[cfg(target_os = "windows")]
-    pub fn is_steam_release(&self) -> bool {
-        match std::path::Path::new(&self.package_name)
-            .file_name()
-            .unwrap()
-            .to_str()
-            .unwrap()
-            .to_ascii_lowercase()
-            .as_str()
-        {
-            "umamusumeprettyderby_jpn.exe" | "umamusumeprettyderby.exe" => true,
-            _ => false
+            #[cfg(target_os = "windows")]
+            is_steam_release
         }
     }
 }

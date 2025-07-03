@@ -126,7 +126,7 @@ pub fn init() {
         let hachimi = Hachimi::instance();
         let game = &hachimi.game;
 
-        let window_name = if game.is_steam_release() && game.region == Region::Japan {
+        let window_name = if game.region == Region::Japan && game.is_steam_release {
             // lmao
             w!("UmamusumePrettyDerby_Jpn")
         }
