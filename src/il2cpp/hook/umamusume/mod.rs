@@ -56,6 +56,9 @@ pub mod CySpringController;
 #[cfg(target_os = "windows")]
 pub mod SceneManager;
 
+#[cfg(target_os = "windows")]
+mod PaymentUtility;
+
 pub fn init() {
     get_assembly_image_or_return!(image, "umamusume.dll");
 
@@ -114,5 +117,8 @@ pub fn init() {
     CySpringController::init(image);
 
     #[cfg(target_os = "windows")]
-    SceneManager::init(image);
+    {
+        SceneManager::init(image);
+        PaymentUtility::init(image);
+    }
 }

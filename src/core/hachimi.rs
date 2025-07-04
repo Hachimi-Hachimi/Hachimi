@@ -53,6 +53,16 @@ impl Hachimi {
             }
         };
 
+        let config = instance.config.load();
+        if config.disable_gui_once {
+            let mut config = config.as_ref().clone();
+            config.disable_gui_once = false;
+            _ = instance.save_config(&config);
+
+            config.disable_gui = true;
+            instance.config.store(Arc::new(config));
+        }
+
         super::log::init(instance.config.load().debug_mode);
 
         info!("Hachimi {}", env!("HACHIMI_DISPLAY_VERSION"));
@@ -129,10 +139,16 @@ impl Hachimi {
         self.config.store(Arc::new(new_config));
     }
 
-    pub fn save_and_reload_config(&self, config: Config) -> Result<(), Error> {
+    pub fn save_config(&self, config: &Config) -> Result<(), Error> {
         fs::create_dir_all(&self.game.data_dir)?;
         let config_path = self.get_data_path("config.json");
-        utils::write_json_file(&config, &config_path)?;
+        utils::write_json_file(config, &config_path)?;
+
+        Ok(())
+    }
+
+    pub fn save_and_reload_config(&self, config: Config) -> Result<(), Error> {
+        self.save_config(&config)?;
 
         config.language.set_locale();
         self.config.store(Arc::new(config));
@@ -229,6 +245,8 @@ pub struct Config {
     pub translator_mode: bool,
     #[serde(default)]
     pub disable_gui: bool,
+    #[serde(default)]
+    pub disable_gui_once: bool,
     pub localized_data_dir: Option<String>,
     pub target_fps: Option<i32>,
     #[serde(default = "Config::default_open_browser_url")]

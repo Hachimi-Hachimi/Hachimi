@@ -152,3 +152,12 @@ update_prompt_dialog:
 updating_dialog:
   title: "Updating"
   content: "Downloading update, the game will restart shortly..."
+
+steam_overlay_conflict_dialog:
+  title: "Notice"
+  content: >-
+    Purchases might not work with the Hachimi overlay enabled. If the Steam overlay already showed
+    up for you to make a purchase, please ignore this message and press No. If it didn't work, press Yes
+    to temporarily disable the Hachimi overlay. It will close the game, and the next time the game starts up,
+    the Hachimi overlay will be disabled and you will be able to make a purchase. After that, you may restart
+    the game again to re-enable the Hachimi overlay.
