@@ -1,6 +1,6 @@
 use std::{fs, path::{Path, PathBuf}, process, sync::{atomic::{self, AtomicBool, AtomicI32}, Arc}};
 use arc_swap::ArcSwap;
-use fnv::FnvHashMap;
+use fnv::{FnvHashMap, FnvHashSet};
 use once_cell::sync::OnceCell;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
@@ -288,6 +288,8 @@ pub struct Config {
     pub physics_update_mode: Option<SpringUpdateMode>,
     #[serde(default = "Config::default_ui_animation_scale")]
     pub ui_animation_scale: f32,
+    #[serde(default)]
+    pub disabled_hooks: FnvHashSet<String>,
 
     #[cfg(target_os = "windows")]
     #[serde(flatten)]
