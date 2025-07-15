@@ -11,3 +11,4 @@ pub mod gui_impl;
 pub mod updater;
 pub mod wnd_hook;
 mod ffi;
+pub mod steamworks;

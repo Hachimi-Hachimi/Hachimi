@@ -29,6 +29,7 @@ pub fn get_region(package_name: &str) -> Region {
         "com.komoe.kmumamusumegp" | "com.komoe.umamusumeofficial" => Region::Taiwan,
         "com.kakaogames.umamusume" => Region::Korea,
         "com.bilibili.umamusu" => Region::China,
+        "com.cygames.umamusume" => Region::Global,
         _ => Region::Unknown
     }
 }

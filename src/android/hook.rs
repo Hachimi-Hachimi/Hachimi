@@ -28,38 +28,17 @@ extern "C" fn dlopen(filename: *const c_char, flags: c_int) -> *mut c_void {
 
     let filename_str = unsafe { CStr::from_ptr(filename).to_str().unwrap() };
     if hachimi.on_dlopen(filename_str, handle as usize) {
-        hachimi.interceptor.unhook(loader_dlopen as usize);
+        hachimi.interceptor.unhook(dlopen as usize);
     }
 
     handle
 }
 
-// android/platform/bionic/linker/dlfcn.cpp
-type LoaderDlopenFn = extern "C" fn(filename: *const c_char, flags: c_int, caller_addr: *const c_void) -> *mut c_void;
-extern "C" fn loader_dlopen(filename: *const c_char, flags: c_int, caller_addr: *const c_void) -> *mut c_void {
+type DoDlopenFn = extern "C" fn(filename: *const c_char, flags: c_int, extinfo: *const c_void, caller_addr: *const c_void) -> *mut c_void;
+extern "C" fn do_dlopen(filename: *const c_char, flags: c_int, extinfo: *const c_void, caller_addr: *const c_void) -> *mut c_void {
     let hachimi = Hachimi::instance();
-    let orig_fn: LoaderDlopenFn = unsafe {
-        std::mem::transmute(hachimi.interceptor.get_trampoline_addr(loader_dlopen as usize))
-    };
-
-    let handle = orig_fn(filename, flags, caller_addr);
-    if filename.is_null() {
-        return handle;
-    }
-
-    let filename_str = unsafe { CStr::from_ptr(filename).to_str().unwrap() };
-    if hachimi.on_dlopen(filename_str, handle as usize) {
-        hachimi.interceptor.unhook(loader_dlopen as usize);
-    }
-
-    handle
-}
-
-type DlopenV30Fn = extern "C" fn(filename: *const c_char, flags: c_int, extinfo: *const c_void, caller_addr: *const c_void) -> *mut c_void;
-extern "C" fn dlopen_v30(filename: *const c_char, flags: c_int, extinfo: *const c_void, caller_addr: *const c_void) -> *mut c_void {
-    let hachimi = Hachimi::instance();
-    let orig_fn: DlopenV30Fn = unsafe {
-        std::mem::transmute(hachimi.interceptor.get_trampoline_addr(dlopen_v30 as usize))
+    let orig_fn: DoDlopenFn = unsafe {
+        std::mem::transmute(hachimi.interceptor.get_trampoline_addr(do_dlopen as usize))
     };
 
     let handle = orig_fn(filename, flags, extinfo, caller_addr);
@@ -69,7 +48,7 @@ extern "C" fn dlopen_v30(filename: *const c_char, flags: c_int, extinfo: *const 
 
     let filename_str = unsafe { CStr::from_ptr(filename).to_str().unwrap() };
     if hachimi.on_dlopen(filename_str, handle as usize) {
-        hachimi.interceptor.unhook(dlopen_v30 as usize);
+        hachimi.interceptor.unhook(do_dlopen as usize);
     }
 
     handle
@@ -102,37 +81,31 @@ fn init_internal(env: *mut jni::sys::JNIEnv) -> Result<(), Error> {
 
     let hachimi = Hachimi::instance();
 
-    if hachimi.config.load().android.hook_libc_dlopen ||
-        std::fs::metadata("/vendor/waydroid.prop").ok().is_some_and(|m| m.is_file())
-    {
-        let dlopen_addr = libc::dlopen as usize;
-        info!("Hooking dlopen: {}", dlopen_addr);
-        hachimi.interceptor.hook(dlopen_addr, dlopen as usize)?;
-    }
-    // A11
-    else if api_level == 30 {
-        let dlopen_addr = Interceptor::find_symbol_by_name(LINKER_MODULE, "__dl__Z9do_dlopenPKciPK17android_dlextinfoPKv")?;
-        info!("Hooking dlopen_v30: {}", dlopen_addr);
-        hachimi.interceptor.hook(dlopen_addr, dlopen_v30 as usize)?;
-    }
-    else {
-        // A6, A7, A7.1      (api >= 23): __dl_open
-        // A8, A8.1          (api >= 26): __dl__Z8__dlopenPKciPKv
-        // A9, A10, A12, A13 (api >= 28): __dl___loader_dlopen
-        let loader_dlopen_symbol = if api_level >= 28 {
-            "__dl___loader_dlopen"
-        }
-        else if api_level >= 26 {
-            "__dl__Z8__dlopenPKciPKv"
-        }
-        else {
-            "__dl_open"
-        };
+    let force_hook_dlopen = hachimi.config.load().android.hook_libc_dlopen ||
+        std::fs::metadata("/vendor/waydroid.prop").ok().is_some_and(|m| m.is_file());
 
-        info!("Hooking dlopen: {}", loader_dlopen_symbol);
-        let loader_dlopen_addr = Interceptor::find_symbol_by_name(LINKER_MODULE, loader_dlopen_symbol)?;
-        hachimi.interceptor.hook(loader_dlopen_addr, loader_dlopen as usize)?;
+    let mut dlopen_orig = libc::dlopen as usize;
+    let mut dlopen_hook = dlopen as usize;
+    let mut dlopen_name = "dlopen";
+
+    const DO_DLOPEN_V24: &str = "__dl__Z9do_dlopenPKciPK17android_dlextinfoPv";  // A7, A7.1
+    const DO_DLOPEN_V26: &str = "__dl__Z9do_dlopenPKciPK17android_dlextinfoPKv"; // A8 or later
+    if !force_hook_dlopen {
+        if api_level >= 26 {
+            dlopen_orig = Interceptor::find_symbol_by_name(LINKER_MODULE, DO_DLOPEN_V26)?;
+            dlopen_hook = do_dlopen as _;
+            dlopen_name = DO_DLOPEN_V26;
+        }
+        else if api_level >= 24 {
+            dlopen_orig = Interceptor::find_symbol_by_name(LINKER_MODULE, DO_DLOPEN_V24)?;
+            dlopen_hook = do_dlopen as _;
+            dlopen_name = DO_DLOPEN_V24;
+        }
+        // otherwise hook dlopen
     }
+
+    info!("Hooking {} at {:#x}", dlopen_name, dlopen_orig);
+    hachimi.interceptor.hook(dlopen_orig, dlopen_hook)?;
 
     if !hachimi.config.load().disable_gui {
         info!("Hooking JNINativeInterface RegisterNatives");

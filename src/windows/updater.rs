@@ -114,7 +114,7 @@ impl Updater {
         let mut slice = [0u16; MAX_PATH as usize];
         let length = unsafe { GetModuleFileNameW(DLL_HMODULE, &mut slice) } as usize;
         let hachimi_path_str = unsafe { Utf16Str::from_slice_unchecked(&slice[..length]) };
-        let game_dir = utils::get_game_dir().unwrap();
+        let game_dir = utils::get_game_dir();
         unsafe {
             ShellExecuteW(
                 None,

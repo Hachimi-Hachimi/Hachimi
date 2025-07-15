@@ -10,7 +10,7 @@ use crate::{core::{utils::get_file_modified_time, Hachimi}, windows::utils};
 proxy_proc!(UnityMain, UnityMain_orig);
 
 fn prepare_orig_dll() -> std::io::Result<PathBuf> {
-    let src_dll = utils::get_game_dir().unwrap().join("UnityPlayer.dll");
+    let src_dll = utils::get_game_dir().join("UnityPlayer.dll");
     let dest_dll = Hachimi::instance().get_data_path("UnityPlayer_orig.dll");
 
     if let Some(dest_mtime) = get_file_modified_time(&dest_dll) {
