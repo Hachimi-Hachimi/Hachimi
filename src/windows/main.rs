@@ -3,14 +3,15 @@ use std::os::raw::{c_ulong, c_void};
 use widestring::U16CString;
 use windows::{core::PCWSTR, Win32::{Foundation::{BOOL, HMODULE, TRUE}, System::LibraryLoader::LoadLibraryW}};
 
-use crate::{core::{plugin_api::{HachimiInitFn, Vtable}, Hachimi}, windows::utils};
+use crate::{core::{hachimi::Plugin, Hachimi}, windows::utils};
 
 use super::{hook, wnd_hook};
 
 const DLL_PROCESS_ATTACH: c_ulong = 1;
 const DLL_PROCESS_DETACH: c_ulong = 0;
 
-pub fn load_libraries() {
+pub fn load_libraries() -> Vec<Plugin> {
+    let mut plugins = Vec::new();
     for name in Hachimi::instance().config.load().windows.load_libraries.iter() {
         let Ok(name_cstr) = U16CString::from_str(name) else {
             warn!("Invalid library name: {}", name);
@@ -24,10 +25,10 @@ pub fn load_libraries() {
 
                 let hachimi_init_addr = utils::get_proc_address(handle, c"hachimi_init");
                 if hachimi_init_addr != 0 {
-                    info!("Calling hachimi_init");
-                    let hachimi_init: HachimiInitFn = unsafe { std::mem::transmute(hachimi_init_addr) };
-                    let vtable = Vtable::instantiate();
-                    hachimi_init(&vtable);
+                    plugins.push(Plugin {
+                        name: name.clone(),
+                        init_fn: unsafe { std::mem::transmute(hachimi_init_addr) }
+                    });
                 }
 
                 continue;
@@ -36,6 +37,8 @@ pub fn load_libraries() {
 
         warn!("Failed to load library: {}", name);
     }
+
+    plugins
 }
 
 pub static mut DLL_HMODULE: HMODULE = HMODULE(0 as _);
@@ -48,7 +51,10 @@ pub extern "C" fn DllMain(hmodule: HMODULE, call_reason: c_ulong, _reserved: *mu
         if !Hachimi::init() {
             return TRUE;
         }
-        load_libraries();
+
+        let hachimi = Hachimi::instance();
+        *hachimi.plugins.lock().unwrap() = load_libraries();
+
         hook::init();
         info!("Attach completed");
     }

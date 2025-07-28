@@ -1,10 +1,10 @@
-use std::{fs, path::{Path, PathBuf}, process, sync::{atomic::{self, AtomicBool, AtomicI32}, Arc}};
+use std::{fs, path::{Path, PathBuf}, process, sync::{atomic::{self, AtomicBool, AtomicI32}, Arc, Mutex}};
 use arc_swap::ArcSwap;
 use fnv::{FnvHashMap, FnvHashSet};
 use once_cell::sync::OnceCell;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
-use crate::{gui_impl, hachimi_impl, il2cpp::{self, hook::umamusume::{CySpringController::SpringUpdateMode, GameSystem}}};
+use crate::{core::plugin_api, gui_impl, hachimi_impl, il2cpp::{self, hook::umamusume::{CySpringController::SpringUpdateMode, GameSystem}}};
 
 use super::{game::Game, ipc, plurals, template, template_filters, tl_repo, utils, Error, Interceptor};
 
@@ -12,6 +12,7 @@ pub struct Hachimi {
     // Hooking stuff
     pub interceptor: Interceptor,
     pub hooking_finished: AtomicBool,
+    pub plugins: Mutex<Vec<Plugin>>,
 
     // Localized data
     pub localized_data: ArcSwap<LocalizedData>,
@@ -33,6 +34,11 @@ pub struct Hachimi {
 
     #[cfg(target_os = "windows")]
     pub updater: Arc<crate::windows::updater::Updater>
+}
+
+pub struct Plugin {
+    pub name: String,
+    pub init_fn: plugin_api::HachimiInitFn
 }
 
 static INSTANCE: OnceCell<Arc<Hachimi>> = OnceCell::new();
@@ -92,9 +98,10 @@ impl Hachimi {
         Ok(Hachimi {
             interceptor: Interceptor::default(),
             hooking_finished: AtomicBool::new(false),
+            plugins: Mutex::default(),
 
             // Don't load localized data initially since it might fail, logging the error is not possible here
-            localized_data: ArcSwap::new(Arc::default()),
+            localized_data: ArcSwap::default(),
             tl_updater: Arc::default(),
 
             game,
@@ -208,6 +215,11 @@ impl Hachimi {
         }
 
         hachimi_impl::on_hooking_finished(self);
+
+        for plugin in self.plugins.lock().unwrap().iter() {
+            info!("Initializing plugin: {}", plugin.name);
+            (plugin.init_fn)(&plugin_api::Vtable::instantiate())
+        }
     }
 
     pub fn get_data_path<P: AsRef<Path>>(&self, rel_path: P) -> PathBuf {
