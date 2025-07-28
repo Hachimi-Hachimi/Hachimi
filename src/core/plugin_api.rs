@@ -28,15 +28,12 @@ unsafe extern "C" fn interceptor_get_trampoline_addr(this: *const Interceptor, h
     (*this).get_trampoline_addr(hook_addr as _) as _
 }
 
-unsafe extern "C" fn interceptor_unhook(this: *const Interceptor, hook_addr: *mut c_void, out_orig_addr: *mut *mut c_void) -> bool {
+unsafe extern "C" fn interceptor_unhook(this: *const Interceptor, hook_addr: *mut c_void) -> *mut c_void {
     if let Some(handle) = (*this).unhook(hook_addr as _) {
-        if !out_orig_addr.is_null() {
-            *out_orig_addr = handle.orig_addr as _;
-        }
-        true
+        handle.orig_addr as _
     }
     else {
-        false
+        0 as _
     }
 }
 
@@ -70,7 +67,7 @@ pub struct Vtable {
     interceptor_hook: unsafe extern "C" fn(this: *const Interceptor, orig_addr: *mut c_void, hook_addr: *mut c_void) -> *mut c_void,
     interceptor_hook_vtable: unsafe extern "C" fn(this: *const Interceptor, vtable: *mut *mut c_void, vtable_index: usize, hook_addr: *mut c_void) -> *mut c_void,
     interceptor_get_trampoline_addr: unsafe extern "C" fn(this: *const Interceptor, hook_addr: *mut c_void) -> *mut c_void,
-    interceptor_unhook: unsafe extern "C" fn(this: *const Interceptor, hook_addr: *mut c_void, out_orig_addr: *mut *mut c_void) -> bool,
+    interceptor_unhook: unsafe extern "C" fn(this: *const Interceptor, hook_addr: *mut c_void) -> *mut c_void,
     il2cpp_resolve_symbol: unsafe extern "C" fn(name: *const c_char) -> *mut c_void,
     log: unsafe extern "C" fn(level: i32, target: *const c_char, message: *const c_char)
 }
