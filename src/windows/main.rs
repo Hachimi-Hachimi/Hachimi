@@ -3,7 +3,7 @@ use std::os::raw::{c_ulong, c_void};
 use widestring::U16CString;
 use windows::{core::PCWSTR, Win32::{Foundation::{BOOL, HMODULE, TRUE}, System::LibraryLoader::LoadLibraryW}};
 
-use crate::core::Hachimi;
+use crate::{core::{plugin_api::{HachimiInitFn, Vtable}, Hachimi}, windows::utils};
 
 use super::{hook, wnd_hook};
 
@@ -21,6 +21,15 @@ pub fn load_libraries() {
         if let Ok(handle) = res {
             if !handle.is_invalid() {
                 info!("Loaded library: {}", name);
+
+                let hachimi_init_addr = utils::get_proc_address(handle, c"hachimi_init");
+                if hachimi_init_addr != 0 {
+                    info!("Calling hachimi_init");
+                    let hachimi_init: HachimiInitFn = unsafe { std::mem::transmute(hachimi_init_addr) };
+                    let vtable = Vtable::instantiate();
+                    hachimi_init(&vtable);
+                }
+
                 continue;
             }
         }
