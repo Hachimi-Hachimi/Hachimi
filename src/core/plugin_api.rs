@@ -56,7 +56,7 @@ unsafe extern "C" fn il2cpp_get_assembly_image(assembly_name: *const c_char) -> 
 
 unsafe extern "C" fn il2cpp_get_class(
     image: *const Il2CppImage, namespace: *const c_char, class_name: *const c_char
-) -> *const Il2CppClass {
+) -> *mut Il2CppClass {
     il2cpp::symbols::get_class(image, CStr::from_ptr(namespace), CStr::from_ptr(class_name))
         .inspect_err(|e| error!("{}", e))
         .unwrap_or(0 as _)
@@ -133,7 +133,7 @@ pub struct Vtable {
     il2cpp_get_assembly_image: unsafe extern "C" fn(assembly_name: *const c_char) -> *const Il2CppImage,
     il2cpp_get_class: unsafe extern "C" fn(
         image: *const Il2CppImage, namespace: *const c_char, class_name: *const c_char
-    ) -> *const Il2CppClass,
+    ) -> *mut Il2CppClass,
     il2cpp_get_method: unsafe extern "C" fn(
         class: *mut Il2CppClass, name: *const c_char, args_count: i32
     ) -> *const MethodInfo,
