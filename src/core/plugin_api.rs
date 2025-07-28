@@ -13,11 +13,15 @@ unsafe extern "C" fn hachimi_get_interceptor(this: *const Hachimi) -> *const Int
 }
 
 unsafe extern "C" fn interceptor_hook(this: *const Interceptor, orig_addr: *mut c_void, hook_addr: *mut c_void) -> *mut c_void {
-    (*this).hook(orig_addr as _, hook_addr as _).unwrap_or(0) as _
+    (*this).hook(orig_addr as _, hook_addr as _)
+        .inspect_err(|e| error!("{}", e))
+        .unwrap_or(0) as _
 }
 
-unsafe extern "C" fn interceptor_hook_vtable(this: *const Interceptor, vtable: *mut *mut c_void, vtable_index: *mut c_void, hook_addr: *mut c_void) -> *mut c_void {
-    (*this).hook_vtable(vtable as _, vtable_index as _, hook_addr as _).unwrap_or(0) as _
+unsafe extern "C" fn interceptor_hook_vtable(this: *const Interceptor, vtable: *mut *mut c_void, vtable_index: usize, hook_addr: *mut c_void) -> *mut c_void {
+    (*this).hook_vtable(vtable as _, vtable_index as _, hook_addr as _)
+        .inspect_err(|e| error!("{}", e))
+        .unwrap_or(0) as _
 }
 
 unsafe extern "C" fn interceptor_get_trampoline_addr(this: *const Interceptor, hook_addr: *mut c_void) -> *mut c_void {
@@ -64,7 +68,7 @@ pub struct Vtable {
     hachimi_instance: unsafe extern "C" fn() -> *const Hachimi,
     hachimi_get_interceptor: unsafe extern "C" fn(this: *const Hachimi) -> *const Interceptor,
     interceptor_hook: unsafe extern "C" fn(this: *const Interceptor, orig_addr: *mut c_void, hook_addr: *mut c_void) -> *mut c_void,
-    interceptor_hook_vtable: unsafe extern "C" fn(this: *const Interceptor, vtable: *mut *mut c_void, vtable_index: *mut c_void, hook_addr: *mut c_void) -> *mut c_void,
+    interceptor_hook_vtable: unsafe extern "C" fn(this: *const Interceptor, vtable: *mut *mut c_void, vtable_index: usize, hook_addr: *mut c_void) -> *mut c_void,
     interceptor_get_trampoline_addr: unsafe extern "C" fn(this: *const Interceptor, hook_addr: *mut c_void) -> *mut c_void,
     interceptor_unhook: unsafe extern "C" fn(this: *const Interceptor, hook_addr: *mut c_void, out_orig_addr: *mut *mut c_void) -> bool,
     il2cpp_resolve_symbol: unsafe extern "C" fn(name: *const c_char) -> *mut c_void,
