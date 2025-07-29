@@ -4,7 +4,7 @@ use fnv::{FnvHashMap, FnvHashSet};
 use once_cell::sync::OnceCell;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
-use crate::{core::plugin_api, gui_impl, hachimi_impl, il2cpp::{self, hook::umamusume::{CySpringController::SpringUpdateMode, GameSystem}}};
+use crate::{core::plugin_api::Plugin, gui_impl, hachimi_impl, il2cpp::{self, hook::umamusume::{CySpringController::SpringUpdateMode, GameSystem}}};
 
 use super::{game::Game, ipc, plurals, template, template_filters, tl_repo, utils, Error, Interceptor};
 
@@ -34,11 +34,6 @@ pub struct Hachimi {
 
     #[cfg(target_os = "windows")]
     pub updater: Arc<crate::windows::updater::Updater>
-}
-
-pub struct Plugin {
-    pub name: String,
-    pub init_fn: plugin_api::HachimiInitFn
 }
 
 static INSTANCE: OnceCell<Arc<Hachimi>> = OnceCell::new();
@@ -218,7 +213,10 @@ impl Hachimi {
 
         for plugin in self.plugins.lock().unwrap().iter() {
             info!("Initializing plugin: {}", plugin.name);
-            (plugin.init_fn)(&plugin_api::Vtable::instantiate())
+            let res = plugin.init();
+            if !res.is_ok() {
+                info!("Plugin init failed");
+            }
         }
     }
 

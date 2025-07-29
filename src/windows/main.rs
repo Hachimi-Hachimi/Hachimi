@@ -3,7 +3,7 @@ use std::os::raw::{c_ulong, c_void};
 use widestring::U16CString;
 use windows::{core::PCWSTR, Win32::{Foundation::{BOOL, HMODULE, TRUE}, System::LibraryLoader::LoadLibraryW}};
 
-use crate::{core::{hachimi::Plugin, Hachimi}, windows::utils};
+use crate::{core::{plugin_api::Plugin, Hachimi}, windows::utils};
 
 use super::{hook, wnd_hook};
 

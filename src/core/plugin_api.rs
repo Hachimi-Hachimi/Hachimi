@@ -2,7 +2,25 @@ use std::ffi::{c_char, c_void, CStr};
 
 use crate::{core::{Hachimi, Interceptor}, il2cpp::{self, types::{il2cpp_array_size_t, FieldInfo, Il2CppArray, Il2CppClass, Il2CppImage, Il2CppObject, Il2CppThread, Il2CppTypeEnum, MethodInfo}}};
 
-pub type HachimiInitFn = extern "C" fn(vtable: *const Vtable);
+const VERSION: i32 = 1;
+
+pub type HachimiInitFn = extern "C" fn(vtable: *const Vtable, version: i32) -> InitResult;
+
+#[repr(i32)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
+pub enum InitResult {
+    Error,
+    Ok
+}
+
+impl InitResult {
+    pub fn is_ok(&self) -> bool {
+        match self {
+            Self::Ok => true,
+            _ => false
+        }
+    }
+}
 
 unsafe extern "C" fn hachimi_instance() -> *const Hachimi {
     Hachimi::instance().as_ref()
@@ -293,5 +311,16 @@ impl Vtable {
 
     pub fn instantiate() -> Self {
         Self::VALUE.clone()
+    }
+}
+
+pub struct Plugin {
+    pub name: String,
+    pub init_fn: HachimiInitFn
+}
+
+impl Plugin {
+    pub fn init(&self) -> InitResult {
+        (self.init_fn)(&Vtable::instantiate(), VERSION)
     }
 }
