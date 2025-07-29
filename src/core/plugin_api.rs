@@ -1,6 +1,6 @@
 use std::ffi::{c_char, c_void, CStr};
 
-use crate::{core::{Hachimi, Interceptor}, il2cpp::{self, types::{Il2CppClass, Il2CppImage, Il2CppTypeEnum, MethodInfo}}};
+use crate::{core::{Hachimi, Interceptor}, il2cpp::{self, types::{il2cpp_array_size_t, FieldInfo, Il2CppArray, Il2CppClass, Il2CppImage, Il2CppObject, Il2CppThread, Il2CppTypeEnum, MethodInfo}}};
 
 pub type HachimiInitFn = extern "C" fn(vtable: *const Vtable);
 
@@ -94,6 +94,86 @@ unsafe extern "C" fn il2cpp_get_method_overload_addr(
     il2cpp::symbols::get_method_overload_addr(class, &name, params) as _
 }
 
+unsafe extern "C" fn il2cpp_get_method_cached(
+    class: *mut Il2CppClass, name: *const c_char, args_count: i32
+) -> *const MethodInfo {
+    il2cpp::symbols::get_method_cached(class, CStr::from_ptr(name), args_count)
+        .inspect_err(|e| error!("{}", e))
+        .unwrap_or(0 as _)
+}
+
+unsafe extern "C" fn il2cpp_get_method_addr_cached(
+    class: *mut Il2CppClass, name: *const c_char, args_count: i32
+) -> *mut c_void {
+    il2cpp::symbols::get_method_addr_cached(class, CStr::from_ptr(name), args_count) as _
+}
+
+unsafe extern "C" fn il2cpp_find_nested_class(
+    class: *mut Il2CppClass, name: *const c_char
+) -> *mut Il2CppClass {
+    il2cpp::symbols::find_nested_class(class, CStr::from_ptr(name))
+        .inspect_err(|e| error!("{}", e))
+        .unwrap_or(0 as _)
+}
+
+unsafe extern "C" fn il2cpp_get_field_from_name(
+    class: *mut Il2CppClass, name: *const c_char
+) -> *mut FieldInfo {
+    il2cpp::api::il2cpp_class_get_field_from_name(class, name)
+}
+
+unsafe extern "C" fn il2cpp_get_field_value(
+    obj: *mut Il2CppObject, field: *mut FieldInfo, out_value: *mut c_void
+) {
+    il2cpp::api::il2cpp_field_get_value(obj, field, out_value)
+}
+
+unsafe extern "C" fn il2cpp_set_field_value(
+    obj: *mut Il2CppObject, field: *mut FieldInfo, value: *const c_void
+) {
+    il2cpp::api::il2cpp_field_set_value(obj, field, value as _)
+}
+
+unsafe extern "C" fn il2cpp_get_static_field_value(
+    field: *mut FieldInfo, out_value: *mut c_void
+) {
+    il2cpp::api::il2cpp_field_static_get_value(field, out_value)
+}
+
+unsafe extern "C" fn il2cpp_set_static_field_value(
+    field: *mut FieldInfo, value: *const c_void
+) {
+    il2cpp::api::il2cpp_field_static_set_value(field, value as _)
+}
+
+unsafe extern "C" fn il2cpp_unbox(obj: *mut Il2CppObject) -> *mut c_void {
+    il2cpp::api::il2cpp_object_unbox(obj)
+}
+
+unsafe extern "C" fn il2cpp_get_main_thread() -> *mut Il2CppThread {
+    il2cpp::symbols::Thread::main_thread().as_raw()
+}
+
+unsafe extern "C" fn il2cpp_get_attached_threads(out_size: *mut usize) -> *mut *mut Il2CppThread {
+    il2cpp::api::il2cpp_thread_get_all_attached_threads(out_size)
+}
+
+unsafe extern "C" fn il2cpp_schedule_on_thread(thread: *mut Il2CppThread, callback: unsafe extern "C" fn()) {
+    il2cpp::symbols::Thread::from_raw(thread).schedule(std::mem::transmute(callback));
+}
+
+unsafe extern "C" fn il2cpp_create_array(
+    element_type: *mut Il2CppClass, length: il2cpp_array_size_t
+) -> *mut Il2CppArray {
+    il2cpp::api::il2cpp_array_new(element_type, length)
+}
+
+unsafe extern "C" fn il2cpp_get_singleton_like_instance(class: *mut Il2CppClass) -> *mut Il2CppObject {
+    il2cpp::symbols::SingletonLike::new(class)
+        .map(|s| s.instance())
+        .unwrap_or(0 as _)
+}
+
 unsafe extern "C" fn log(level: i32, target: *const c_char, message: *const c_char) {
     let target = CStr::from_ptr(target).to_string_lossy();
     let message = CStr::from_ptr(message).to_string_lossy();
@@ -112,43 +192,71 @@ unsafe extern "C" fn log(level: i32, target: *const c_char, message: *const c_ch
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct Vtable {
-    /* Hachimi */
-    hachimi_instance: unsafe extern "C" fn() -> *const Hachimi,
-    hachimi_get_interceptor: unsafe extern "C" fn(this: *const Hachimi) -> *const Interceptor,
+    pub hachimi_instance: unsafe extern "C" fn() -> *const Hachimi,
+    pub hachimi_get_interceptor: unsafe extern "C" fn(this: *const Hachimi) -> *const Interceptor,
 
-    /* Interceptor */
-    interceptor_hook: unsafe extern "C" fn(
+    pub interceptor_hook: unsafe extern "C" fn(
         this: *const Interceptor, orig_addr: *mut c_void, hook_addr: *mut c_void
     ) -> *mut c_void,
-    interceptor_hook_vtable: unsafe extern "C" fn(
+    pub interceptor_hook_vtable: unsafe extern "C" fn(
         this: *const Interceptor, vtable: *mut *mut c_void, vtable_index: usize, hook_addr: *mut c_void
     ) -> *mut c_void,
-    interceptor_get_trampoline_addr: unsafe extern "C" fn(
+    pub interceptor_get_trampoline_addr: unsafe extern "C" fn(
         this: *const Interceptor, hook_addr: *mut c_void
     ) -> *mut c_void,
-    interceptor_unhook: unsafe extern "C" fn(this: *const Interceptor, hook_addr: *mut c_void) -> *mut c_void,
+    pub interceptor_unhook: unsafe extern "C" fn(this: *const Interceptor, hook_addr: *mut c_void) -> *mut c_void,
 
-    /* Il2Cpp */
-    il2cpp_resolve_symbol: unsafe extern "C" fn(name: *const c_char) -> *mut c_void,
-    il2cpp_get_assembly_image: unsafe extern "C" fn(assembly_name: *const c_char) -> *const Il2CppImage,
-    il2cpp_get_class: unsafe extern "C" fn(
+    pub il2cpp_resolve_symbol: unsafe extern "C" fn(name: *const c_char) -> *mut c_void,
+    pub il2cpp_get_assembly_image: unsafe extern "C" fn(assembly_name: *const c_char) -> *const Il2CppImage,
+    pub il2cpp_get_class: unsafe extern "C" fn(
         image: *const Il2CppImage, namespace: *const c_char, class_name: *const c_char
     ) -> *mut Il2CppClass,
-    il2cpp_get_method: unsafe extern "C" fn(
+    pub il2cpp_get_method: unsafe extern "C" fn(
         class: *mut Il2CppClass, name: *const c_char, args_count: i32
     ) -> *const MethodInfo,
-    il2cpp_get_method_overload: unsafe extern "C" fn(
+    pub il2cpp_get_method_overload: unsafe extern "C" fn(
         class: *mut Il2CppClass, name: *const c_char, params: *const Il2CppTypeEnum, param_count: usize
     ) -> *const MethodInfo,
-    il2cpp_get_method_addr: unsafe extern "C" fn(
+    pub il2cpp_get_method_addr: unsafe extern "C" fn(
         class: *mut Il2CppClass, name: *const c_char, args_count: i32
     ) -> *mut c_void,
-    il2cpp_get_method_overload_addr: unsafe extern "C" fn(
+    pub il2cpp_get_method_overload_addr: unsafe extern "C" fn(
         class: *mut Il2CppClass, name: *const c_char, params: *const Il2CppTypeEnum, param_count: usize
     ) -> *mut c_void,
+        pub il2cpp_get_method_cached: unsafe extern "C" fn(
+        class: *mut Il2CppClass, name: *const c_char, args_count: i32
+    ) -> *const MethodInfo,
+    pub il2cpp_get_method_addr_cached: unsafe extern "C" fn(
+        class: *mut Il2CppClass, name: *const c_char, args_count: i32
+    ) -> *mut c_void,
+    pub il2cpp_find_nested_class: unsafe extern "C" fn(
+        class: *mut Il2CppClass, name: *const c_char
+    ) -> *mut Il2CppClass,
+    pub il2cpp_get_field_from_name: unsafe extern "C" fn(
+        class: *mut Il2CppClass, name: *const c_char
+    ) -> *mut FieldInfo,
+    pub il2cpp_get_field_value: unsafe extern "C" fn(
+        obj: *mut Il2CppObject, field: *mut FieldInfo, out_value: *mut c_void
+    ),
+    pub il2cpp_set_field_value: unsafe extern "C" fn(
+        obj: *mut Il2CppObject, field: *mut FieldInfo, value: *const c_void
+    ),
+    pub il2cpp_get_static_field_value: unsafe extern "C" fn(
+        field: *mut FieldInfo, out_value: *mut c_void
+    ),
+    pub il2cpp_set_static_field_value: unsafe extern "C" fn(
+        field: *mut FieldInfo, value: *const c_void
+    ),
+    pub il2cpp_unbox: unsafe extern "C" fn(obj: *mut Il2CppObject) -> *mut c_void,
+    pub il2cpp_get_main_thread: unsafe extern "C" fn() -> *mut Il2CppThread,
+    pub il2cpp_get_attached_threads: unsafe extern "C" fn(out_size: *mut usize) -> *mut *mut Il2CppThread,
+    pub il2cpp_schedule_on_thread: unsafe extern "C" fn(thread: *mut Il2CppThread, callback: unsafe extern "C" fn()),
+    pub il2cpp_create_array: unsafe extern "C" fn(
+        element_type: *mut Il2CppClass, length: il2cpp_array_size_t
+    ) -> *mut Il2CppArray,
+    pub il2cpp_get_singleton_like_instance: unsafe extern "C" fn(class: *mut Il2CppClass) -> *mut Il2CppObject,
 
-    /* Logging */
-    log: unsafe extern "C" fn(level: i32, target: *const c_char, message: *const c_char)
+    pub log: unsafe extern "C" fn(level: i32, target: *const c_char, message: *const c_char),
 }
 
 impl Vtable {
@@ -166,7 +274,21 @@ impl Vtable {
         il2cpp_get_method_overload,
         il2cpp_get_method_addr,
         il2cpp_get_method_overload_addr,
-        log
+        il2cpp_get_method_cached,
+        il2cpp_get_method_addr_cached,
+        il2cpp_find_nested_class,
+        il2cpp_get_field_from_name,
+        il2cpp_get_field_value,
+        il2cpp_set_field_value,
+        il2cpp_get_static_field_value,
+        il2cpp_set_static_field_value,
+        il2cpp_unbox,
+        il2cpp_get_main_thread,
+        il2cpp_get_attached_threads,
+        il2cpp_schedule_on_thread,
+        il2cpp_create_array,
+        il2cpp_get_singleton_like_instance,
+        log,
     };
 
     pub fn instantiate() -> Self {
