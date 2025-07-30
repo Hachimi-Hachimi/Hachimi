@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::collections::hash_map;
 use std::ffi::CStr;
 use std::marker::PhantomData;
@@ -125,14 +126,14 @@ pub fn get_method_overload_addr(class: *mut Il2CppClass, name: &str, params: &[I
 }
 
 pub static METHOD_CACHE: Lazy<
-    Mutex<FnvHashMap<usize, FnvHashMap<(&'static CStr, i32), usize>>>
+    Mutex<FnvHashMap<usize, FnvHashMap<(Cow<'_, CStr>, i32), usize>>>
 > = Lazy::new(|| Mutex::default());
 
-pub fn get_method_cached(class: *mut Il2CppClass, name: &'static CStr, args_count: i32) -> Result<*const MethodInfo, Error> {
+pub fn get_method_cached(class: *mut Il2CppClass, name: &CStr, args_count: i32) -> Result<*const MethodInfo, Error> {
     let mut cache = METHOD_CACHE.lock().unwrap();
     let entries = match cache.entry(class as usize) {
         hash_map::Entry::Occupied(e) => {
-            if let Some(addr) = e.get().get(&(name, args_count)) {
+            if let Some(addr) = e.get().get(&(name.into(), args_count)) {
                 if *addr == 0 {
                     // Only error that get_method returns
                     return Err(Error::MethodNotFound(name.to_str().unwrap().to_owned()));
@@ -150,11 +151,11 @@ pub fn get_method_cached(class: *mut Il2CppClass, name: &'static CStr, args_coun
         Ok(addr) => addr as usize,
         Err(_) => 0
     };
-    entries.insert((name, args_count), addr);
+    entries.insert((name.to_owned().into(), args_count), addr);
     res
 }
 
-pub fn get_method_addr_cached(class: *mut Il2CppClass, name: &'static CStr, args_count: i32) -> usize {
+pub fn get_method_addr_cached(class: *mut Il2CppClass, name: &CStr, args_count: i32) -> usize {
     let res = get_method_cached(class, name, args_count);
     if let Ok(method) = res {
         unsafe { (*method).methodPointer }
@@ -481,6 +482,10 @@ impl<K, V> IDictionary<K, V> {
 pub struct Thread(*mut Il2CppThread);
 
 impl Thread {
+    pub fn from_raw(ptr: *mut Il2CppThread) -> Self {
+        Self(ptr)
+    }
+
     fn sync_ctx(&self) -> *mut Il2CppObject {
         let class = unsafe { (*self.0).obj.klass() };
         let get_exec_ctx_addr = get_method_addr_cached(class, c"GetMutableExecutionContext", 0);
@@ -529,6 +534,10 @@ impl Thread {
 
     pub fn main_thread() -> Thread {
         Self::attached_threads().get(0).expect("main thread must be present").clone()
+    }
+
+    pub fn as_raw(&self) -> *mut Il2CppThread {
+        self.0
     }
 }
 

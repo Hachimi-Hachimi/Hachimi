@@ -25,3 +25,5 @@ mod ipc;
 
 mod sugoi_client;
 pub use sugoi_client::SugoiClient;
+
+pub mod plugin_api;
