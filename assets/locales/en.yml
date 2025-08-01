@@ -138,6 +138,7 @@ config_editor:
   force_allow_dynamic_camera: "Force allow\ndynamic camera"
   live_theater_allow_same_chara: "Live theater\nallow same chara"
   physics_update_mode: "Physics update\nmode"
+  disable_skill_name_translation: "Disable skill name\ntranslation"
 
 tl_update_dialog:
   title: "New update available"

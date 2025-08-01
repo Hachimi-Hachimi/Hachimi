@@ -292,6 +292,8 @@ pub struct Config {
     #[serde(default)]
     pub auto_translate_localize: bool,
     #[serde(default)]
+    pub disable_skill_name_translation: bool,
+    #[serde(default)]
     pub language: Language,
     #[serde(default = "Config::default_meta_index_url")]
     pub meta_index_url: String,

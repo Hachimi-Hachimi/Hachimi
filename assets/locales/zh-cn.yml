@@ -130,8 +130,9 @@ config_editor:
   story_choice_auto_select_delay: "剧情选项自动选择延迟"
   story_text_speed_multiplier: "剧情文本速度倍率"
   force_allow_dynamic_camera: "强制启用动态镜头"
-  live_theater_allow_same_chara: "在 LIVE 剧场中允许设置多个相同角色"
+  live_theater_allow_same_chara: "在 LIVE 剧场中\n允许设置多个相同角色"
   physics_update_mode: "物理引擎更新模式"
+  disable_skill_name_translation: "禁用技能名称翻译"
 
 tl_update_dialog:
   title: "新翻译更新可用"

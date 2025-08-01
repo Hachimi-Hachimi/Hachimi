@@ -124,13 +124,18 @@ impl TextDataQuery {
     }
 
     fn get_skill_name(index: i32) -> Option<*mut Il2CppString> {
+        // Return None if skill name translation is disabled
+        if Hachimi::instance().config.load().disable_skill_name_translation {
+            return None;
+        }
+
         let localized_data = Hachimi::instance().localized_data.load();
         let text_opt = localized_data
             .text_data_dict
             .get(&47)
             .map(|c| c.get(&index))
             .unwrap_or_default();
-        
+
         if let Some(text) = text_opt {
             // Fit the text when it's being used in the skill learning screen
             if Self::is_skill_learning_query() {
