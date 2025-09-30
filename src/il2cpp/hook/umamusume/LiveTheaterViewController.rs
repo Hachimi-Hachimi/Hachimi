@@ -25,6 +25,6 @@ pub fn init(umamusume: *const Il2CppImage) {
     new_hook!(ChangeLive_addr, ChangeLive);
 
     unsafe {
-        CHANGELIVE_ONSUCCESS_ADDR = get_method_addr(LiveTheaterViewController, c"<ChangeLive>b__41_1", 1);
+        CHANGELIVE_ONSUCCESS_ADDR = get_method_addr(LiveTheaterViewController, c"<ChangeLive>b__48_1", 1);
     }
 }
