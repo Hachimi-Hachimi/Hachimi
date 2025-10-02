@@ -151,11 +151,6 @@ impl TextDataQuery {
     }
 
     fn get_skill_desc(mut index: i32) -> Option<*mut Il2CppString> {
-        // Inherited skills use a different id for some reason
-        if index > 900000 && index < 1000000 {
-            index -= 800000
-        }
-
         let localized_data = Hachimi::instance().localized_data.load();
         let text_opt = localized_data
             .text_data_dict
