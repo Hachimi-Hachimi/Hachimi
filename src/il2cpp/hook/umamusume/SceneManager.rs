@@ -22,7 +22,6 @@ extern "C" fn ChangeView(
     );
     if next_view_id == 1 { // ViewId.Splash
         SPLASH_SHOWN.store(true, atomic::Ordering::Release);
-        wnd_hook::drain_wm_size_buffer();
     }
 }
 

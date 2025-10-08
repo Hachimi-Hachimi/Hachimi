@@ -22,6 +22,8 @@ lazy_fnptr!(il2cpp_set_commandline_arguments_utf16, (), argc: ::std::os::raw::c_
 lazy_fnptr!(il2cpp_set_config_utf16, (), executablePath: *const Il2CppChar);
 lazy_fnptr!(il2cpp_set_config, (), executablePath: *const ::std::os::raw::c_char);
 lazy_fnptr!(il2cpp_set_memory_callbacks, (), callbacks: *mut Il2CppMemoryCallbacks);
+lazy_fnptr!(il2cpp_memory_pool_set_region_size, (), size: usize);
+lazy_fnptr!(il2cpp_memory_pool_get_region_size, usize, );
 lazy_fnptr!(il2cpp_get_corlib, *const Il2CppImage, );
 lazy_fnptr!(il2cpp_add_internal_call, (), name: *const ::std::os::raw::c_char, method: Il2CppMethodPointer);
 lazy_fnptr!(il2cpp_resolve_icall, Il2CppMethodPointer, name: *const ::std::os::raw::c_char);
