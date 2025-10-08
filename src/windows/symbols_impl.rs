@@ -243,7 +243,7 @@ const SYMBOL_LIST: &[&'static str] = &[
     "il2cpp_unity_set_android_network_up_state_func"
 ];
 
-const START_RVA: u32 = 0x782c12;
+const START_RVA: u32 = 0x782c92;
 fn generate_symbol_map() -> Result<FnvHashMap<&'static str, CString>, Error> {
     let mut map = FnvHashMap::with_capacity(SYMBOL_LIST.len());
 
