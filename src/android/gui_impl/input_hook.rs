@@ -30,19 +30,19 @@ static VOLUME_DOWN_PRESSED: AtomicBool = AtomicBool::new(false);
 
 static SCROLL_AXIS_SCALE: f32 = 10.0;
 
-type NativeInjectEventFn = extern "C" fn(env: JNIEnv, obj: JObject, input_event: JObject) -> jboolean;
-extern "C" fn nativeInjectEvent(mut env: JNIEnv, obj: JObject, input_event: JObject) -> jboolean {
+type NativeInjectEventFn = extern "C" fn(env: JNIEnv, obj: JObject, input_event: JObject, extra_param: jint) -> jboolean;
+extern "C" fn nativeInjectEvent(mut env: JNIEnv, obj: JObject, input_event: JObject, extra_param: jint) -> jboolean {
     let motion_event_class = env.find_class("android/view/MotionEvent").unwrap();
     let key_event_class = env.find_class("android/view/KeyEvent").unwrap();
 
     if env.is_instance_of(&input_event, &motion_event_class).unwrap() {
         // early return using atomic check to prevent mutex lock overhead
         if !Gui::is_consuming_input_atomic() {
-            return get_orig_fn!(nativeInjectEvent, NativeInjectEventFn)(env, obj, input_event);
+            return get_orig_fn!(nativeInjectEvent, NativeInjectEventFn)(env, obj, input_event, extra_param);
         }
 
         let Some(mut gui) = Gui::instance().map(|m| m.lock().unwrap()) else {
-            return get_orig_fn!(nativeInjectEvent, NativeInjectEventFn)(env, obj, input_event);
+            return get_orig_fn!(nativeInjectEvent, NativeInjectEventFn)(env, obj, input_event, extra_param);
         };
 
         let get_action_res = env.call_method(&input_event, "getAction", "()I", &[]).unwrap();
@@ -145,13 +145,13 @@ extern "C" fn nativeInjectEvent(mut env: JNIEnv, obj: JObject, input_event: JObj
             _ => {
                 if pressed && key_code == Hachimi::instance().config.load().android.menu_open_key {
                     let Some(mut gui) = Gui::instance().map(|m| m.lock().unwrap()) else {
-                        return get_orig_fn!(nativeInjectEvent, NativeInjectEventFn)(env, obj, input_event);
+                        return get_orig_fn!(nativeInjectEvent, NativeInjectEventFn)(env, obj, input_event, extra_param);
                     };
                     gui.toggle_menu();
                 }
                 if Gui::is_consuming_input_atomic() {
                     let Some(mut gui) = Gui::instance().map(|m| m.lock().unwrap()) else {
-                        return get_orig_fn!(nativeInjectEvent, NativeInjectEventFn)(env, obj, input_event);
+                        return get_orig_fn!(nativeInjectEvent, NativeInjectEventFn)(env, obj, input_event, extra_param);
                     };
 
                     if let Some(key) = keymap::get_key(key_code) {
@@ -177,19 +177,19 @@ extern "C" fn nativeInjectEvent(mut env: JNIEnv, obj: JObject, input_event: JObj
                     }
                     return JNI_TRUE;
                 }
-                return get_orig_fn!(nativeInjectEvent, NativeInjectEventFn)(env, obj, input_event);
+                return get_orig_fn!(nativeInjectEvent, NativeInjectEventFn)(env, obj, input_event, extra_param);
             }
         };
 
         if pressed && other_atomic.load(Ordering::Relaxed) {
             let Some(mut gui) = Gui::instance().map(|m| m.lock().unwrap()) else {
-                return get_orig_fn!(nativeInjectEvent, NativeInjectEventFn)(env, obj, input_event);
+                return get_orig_fn!(nativeInjectEvent, NativeInjectEventFn)(env, obj, input_event, extra_param);
             };
             gui.toggle_menu();
         }
     }
 
-    get_orig_fn!(nativeInjectEvent, NativeInjectEventFn)(env, obj, input_event)
+    get_orig_fn!(nativeInjectEvent, NativeInjectEventFn)(env, obj, input_event, extra_param)
 }
 
 fn get_ppp(mut env: JNIEnv, gui: &Gui) -> f32 {
