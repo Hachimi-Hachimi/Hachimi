@@ -16,10 +16,20 @@ fn get__lyricsDataDic(this: *mut Il2CppObject) -> Dictionary<i32, Array<LyricsDa
     Dictionary::from(get_field_object_value(this, unsafe { LYRICSDATADIC_FIELD }))
 }
 
+// dead code needed here, currently unused in-game
+#[repr(i32)]
+#[allow(dead_code)]
+enum AdditionalSetting {
+    None = 0,
+    SheetVariationId = 1
+}
+
 #[repr(C)]
 struct LyricsData {
     time: f32,
-    lyrics: *mut Il2CppString
+    lyrics: *mut Il2CppString,
+    additionalsetting_type: AdditionalSetting,
+    additionalsetting_value: i32
 }
 
 type LoadLyricsFn = extern "C" fn(this: *mut Il2CppObject, id: i32, path: *mut Il2CppString) -> bool;
@@ -39,7 +49,7 @@ extern "C" fn LoadLyrics(this: *mut Il2CppObject, id: i32, path: *mut Il2CppStri
     };
     // dont let pbork interactive know about this
     let secs_dict: FnvHashMap<i32, String> = dict.into_iter()
-        .map(|(time, lyrics)| unsafe { (std::mem::transmute(time as f32 / 1000.0), lyrics) })
+        .map(|(time, lyrics)| (f32::to_bits(time as f32 / 1000.0).cast_signed(), lyrics) )
         .collect();
 
     let lyrics_data_dict = get__lyricsDataDic(this);
@@ -47,8 +57,8 @@ extern "C" fn LoadLyrics(this: *mut Il2CppObject, id: i32, path: *mut Il2CppStri
         return true;
     };
     for lyrics_data in unsafe { lyrics_data_array.as_slice().iter_mut() } {
-        // transmute to an i32 so we can do an exact match lookup in the map
-        let time: i32 = unsafe { std::mem::transmute(lyrics_data.time) };
+        // cast as an i32 so we can do an exact match lookup in the map
+        let time: i32 = f32::to_bits(lyrics_data.time).cast_signed();
         if let Some(text) = secs_dict.get(&time) {
             lyrics_data.lyrics = text.to_il2cpp_string();
         }
