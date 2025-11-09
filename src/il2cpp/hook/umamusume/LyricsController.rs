@@ -16,10 +16,20 @@ fn get__lyricsDataDic(this: *mut Il2CppObject) -> Dictionary<i32, Array<LyricsDa
     Dictionary::from(get_field_object_value(this, unsafe { LYRICSDATADIC_FIELD }))
 }
 
+// dead code needed here, currently unused in-game
+#[repr(i32)]
+#[allow(dead_code)]
+enum AdditionalSetting {
+    None = 0,
+    SheetVariationId = 1
+}
+
 #[repr(C)]
 struct LyricsData {
     time: f32,
-    lyrics: *mut Il2CppString
+    lyrics: *mut Il2CppString,
+    additionalsetting_type: AdditionalSetting,
+    additionalsetting_value: i32
 }
 
 type LoadLyricsFn = extern "C" fn(this: *mut Il2CppObject, id: i32, path: *mut Il2CppString) -> bool;
